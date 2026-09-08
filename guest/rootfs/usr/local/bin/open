@@ -1,0 +1,62 @@
+#!/bin/sh
+# Edit a file in the browser instead of in the terminal.
+#
+# The page cannot read the guest's disk directly (9p caching would hand it a
+# stale copy), so the whole exchange runs over the serial line:
+#
+#   guest -> page   ESC ] 777 ; open ; <path> BEL   <file contents>   ESC ] 777 ; eof BEL
+#   page  -> guest  <edited lines> __V86_OPEN_SAVE__      (or __V86_OPEN_CANCEL__)
+#
+# The page hides everything between the two markers, so nothing leaks onto the
+# screen. This blocks until the editor is closed, the way an editor would.
+
+if [ $# -ne 1 ]; then
+    echo "usage: open FILE" >&2
+    exit 2
+fi
+
+file=$1
+case "$file" in
+    /*) ;;
+    ~/*) file="$HOME/${file#~/}" ;;
+    *) file="$PWD/$file" ;;
+esac
+
+if [ -e "$file" ] && [ ! -f "$file" ]; then
+    echo "open: not a regular file: $file" >&2
+    exit 1
+fi
+if [ ! -e "$file" ] && ! : > "$file" 2>/dev/null; then
+    echo "open: cannot create $file" >&2
+    exit 1
+fi
+
+saved_stty=$(stty -g 2>/dev/null)
+stty -echo 2>/dev/null
+
+printf '\033]777;open;%s\007' "$file"
+cat "$file"
+printf '\033]777;eof\007'
+
+tmp=$(mktemp /tmp/open.XXXXXX) || exit 1
+verdict=cancel
+
+while IFS= read -r line; do
+    case "$line" in
+        __V86_OPEN_SAVE__) verdict=save; break ;;
+        __V86_OPEN_CANCEL__) break ;;
+        *) printf '%s\n' "$line" >> "$tmp" ;;
+    esac
+done
+
+if [ "$verdict" = save ]; then
+    cat "$tmp" > "$file"
+fi
+rm -f "$tmp"
+
+if [ -n "$saved_stty" ]; then
+    stty "$saved_stty" 2>/dev/null
+else
+    stty echo 2>/dev/null
+fi
+exit 0

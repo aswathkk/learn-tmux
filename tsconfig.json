@@ -1,5 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "comment": "public/ holds v86's generated UMD bundle and dist/ is build output; neither is ours to type-check. .astro must stay includable: it is where the content collection types are generated.",
+  "exclude": ["dist", "public"]
 }

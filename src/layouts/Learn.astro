@@ -1,0 +1,45 @@
+---
+/**
+ * The learn screen shell: a header across the top, the task on the left, the
+ * real terminal on the right.
+ *
+ * The task column scrolls on its own with the hint line pinned to its floor;
+ * the terminal column never moves. That is the whole idea — the machine is one
+ * continuous session, not something that reloads under you as you read.
+ *
+ * Below the lg breakpoint the columns stack, terminal first: on a phone the
+ * terminal is the part that cannot usefully be made smaller.
+ */
+import Base from './Base.astro';
+import EditorOverlay from '../components/learn/EditorOverlay.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  noindex?: boolean;
+  jsonLd?: object[];
+}
+
+const { ...seo } = Astro.props;
+---
+<Base {...seo} hideFooter bodyClass="learn-body">
+  <div class="learn-shell">
+    <slot name="header" />
+
+    <main id="main" class="learn-main">
+      <div class="learn-column learn-column--task">
+        <div class="learn-task-scroll">
+          <slot name="task" />
+        </div>
+        <slot name="hint" />
+      </div>
+
+      <div class="learn-column learn-column--terminal">
+        <slot name="terminal" />
+      </div>
+    </main>
+  </div>
+
+  <EditorOverlay />
+</Base>

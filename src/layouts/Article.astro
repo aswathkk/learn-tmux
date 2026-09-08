@@ -1,0 +1,28 @@
+---
+/**
+ * The reading layout for guides: one column, generous measure, breadcrumbs.
+ */
+import Base from './Base.astro';
+import SiteHeader from '../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
+import type { BreadcrumbEntry } from '../lib/seo';
+
+interface Props {
+  title: string;
+  description: string;
+  crumbs: BreadcrumbEntry[];
+  jsonLd?: object[];
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  section?: 'guides' | 'gallery';
+}
+
+const { crumbs, section = 'guides', ...seo } = Astro.props;
+---
+<Base {...seo} type="article">
+  <SiteHeader section={section} />
+  <main id="main" class="mx-auto max-w-[760px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+    <slot />
+  </main>
+</Base>

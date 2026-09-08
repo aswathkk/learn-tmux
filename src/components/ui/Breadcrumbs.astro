@@ -1,0 +1,38 @@
+---
+/**
+ * Visible breadcrumbs. The matching BreadcrumbList JSON-LD is emitted by the
+ * page, so the two always describe the same trail.
+ */
+import type { BreadcrumbEntry } from '../../lib/seo';
+
+interface Props {
+  entries: BreadcrumbEntry[];
+  class?: string;
+}
+
+const { entries, class: className = '' } = Astro.props;
+---
+<nav aria-label="Breadcrumb" class={className}>
+  <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-fg-dim">
+    {
+      entries.map((entry, index) => (
+        <li class="flex items-center gap-2">
+          {/* fg-faintest is the ring colour for a locked row — 1.48:1 here, which
+              read as a rendering artefact rather than a separator. */}
+          {index > 0 && <span aria-hidden="true" class="text-fg-faint">/</span>}
+          {entry.href ? (
+            /* The padding grows the target from 20px to 36px; the negative
+               margin takes it back out of the layout, so the row is unchanged. */
+            <a href={entry.href} class="-my-2 inline-flex items-center py-2 transition-colors hover:text-accent">
+              {entry.name}
+            </a>
+          ) : (
+            <span class="text-fg-muted" aria-current="page">
+              {entry.name}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>

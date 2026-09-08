@@ -1,0 +1,113 @@
+---
+/**
+ * The cheat sheet.
+ *
+ * Every row is derived from the lesson that teaches it, so each one links back
+ * to where it was learned. That link is the point: a cheat sheet you can fall
+ * into and come out of understanding the key, rather than just copying it.
+ *
+ * "tmux cheat sheet" is one of the highest-volume queries in this space, so the
+ * whole table is server-rendered. Progress only adds a "you've done this" mark
+ * on top; it never hides a row from a crawler or a first-time visitor.
+ */
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import Kbd from '../../components/ui/Kbd.astro';
+import { getCheatSheetSections } from '../../lib/cheatsheet';
+import { getCourseStats, levelPath } from '../../lib/lessons';
+import { breadcrumbJsonLd } from '../../lib/seo';
+
+const sections = await getCheatSheetSections();
+const stats = await getCourseStats();
+
+const crumbs = [{ name: 'learntmux', href: '/' }, { name: 'Cheat sheet' }];
+const jsonLd = [breadcrumbJsonLd(crumbs, Astro.site)];
+
+const description = `Every tmux key binding and command taught in ${stats.lessons} hands-on lessons, grouped by level, each one linked to the lesson that explains it.`;
+---
+
+<Base
+  title="tmux Cheat Sheet: Every Key Binding, With the Lesson Behind It | learntmux"
+  description={description}
+  jsonLd={jsonLd}
+>
+  <SiteHeader section="cheatsheet" />
+
+  <main id="main" class="mx-auto max-w-[1100px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+
+    <header class="flex flex-col gap-4">
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">CHEAT SHEET</span>
+      <h1
+        class="m-0 max-w-[22ch] font-bold [text-wrap:balance]"
+        style="font-size:clamp(32px,4vw,52px); letter-spacing:-.03em; line-height:1.04;"
+      >
+        Every key, and where you learned it.
+      </h1>
+      <p class="max-w-[60ch] text-base leading-[1.6] text-fg-muted">
+        {stats.keys} bindings and commands, grouped by the level that teaches them. Each row links
+        back to its lesson, so a key you have forgotten is one click from the terminal where it
+        makes sense again.
+      </p>
+      <p class="font-mono text-[12px] text-fg-dim">
+        The prefix is <span class="text-fg">C-b</span> throughout: press Ctrl and b together, let
+        go, then press the second key.
+      </p>
+    </header>
+
+    {
+      sections.map((section) => (
+        <section class="mt-12 flex flex-col gap-4">
+          <div class="flex items-baseline gap-3 border-b border-line pb-3">
+            <h2 class="text-[20px] font-bold tracking-[-.02em]">
+              Level {section.level.n} · {section.level.name}
+            </h2>
+            <a
+              href={levelPath(section.level)}
+              class="ml-auto text-[13px] text-fg-dim hover:text-accent"
+            >
+              Practise these →
+            </a>
+          </div>
+
+          <table class="w-full border-collapse text-left">
+            <caption class="sr-only">
+              tmux keys taught in level {section.level.n}, {section.level.name}
+            </caption>
+            <thead>
+              <tr class="text-[11px] uppercase tracking-[.08em] text-fg-faint">
+                <th scope="col" class="py-2 font-mono font-medium">Key</th>
+                <th scope="col" class="py-2 font-mono font-medium">tmux command</th>
+                <th scope="col" class="py-2 font-mono font-medium">What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.rows.map((row) => (
+                <tr
+                  id={`key-${row.anchor}`}
+                  class="border-t border-line-faint align-baseline"
+                  data-cheat-row={row.lessonHref}
+                >
+                  <td class="py-3 pr-4">
+                    <Kbd keys={row.key} size="sm" />
+                  </td>
+                  <td class="py-3 pr-4 font-mono text-[12.5px] text-fg-dim">{row.command}</td>
+                  <td class="py-3 text-[13.5px] text-fg-muted">
+                    {row.description}{' '}
+                    <a
+                      href={row.lessonHref}
+                      class="ml-2 whitespace-nowrap text-[12px] text-fg-faint underline decoration-white/15 hover:text-accent"
+                    >
+                      {row.lessonTitle}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))
+    }
+  </main>
+</Base>

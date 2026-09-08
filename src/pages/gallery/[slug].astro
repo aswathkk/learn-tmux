@@ -1,0 +1,92 @@
+---
+/**
+ * One config: the screenshot, the write-up, and the file itself.
+ */
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Article from '../../layouts/Article.astro';
+import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
+
+export async function getStaticPaths() {
+  const configs = await getCollection('configs', ({ data }) => !data.draft);
+  return configs.map((config: CollectionEntry<'configs'>) => ({
+    // ids look like "minimal-green/index"; the directory name is the slug.
+    params: { slug: config.id.split('/')[0] },
+    props: { config },
+  }));
+}
+
+interface Props {
+  config: CollectionEntry<'configs'>;
+}
+
+const { config } = Astro.props;
+const { Content } = await render(config);
+const data = config.data;
+const slug = config.id.split('/')[0];
+
+const crumbs = [
+  { name: 'learntmux', href: '/' },
+  { name: 'Config gallery', href: '/gallery' },
+  { name: data.title },
+];
+
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  articleJsonLd({
+    title: data.title,
+    description: data.description,
+    path: `/gallery/${slug}`,
+    published: data.added,
+    site: Astro.site,
+  }),
+];
+---
+<Article
+  title={`${data.title} — tmux config | learntmux`}
+  description={data.description}
+  crumbs={crumbs}
+  jsonLd={jsonLd}
+  section="gallery"
+  publishedTime={data.added}
+>
+  <article class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      <h1
+        class="m-0 font-bold [text-wrap:balance]"
+        style="font-size:clamp(28px,3.4vw,44px); letter-spacing:-.03em; line-height:1.08;"
+      >
+        {data.title}
+      </h1>
+      <p class="text-[17px] leading-[1.55] text-fg-muted">{data.description}</p>
+      <p class="font-mono text-[12px] text-fg-faint">
+        by {data.authorUrl ? <a href={data.authorUrl} rel="noopener nofollow" class="text-fg-dim underline hover:text-accent">{data.author}</a> : data.author}
+        {data.tmuxVersion && <> · tmux {data.tmuxVersion}</>}
+      </p>
+    </header>
+
+    <Image
+      src={data.screenshot}
+      alt={`Screenshot of the ${data.title} tmux configuration`}
+      widths={[720, 1200]}
+      sizes="(min-width: 900px) 760px, 100vw"
+      class="rounded-xl border border-white/10"
+      loading="eager"
+    />
+
+    <div class="lesson-prose text-[16px]">
+      <Content />
+    </div>
+
+    <aside class="flex flex-col gap-3 rounded-xl border border-accent/20 bg-accent/[.05] p-5">
+      <h2 class="text-[15px] font-semibold text-fg">Understand it before you paste it</h2>
+      <p class="text-[14px] text-fg-muted">
+        Level 4 walks through every kind of line in this file: options, bindings, the status line
+        and its formats, in a live terminal.
+      </p>
+      <a href="/configure" class="text-[14px] font-semibold text-accent hover:underline">
+        Start Level 4 · Configure →
+      </a>
+    </aside>
+  </article>
+</Article>

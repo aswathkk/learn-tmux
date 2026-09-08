@@ -1,0 +1,48 @@
+---
+/**
+ * The overlay the guest's `open` command drives.
+ *
+ * Modal on purpose: `open` blocks reading the tty until the editor closes, so
+ * any keystroke that reached the terminal underneath would be eaten by it.
+ * Level 4 uses this to edit ~/.tmux.conf without making anyone learn vi first.
+ */
+---
+<div
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm [&:not([hidden])]:flex"
+  data-editor
+  hidden
+>
+  <div
+    class="flex h-[min(70vh,560px)] w-[min(760px,100%)] flex-col overflow-hidden rounded-xl border border-white/10 bg-ink-raised shadow-[0_30px_80px_rgba(0,0,0,.7)]"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Edit file"
+  >
+    <header class="flex items-center gap-3 border-b border-line px-4 py-3">
+      <span class="font-mono text-[13px] font-medium text-fg" data-editor-path></span>
+      {/* Raised surface: fg-faint is 4.34:1 here. */}
+      <span class="ml-auto font-mono text-[11px] text-fg-dim">
+        &#8984;S / Ctrl-S save &middot; Esc cancel
+      </span>
+    </header>
+
+    <div class="min-h-0 flex-1 overflow-hidden" data-editor-host></div>
+
+    <footer class="flex items-center justify-end gap-3 border-t border-line px-4 py-3">
+      <button
+        type="button"
+        data-editor-cancel
+        class="rounded-lg border border-line-strong px-4 py-2 text-[13px] font-medium text-fg-muted hover:text-fg"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        data-editor-save
+        class="rounded-lg bg-accent px-4 py-2 text-[13px] font-bold text-ink hover:opacity-90"
+      >
+        Save
+      </button>
+    </footer>
+  </div>
+</div>

@@ -1,0 +1,99 @@
+---
+/**
+ * The learn screen header: a 52px bar spanning both columns.
+ *
+ * Follows the design exactly — wordmark, a hairline divider, where you are,
+ * then a progress bar, the count and the way out to the cheat sheet. Nothing
+ * here is a button; the whole bar reads as one line of text.
+ */
+import Wordmark from '../ui/Wordmark.astro';
+import TaskPicker from './TaskPicker.astro';
+import type { LessonContext, LessonEntry } from '../../lib/lessons';
+import { levelPath } from '../../lib/lessons';
+
+interface Props {
+  context: LessonContext;
+  /** Every lesson in the current level, for the picker. */
+  siblings: LessonEntry[];
+  totalInCourse: number;
+}
+
+const { context, siblings, totalInCourse } = Astro.props;
+const { level, position, totalInLevel, lesson } = context;
+---
+
+{/*
+  No `overflow: hidden` here. It was guarding the grid track — a header wider
+  than its column used to stretch everything below it — but .learn-shell pins
+  that track with `grid-template-columns: minmax(0, 1fr)` and each child below
+  carries `min-w-0`, so the guard had nothing left to do except clip the task
+  picker: 439px of a 448px dropdown, at every width. The only navigation
+  between tasks in a level rendered as an 8px sliver.
+*/}
+<header
+  class="flex h-[52px] min-w-0 items-center gap-3 border-b border-line bg-ink px-4 sm:gap-[18px] sm:px-5"
+  style="grid-column:1/-1"
+>
+  <a
+    href="/"
+    aria-label="learntmux home"
+    class="flex-none py-[14px] -my-[14px]"><Wordmark size="15px" /></a>
+
+  <span aria-hidden="true" class="hidden h-[22px] w-px flex-none bg-line-strong sm:block"></span>
+
+  <div class="flex min-w-0 items-center gap-[7px] text-[13px] text-fg-muted">
+    <a
+      href={levelPath(level)}
+      class="hidden whitespace-nowrap py-[14px] -my-[14px] hover:text-accent sm:inline"
+    >
+      Level {level.n} · {level.name}
+    </a>
+    <span aria-hidden="true" class="hidden text-fg-faint sm:inline">·</span>
+    <TaskPicker
+      current={lesson}
+      siblings={siblings}
+      position={position}
+      totalInLevel={totalInLevel}
+    />
+  </div>
+
+  <div class="ml-auto flex flex-none items-center gap-3">
+    {/*
+      Course progress, not lesson progress: the one number that answers "how
+      much of this is left". Width is fixed so it never jitters as it fills.
+    */}
+    <span
+      class="hidden h-1 w-[150px] overflow-hidden rounded-[2px] bg-line-strong md:block"
+      role="progressbar"
+      aria-label="Course progress"
+      aria-valuemin="0"
+      aria-valuemax={totalInCourse}
+      aria-valuenow="0"
+      aria-valuetext={`0 of ${totalInCourse} tasks done`}
+      data-progress-bar
+    >
+      <span class="block h-full w-0 bg-accent transition-[width] duration-500" data-progress-fill
+      ></span>
+    </span>
+
+    {/*
+      The bar needs 150px of its own, so it waits for md; the count fits from sm.
+      Between the two, the count alone says where you are.
+
+      The progressbar above already carries this number and announces its own
+      changes, so this is the same fact a second time: it was announcing "3 / 42"
+      on every page load, on top of the bar. It is the visible half of one
+      control, not a live region.
+    */}
+    <span class="hidden font-mono text-[11.5px] font-medium text-fg-dim sm:inline" aria-hidden="true">
+      <span data-progress-count>0</span> / {totalInCourse}
+    </span>
+
+    <a
+      href="/cheatsheet"
+      class="whitespace-nowrap py-[14px] -my-[14px] text-[12.5px] text-fg-muted hover:text-accent sm:pl-[6px]"
+    >
+      Cheat sheet
+    </a>
+  </div>
+</header>

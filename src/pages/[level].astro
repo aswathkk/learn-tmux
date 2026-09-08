@@ -1,0 +1,138 @@
+---
+/**
+ * A level hub: every task in the level, in order, with what it teaches.
+ *
+ * This is the page that should rank for "tmux copy mode" or "tmux config", and
+ * the one that links every lesson in the level so none of them is more than two
+ * hops from the site root.
+ */
+import Base from '../layouts/Base.astro';
+import SiteHeader from '../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
+import Kbd from '../components/ui/Kbd.astro';
+import { levels, type Level } from '../lib/levels';
+import { getLevelSummaries, lessonPath, levelPath } from '../lib/lessons';
+import { breadcrumbJsonLd, itemListJsonLd } from '../lib/seo';
+
+export async function getStaticPaths() {
+  const summaries = await getLevelSummaries();
+  return summaries.map((summary) => ({
+    params: { level: summary.level.slug },
+    props: { summary },
+  }));
+}
+
+interface Props {
+  summary: Awaited<ReturnType<typeof getLevelSummaries>>[number];
+}
+
+const { summary } = Astro.props;
+const level: Level = summary.level;
+
+const previousLevel = levels.find((entry) => entry.n === level.n - 1);
+const nextLevel = levels.find((entry) => entry.n === level.n + 1);
+
+const crumbs = [
+  { name: 'learntmux', href: '/' },
+  { name: level.name },
+];
+
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  itemListJsonLd(
+    summary.lessons.map((lesson) => ({ name: lesson.data.title, href: lessonPath(lesson) })),
+    Astro.site,
+  ),
+];
+---
+
+<Base title={`${level.seoTitle} | learntmux`} description={level.seoDescription} jsonLd={jsonLd}>
+  <SiteHeader section="learn" />
+
+  <main id="main" class="mx-auto max-w-[900px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+
+    <header class="flex flex-col gap-4">
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">
+        LEVEL {level.n} · {level.name.toUpperCase()}
+      </span>
+      <h1
+        class="m-0 max-w-[22ch] font-bold [text-wrap:balance]"
+        style="font-size:clamp(30px,3.6vw,48px); letter-spacing:-.03em; line-height:1.06;"
+      >
+        {level.tagline}
+      </h1>
+      <p class="max-w-[62ch] text-base leading-[1.6] text-fg-muted">{level.blurb}</p>
+      <p class="font-mono text-[13px] text-fg-dim">
+        {summary.count} tasks · about {summary.minutes} minutes · {summary.keyCount} key bindings
+      </p>
+      <a
+        href={lessonPath(summary.lessons[0])}
+        class="mt-2 inline-flex w-fit items-center gap-2 rounded-[10px] bg-accent px-5 py-3 text-sm font-bold text-ink hover:opacity-90"
+      >
+        Start with task 1 <span aria-hidden="true">→</span>
+      </a>
+    </header>
+
+    <ol class="mt-12 flex flex-col gap-3">
+      {
+        summary.lessons.map((lesson, index) => (
+          <li>
+            <a
+              href={lessonPath(lesson)}
+              class="group flex flex-col gap-3 rounded-xl border border-line bg-ink-card p-5 transition-colors hover:border-accent/30"
+            >
+              <div class="flex items-baseline gap-3">
+                <span class="font-mono text-[12px] text-fg-faint">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <h2 class="text-[17px] font-semibold text-fg group-hover:text-accent">
+                  {lesson.data.title}
+                </h2>
+                {lesson.data.challenge && (
+                  <span class="rounded-full bg-hint/15 px-2 py-[2px] font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-hint">
+                    challenge
+                  </span>
+                )}
+                <span class="ml-auto flex-none font-mono text-[11px] text-fg-dim">
+                  {lesson.data.estimatedMinutes} min
+                </span>
+              </div>
+
+              <p class="text-[14px] leading-[1.55] text-fg-muted">{lesson.data.summary}</p>
+
+              {lesson.data.keys.length > 0 && (
+                <div class="flex flex-wrap gap-2">
+                  {lesson.data.keys.slice(0, 4).map((entry) => (
+                    <Kbd keys={entry.key} size="sm" />
+                  ))}
+                </div>
+              )}
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    <nav class="mt-12 flex flex-wrap items-center gap-4 border-t border-line pt-6 text-sm">
+      {
+        previousLevel ? (
+          <a href={levelPath(previousLevel)} class="text-fg-dim hover:text-accent">
+            ← Level {previousLevel.n}: {previousLevel.name}
+          </a>
+        ) : (
+          <a href="/#levels" class="text-fg-dim hover:text-accent">
+            ← All levels
+          </a>
+        )
+      }
+      {
+        nextLevel && (
+          <a href={levelPath(nextLevel)} class="ml-auto text-fg-dim hover:text-accent">
+            Level {nextLevel.n}: {nextLevel.name} →
+          </a>
+        )
+      }
+    </nav>
+  </main>
+</Base>

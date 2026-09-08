@@ -1,0 +1,47 @@
+---
+/**
+ * Not found. Kept useful: the most likely reason someone lands here is a stale
+ * link to a lesson, so the levels are one click away.
+ */
+import Base from '../layouts/Base.astro';
+import SiteHeader from '../components/ui/SiteHeader.astro';
+import { getLevelSummaries, levelPath } from '../lib/lessons';
+
+const summaries = await getLevelSummaries();
+---
+<Base
+  title="Page not found | learntmux"
+  description="That page does not exist. Start the tmux course, or jump to a level."
+  noindex
+>
+  <SiteHeader />
+  <main
+    id="main"
+    class="mx-auto flex max-w-[700px] flex-col gap-6 px-5 py-[16vh] sm:px-[clamp(20px,5vw,72px)]"
+  >
+    <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">404</span>
+    <h1 class="m-0 text-[clamp(30px,4vw,48px)] font-bold tracking-[-.03em]">
+      No pane here.
+    </h1>
+    <p class="text-base leading-[1.6] text-fg-muted">
+      That page does not exist, or it moved. The course is where most people were heading.
+    </p>
+    <ul class="flex flex-wrap gap-3">
+      {
+        summaries.map((summary) => (
+          <li>
+            <a
+              href={levelPath(summary.level)}
+              class="inline-flex rounded-lg border border-line-strong px-4 py-2 text-sm font-medium text-fg-muted hover:border-accent/40 hover:text-accent"
+            >
+              Level {summary.level.n} · {summary.level.name}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <a href="/#levels" class="text-sm font-semibold text-accent hover:underline">
+      All levels →
+    </a>
+  </main>
+</Base>

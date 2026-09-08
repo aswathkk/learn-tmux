@@ -1,0 +1,185 @@
+---
+/**
+ * One lesson: the two-column learn screen.
+ *
+ * Everything the learner reads is in the HTML at first paint, including the
+ * completion state and every hint. The client script only reveals what is
+ * already there, so the page is fully readable — and fully indexable — before
+ * any JavaScript runs and without the emulator ever starting.
+ */
+import { getCollection } from 'astro:content';
+import Learn from '../../layouts/Learn.astro';
+import LessonHeader from '../../components/learn/LessonHeader.astro';
+import LearnTerminal from '../../components/learn/LearnTerminal.astro';
+import Checks from '../../components/learn/Checks.astro';
+import Hint from '../../components/learn/Hint.astro';
+import Completion from '../../components/learn/Completion.astro';
+import Steps from '../../components/learn/Steps.astro';
+import { getLevel } from '../../lib/levels';
+import {
+  byCourseOrder,
+  getLessonContext,
+  lessonPath,
+  levelPath,
+  type LessonEntry,
+} from '../../lib/lessons';
+import { lessonSections } from '../../lib/lesson-sections';
+import { renderInline } from '../../lib/inline-markdown';
+import { breadcrumbJsonLd, lessonJsonLd } from '../../lib/seo';
+import type { LessonSpec } from '../../lib/harness/types';
+
+export async function getStaticPaths() {
+  const lessons = (await getCollection('lessons')).sort(byCourseOrder);
+  return lessons.map((lesson: LessonEntry) => ({
+    params: { level: getLevel(lesson.data.level).slug, lesson: lesson.data.slug },
+    props: { lesson },
+  }));
+}
+
+interface Props {
+  lesson: LessonEntry;
+}
+
+const { lesson } = Astro.props;
+const data = lesson.data;
+
+const context = await getLessonContext(lesson);
+const { level, totalInCourse, previous, next } = context;
+
+const all = (await getCollection('lessons')).sort(byCourseOrder);
+const siblings = all.filter((entry: LessonEntry) => entry.data.level === data.level);
+
+const sections = lessonSections(lesson);
+const path = lessonPath(lesson);
+
+/**
+ * What the harness needs, and nothing else. Serialised into the page rather
+ * than fetched: it is a few hundred bytes, and a lesson that renders should
+ * never be one network hop away from being runnable.
+ */
+const spec: LessonSpec = {
+  id: `${data.level}-${data.task}`,
+  setup: data.setup,
+  startCommand: data.startCommand,
+  checks: data.checks,
+};
+
+const title = `${data.title} — tmux ${level.name} | learntmux`;
+
+const crumbs = [
+  { name: 'learntmux', href: '/' },
+  { name: level.name, href: levelPath(level) },
+  { name: data.title },
+];
+
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  lessonJsonLd({
+    title: data.title,
+    description: data.summary,
+    path,
+    teaches: data.concepts,
+    difficulty: data.difficulty,
+    minutes: data.estimatedMinutes,
+    position: context.coursePosition,
+    site: Astro.site,
+  }),
+];
+---
+
+<Learn title={title} description={data.summary} jsonLd={jsonLd}>
+  <LessonHeader
+    slot="header"
+    context={context}
+    siblings={siblings}
+    totalInCourse={totalInCourse}
+  />
+
+  <Fragment slot="task">
+    {/*
+      The working state. Title, what you are aiming at, one paragraph of why,
+      then the steps. Swapped for the completion panel once every check passes.
+
+      Two blocks rather than one, so the narrow layout can lift what the task is
+      above the terminal and leave the steps below it. Both carry `data-working`
+      and are hidden together when the task is done.
+
+      There are no visible breadcrumbs here: the header already links the level
+      and lists every task in it, and the design keeps this column to the task
+      alone. The BreadcrumbList markup is still emitted for search.
+    */}
+    <div class="learn-intro flex flex-col gap-[10px]" data-working>
+      {
+        data.challenge && (
+          <span class="w-fit rounded-full bg-hint/15 px-[10px] py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-hint">
+            Challenge · no new keys
+          </span>
+        )
+      }
+      <h1
+        class="m-0 text-[27px] font-semibold leading-[1.18] tracking-[-.02em] text-fg [text-wrap:pretty]"
+      >
+        {data.title}
+      </h1>
+      <p
+        class="m-0 text-[14.5px] leading-[1.55] text-fg-dim [text-wrap:pretty]"
+        set:html={renderInline(data.objective)}
+      />
+    </div>
+
+    <div class="learn-task-body flex flex-col gap-5" data-working>
+      {/*
+        One paragraph of concept, as designed. The rest of the section is real
+        teaching and stays in the page, folded, rather than being dropped: it is
+        what the learner reaches for when the step in front of them does not
+        make sense yet.
+      */}
+      {
+        sections.conceptLead && (
+          <div class="lesson-prose lesson-concept" set:html={sections.conceptLead} />
+        )
+      }
+
+      {
+        sections.conceptRest && (
+          <details class="lesson-aside">
+            <summary>Why this works</summary>
+            <div class="lesson-prose mt-3" set:html={sections.conceptRest} />
+          </details>
+        )
+      }
+
+      <Steps html={sections.steps} />
+    </div>
+
+    <Completion
+      lesson={lesson}
+      whatHappened={sections.whatHappened}
+      goFurther={sections.goFurther}
+      next={next}
+      nextStartsLevel={next ? next.data.level !== data.level : false}
+    />
+  </Fragment>
+
+  <Fragment slot="hint">
+    <Hint hints={data.hints} lessonSlug={data.slug} />
+  </Fragment>
+
+  <Fragment slot="terminal">
+    <LearnTerminal />
+    <Checks checks={data.checks} challenge={data.challenge} />
+  </Fragment>
+</Learn>
+
+{/* The harness contract for this page. Read once, on load. */}
+<script
+  type="application/json"
+  data-lesson-spec
+  set:html={JSON.stringify({ ...spec, slug: data.slug, hintCount: data.hints.length })}
+  is:inline
+/>
+
+<script>
+  import { mountLearnScreen } from '../../scripts/learn';
+  mountLearnScreen();
+</script>

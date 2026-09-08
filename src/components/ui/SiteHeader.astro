@@ -1,0 +1,61 @@
+---
+/**
+ * The site header for everything except the learn screen, which has its own
+ * denser header with the task picker in it.
+ */
+import Wordmark from './Wordmark.astro';
+
+interface Props {
+  /** Highlights the section the reader is in. */
+  section?: 'learn' | 'guides' | 'cheatsheet' | 'gallery';
+}
+
+const { section } = Astro.props;
+
+const links = [
+  { href: '/#levels', label: 'Levels', key: 'learn' },
+  { href: '/guides', label: 'Guides', key: 'guides' },
+  { href: '/cheatsheet', label: 'Cheat sheet', key: 'cheatsheet' },
+  { href: '/gallery', label: 'Gallery', key: 'gallery' },
+] as const;
+---
+<header class="border-b border-line">
+  {/*
+    The wordmark and the four links do not fit on one line on a phone: at 375px
+    they measure 495px together, and the row used to run off the side of the
+    viewport, taking the whole document with it — Cheat sheet cut in half,
+    Gallery unreachable, every page scrolling sideways.
+
+    So below `sm` the nav claims a row of its own, where the four links fit in
+    280px with room to spare, and wraps rather than clips if the viewport is
+    narrower still. The negative margin cancels the first link's own padding so
+    its text starts on the same vertical as the wordmark above it.
+  */}
+  <div
+    class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-1 px-5 py-4 sm:flex-nowrap sm:px-[clamp(20px,5vw,72px)]"
+  >
+    <a href="/" aria-label="learntmux home"><Wordmark size="19px" /></a>
+    <nav
+      class="-ml-3 flex w-full flex-wrap items-center gap-1 text-sm sm:ml-auto sm:w-auto sm:flex-nowrap"
+      aria-label="Main"
+    >
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            aria-current={section === link.key ? 'page' : undefined}
+            class:list={[
+              /* 36px is comfortable under a cursor and small under a thumb, so
+                 the target grows to the full 44px only where the pointer is
+                 coarse. Nothing moves on a desktop. */
+              'inline-flex min-h-9 items-center rounded-lg px-3 font-medium transition-colors hover:text-fg [@media(pointer:coarse)]:min-h-11',
+              section === link.key ? 'text-accent' : 'text-fg-dim',
+            ]}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

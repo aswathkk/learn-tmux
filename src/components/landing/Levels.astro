@@ -1,0 +1,103 @@
+---
+/**
+ * The four levels.
+ *
+ * Counts, durations and key bindings all come from the content, and every card
+ * links to its level.
+ *
+ * Progress belongs to the browser: `data-level-card` and the slug list let the
+ * client fill in what this reader has finished. The markup ships in its
+ * zero-progress state, so it reads correctly for a first-time visitor and for
+ * anyone without JavaScript.
+ */
+import type { LandingLevel } from '../../lib/landing';
+import { formatDuration } from '../../lib/landing';
+
+interface Props {
+  levels: LandingLevel[];
+  totalTasks: number;
+}
+
+const { levels, totalTasks } = Astro.props;
+---
+
+<section id="levels" class="sheet">
+  <div
+    class="mx-auto flex max-w-[1200px] flex-col gap-12 px-5 pb-[12vh] pt-[10vh] sm:px-[clamp(20px,5vw,72px)]"
+  >
+    <div
+      class="grid items-end gap-8 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both] sm:grid-cols-2"
+    >
+      <div>
+        <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">THE PATH</span>
+        <h2
+          class="m-0 mt-[10px] font-bold [text-wrap:balance]"
+          style="font-size:clamp(30px,3.6vw,50px); letter-spacing:-.03em; line-height:1.04;"
+        >
+          Four levels, in the order the official guide teaches them.
+        </h2>
+      </div>
+      <p class="m-0 max-w-[44ch] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
+        Each level takes about ten minutes a sitting and ends with a challenge that combines
+        what you just did. Start anywhere, and nothing is locked.
+      </p>
+    </div>
+
+    {/* Course-wide progress. Zero-width until the client knows better. */}
+    <div class="relative h-[2px] overflow-hidden rounded-[1px] bg-white/[.08]">
+      <div
+        class="absolute inset-y-0 left-0 w-0 bg-accent transition-[width] duration-700"
+        data-course-progress
+        data-total={totalTasks}
+      >
+      </div>
+    </div>
+
+    <ol class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
+      {
+        levels.map((entry, index) => (
+          <li>
+            <a
+              href={entry.href}
+              class="group flex h-full min-h-[340px] flex-col gap-[14px] rounded-2xl border border-white/10 bg-ink-card p-6 transition-colors hover:border-accent/40"
+              data-level-card
+              data-slugs={entry.slugs.join(' ')}
+              style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${index * 5}% entry ${45 + index * 5}%;`}
+            >
+              <div class="flex items-baseline justify-between gap-3">
+                <span class="font-mono text-[13px] font-semibold text-accent">{entry.ordinal}</span>
+                <span class="font-mono text-[11px] text-fg-dim" data-level-badge>
+                  {entry.count} tasks
+                </span>
+              </div>
+
+              <h3 class="text-[22px] font-bold tracking-[-.02em] group-hover:text-accent">
+                {entry.level.name}
+              </h3>
+              <p class="m-0 text-[14px] leading-[1.5] text-fg-muted">{entry.level.tagline}</p>
+
+              <ul class="mt-1 flex flex-col gap-[7px] font-mono text-[12.5px] text-fg-dim">
+                {entry.keys.map((key) => (
+                  <li class="truncate">{key}</li>
+                ))}
+              </ul>
+
+              <div class="mt-auto flex flex-col gap-[10px] pt-4">
+                <div class="h-[3px] overflow-hidden rounded-[2px] bg-white/[.08]">
+                  <div
+                    class="h-full w-0 bg-accent transition-[width] duration-700"
+                    data-level-progress
+                  >
+                  </div>
+                </div>
+                <span class="font-mono text-[11px] text-fg-faint">
+                  {formatDuration(entry.minutes)} · {entry.keyCount} keys
+                </span>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

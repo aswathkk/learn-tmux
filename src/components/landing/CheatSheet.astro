@@ -1,0 +1,115 @@
+---
+/**
+ * A taste of the cheat sheet, plus the way in to the rest of the site.
+ *
+ * The rows are the opening entries of the real sheet and the count is the real
+ * total, both read from the lessons. Nothing here is locked: the sheet is
+ * derived from the course, so every row exists from the first visit.
+ */
+import Kbd from '../ui/Kbd.astro';
+import type { CheatSheetRow } from '../../lib/cheatsheet';
+
+interface Props {
+  rows: CheatSheetRow[];
+  total: number;
+  remaining: number;
+}
+
+const { rows, total, remaining } = Astro.props;
+
+const elsewhere = [
+  {
+    href: '/guides',
+    label: 'Guides',
+    blurb: 'Configs to copy from, workflows that hold up, and tmux over a connection that drops.',
+  },
+  {
+    href: '/gallery',
+    label: 'Config gallery',
+    blurb: 'Real tmux.conf files with screenshots, next to the level that explains every line.',
+  },
+];
+---
+
+<section
+  id="cheatsheet"
+  class="mx-auto flex max-w-[1200px] flex-col gap-9 px-5 pb-[14vh] pt-[4vh] sm:px-[clamp(20px,5vw,72px)]"
+>
+  <div class="flex flex-wrap items-end justify-between gap-6 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both]">
+    <div>
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">
+        YOUR CHEAT SHEET
+      </span>
+      <h2
+        class="m-0 mt-[10px] font-bold"
+        style="font-size:clamp(30px,3.6vw,50px); letter-spacing:-.03em; line-height:1.04;"
+      >
+        Every key, and where you learned it.
+      </h2>
+      <p class="m-0 mt-[14px] max-w-[48ch] text-base leading-[1.55] text-fg-muted">
+        {total} bindings and commands, each one linked back to the task that teaches it. It is
+        built from the lessons, so it can never drift out of step with them.
+      </p>
+    </div>
+    <a
+      href="/cheatsheet"
+      class="rounded-[10px] border border-line-strong px-[18px] py-3 text-sm font-semibold transition-colors hover:border-accent/40 hover:text-accent"
+    >
+      Open the cheat sheet
+    </a>
+  </div>
+
+  <ul class="grid gap-[10px]" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));">
+    {
+      rows.map((row, index) => (
+        <li
+          style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${(index % 5) * 6}% entry ${50 + (index % 5) * 6}%;`}
+        >
+          <a
+            href={`${row.lessonHref}`}
+            class="flex h-full flex-col gap-[5px] rounded-xl border border-white/10 bg-ink-card px-[18px] py-4 transition-colors hover:border-accent/40"
+          >
+            <Kbd keys={row.key} size="sm" />
+            <span class="text-[13px] text-fg-muted">{row.description}</span>
+          </a>
+        </li>
+      ))
+    }
+    {
+      remaining > 0 && (
+        <li
+          style="animation:upSoft linear both;animation-timeline:view();animation-range:entry 0% entry 50%;"
+        >
+          <a
+            href="/cheatsheet"
+            class="flex h-full flex-col justify-center gap-[5px] rounded-xl border border-dashed border-line-strong px-[18px] py-4 text-fg-faint transition-colors hover:border-accent/40 hover:text-accent"
+          >
+            <span class="font-mono text-sm font-semibold">{remaining} more</span>
+            <span class="text-[13px]">across all four levels</span>
+          </a>
+        </li>
+      )
+    }
+  </ul>
+
+  {/* The rest of the site. Without this, guides and the gallery are unreachable
+      from the home page. */}
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    {
+      elsewhere.map((item) => (
+        <a
+          href={item.href}
+          class="group flex flex-col gap-2 rounded-2xl border border-white/10 bg-ink-card p-6 transition-colors hover:border-accent/40"
+        >
+          <span class="flex items-center gap-2 text-[17px] font-semibold group-hover:text-accent">
+            {item.label}
+            <span aria-hidden="true" class="text-accent transition-transform group-hover:translate-x-1">
+              →
+            </span>
+          </span>
+          <span class="text-[14px] leading-[1.5] text-fg-muted">{item.blurb}</span>
+        </a>
+      ))
+    }
+  </div>
+</section>

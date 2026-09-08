@@ -9,15 +9,32 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "check": "astro check",
+    "astro": "astro",
+    "guest:fetch": "./guest/fetch-assets.sh",
+    "guest:build": "./guest/build.sh",
+    "guest:state": "bun run guest/make-state.ts 64 public/vm/state.bin"
   },
   "dependencies": {
+    "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.4",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
     "@tailwindcss/vite": "^4.3.3",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "astro": "^7.3.1",
+    "codemirror": "^6.0.2",
     "tailwindcss": "^4.3.3"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6"
   }
 }

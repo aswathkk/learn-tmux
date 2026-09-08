@@ -1,0 +1,82 @@
+---
+/**
+ * Every meta tag a page needs, in one place.
+ *
+ * Canonical URLs are built from `Astro.site` and the current path, so they are
+ * always absolute and always carry the trailing slash the site is configured
+ * for. Any page that can be reached at more than one URL must pass an explicit
+ * `canonical`.
+ */
+import { canonicalPath, DEFAULT_SOCIAL_IMAGE, SITE_NAME, TWITTER_CARD } from '../../lib/seo';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Overrides the derived canonical. Use for paginated or filtered views. */
+  canonical?: string;
+  /** Social card image, site-relative. */
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  /** Thin or duplicated pages: keep them out of the index and the sitemap. */
+  noindex?: boolean;
+  /** Schema.org objects, serialised one <script> each. */
+  jsonLd?: object[];
+}
+
+const {
+  title,
+  description,
+  canonical,
+  image = DEFAULT_SOCIAL_IMAGE,
+  imageAlt = 'learntmux — learn tmux in a live terminal',
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  noindex = false,
+  jsonLd = [],
+} = Astro.props;
+
+const canonicalUrl = new URL(canonicalPath(canonical ?? Astro.url.pathname), Astro.site);
+const imageUrl = new URL(image, Astro.site);
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+
+{
+  noindex ? (
+    <meta name="robots" content="noindex, follow" />
+  ) : (
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  )
+}
+
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={SITE_NAME} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:image:alt" content={imageAlt} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="en" />
+
+{publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime.toISOString()} />}
+
+<meta name="twitter:card" content={TWITTER_CARD} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+<meta name="twitter:image:alt" content={imageAlt} />
+
+{
+  jsonLd.map((schema) => (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} is:inline />
+  ))
+}

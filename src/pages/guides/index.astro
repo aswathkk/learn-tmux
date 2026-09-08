@@ -1,0 +1,173 @@
+---
+/**
+ * The guides index, as a blog.
+ *
+ * Reverse chronological, one entry per row, each carrying the date, the
+ * category and how long it takes to read. Guides are written and published over
+ * time, so recency is the thing a returning reader wants; grouping them by
+ * category buried the newest piece and gave no sense of whether anything had
+ * been added.
+ *
+ * Every article lives here — setup, workflows, config and remote. There is no
+ * separate blog: a piece about mosh and a piece about a status line are the
+ * same kind of thing to a reader, and splitting them would split their
+ * authority too.
+ */
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import { guideCategoryNames } from '../../content.config';
+import { readingTime } from '../../lib/reading-time';
+import { breadcrumbJsonLd, itemListJsonLd } from '../../lib/seo';
+
+type Guide = CollectionEntry<'guides'>;
+
+const published = await getCollection('guides', ({ data }) => !data.draft);
+
+/** Featured first, then newest. A featured guide stays pinned until unset. */
+const guides = published.sort((a: Guide, b: Guide) => {
+  if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+  return b.data.published.getTime() - a.data.published.getTime();
+});
+
+const entries = guides.map((guide) => ({
+  href: `/guides/${guide.id}`,
+  title: guide.data.title,
+  description: guide.data.description,
+  category: guideCategoryNames[guide.data.category],
+  published: guide.data.published,
+  updated: guide.data.updated,
+  reading: readingTime(guide.body ?? ''),
+}));
+
+const [lead, ...rest] = entries;
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const crumbs = [{ name: 'learntmux', href: '/' }, { name: 'Guides' }];
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  itemListJsonLd(
+    entries.map((entry) => ({ name: entry.title, href: entry.href })),
+    Astro.site,
+  ),
+];
+---
+
+<Base
+  title="tmux Guides: Config, Workflows and Remote Sessions | learntmux"
+  description="Practical tmux guides: writing a config you understand, workflows that hold up day to day, and keeping a session alive over mosh and SSH."
+  jsonLd={jsonLd}
+>
+  <SiteHeader section="guides" />
+
+  <main id="main" class="mx-auto max-w-[760px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+
+    <header class="flex flex-col gap-4">
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">GUIDES</span>
+      <h1
+        class="m-0 max-w-[20ch] font-bold [text-wrap:balance]"
+        style="font-size:clamp(32px,4vw,48px); letter-spacing:-.03em; line-height:1.06;"
+      >
+        Everything around tmux that the lessons do not cover.
+      </h1>
+      <p class="max-w-[58ch] text-base leading-[1.6] text-fg-muted [text-wrap:pretty]">
+        The course teaches tmux itself. These are the things you reach for once you use it every
+        day: a config you can explain line by line, a shape for your sessions, and the setup that
+        keeps one alive when your laptop lid closes.
+      </p>
+    </header>
+
+    {
+      entries.length === 0 ? (
+        <p class="mt-12 rounded-xl border border-dashed border-line-strong p-8 text-center text-fg-dim">
+          The first guides are being written. Check back shortly.
+        </p>
+      ) : (
+        <div class="mt-14 flex flex-col">
+          {/*
+            Whatever the sort puts first leads, at a size that reads as the front
+            of a blog. Normally that is the newest guide; a featured one holds
+            the position until it is unset.
+
+            The whole row is clickable, but only the title is the link. Wrapping
+            the date, category, reading time, title, description and call to
+            action in one <a> gave it an accessible name 237 characters long —
+            three unreadable paragraphs in a screen reader's link list. The
+            stretched pseudo-element keeps the hit area and leaves the name as
+            the title alone.
+          */}
+          <article class="group relative flex flex-col gap-3 border-t border-line py-8">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-fg-dim">
+              <time datetime={lead.published.toISOString()}>{formatDate(lead.published)}</time>
+              <span aria-hidden="true" class="text-fg-faint">·</span>
+              <span class="text-accent">{lead.category}</span>
+              <span aria-hidden="true" class="text-fg-faint">·</span>
+              <span>{lead.reading.label}</span>
+            </div>
+            <h2
+              class="m-0 font-bold [text-wrap:balance]"
+              style="font-size:clamp(26px,3.2vw,34px); letter-spacing:-.025em; line-height:1.15;"
+            >
+              <a
+                href={lead.href}
+                class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+              >
+                {lead.title}
+              </a>
+            </h2>
+            <p class="m-0 max-w-[62ch] text-[16px] leading-[1.6] text-fg-muted [text-wrap:pretty]">
+              {lead.description}
+            </p>
+            {/* The link above already says where this goes. */}
+            <span
+              aria-hidden="true"
+              class="mt-1 inline-flex items-center gap-2 text-[14px] font-semibold text-accent"
+            >
+              Read it
+              <span class="transition-transform group-hover:translate-x-1">→</span>
+            </span>
+          </article>
+
+          {rest.map((entry) => (
+            <article class="group relative flex flex-col gap-[10px] border-t border-line py-8">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-fg-dim">
+                <time datetime={entry.published.toISOString()}>{formatDate(entry.published)}</time>
+                <span aria-hidden="true" class="text-fg-faint">
+                  ·
+                </span>
+                <span class="text-accent">{entry.category}</span>
+                <span aria-hidden="true" class="text-fg-faint">
+                  ·
+                </span>
+                <span>{entry.reading.label}</span>
+              </div>
+              <h2 class="m-0 text-[21px] font-semibold tracking-[-.02em]">
+                <a
+                  href={entry.href}
+                  class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+                >
+                  {entry.title}
+                </a>
+              </h2>
+              <p class="m-0 max-w-[62ch] text-[14.5px] leading-[1.6] text-fg-muted [text-wrap:pretty]">
+                {entry.description}
+              </p>
+            </article>
+          ))}
+        </div>
+      )
+    }
+
+    {/* Every rule on this page carries 32px above and 32px below it. */}
+    <p class="border-t border-line pt-8 text-[13.5px] text-fg-dim">
+      New guides land here as they are written.{' '}
+      <a href="/rss.xml" class="text-accent transition-colors hover:underline">Subscribe by RSS</a>,
+      or{' '}
+      <a href="/#levels" class="text-accent transition-colors hover:underline">start the course</a>.
+    </p>
+  </main>
+</Base>

@@ -1,0 +1,38 @@
+---
+import Wordmark from './Wordmark.astro';
+
+const year = new Date().getFullYear();
+---
+<footer
+  class="mx-auto flex max-w-[1200px] flex-wrap items-start justify-between gap-8 border-t border-line px-5 py-10 text-[13px] text-fg-dim sm:px-[clamp(20px,5vw,72px)]"
+>
+  <div class="flex flex-col gap-2">
+    <Wordmark size="17px" />
+    <span>Made with love for tmux. &copy; {year}</span>
+  </div>
+
+  <nav class="flex flex-col gap-2" aria-label="Learn">
+    <span class="font-semibold text-fg">Learn</span>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/basics">Basics</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/intermediate">Intermediate</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/advanced">Advanced</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/configure">Configure</a>
+  </nav>
+
+  <nav class="flex flex-col gap-2" aria-label="More">
+    <span class="font-semibold text-fg">More</span>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/cheatsheet">Cheat sheet</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/guides">Guides</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/gallery">Config gallery</a>
+    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/rss.xml">RSS</a>
+  </nav>
+
+  <p class="max-w-[30ch]">
+    Built on the official
+    <a
+      href="https://github.com/tmux/tmux/wiki/Getting-Started"
+      class="underline decoration-white/20 hover:text-accent-soft"
+      rel="noopener">tmux Getting Started guide</a
+    >. tmux is not affiliated with this site.
+  </p>
+</footer>

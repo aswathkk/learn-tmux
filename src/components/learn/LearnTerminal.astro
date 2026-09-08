@@ -1,0 +1,108 @@
+---
+/**
+ * The terminal column, exactly as designed: the machine, one line of status
+ * under it, and nothing else.
+ *
+ * No app chrome on top of the terminal and no key toolbar beneath it. Every
+ * character in the box comes from a Linux guest running in this tab, and the
+ * design's point is that nothing should look painted on.
+ *
+ * The status line is the one place the machine gets to speak. It carries the
+ * session, the grid size, and — while the machine is loading, booting or
+ * broken — what it is doing. The client has always written to those last three
+ * through `data-terminal-status`, `-status-text` and `-dot`, but no markup ever
+ * carried them, so every status the machine reported went nowhere: the gate
+ * vanished on click and the learner watched an empty black rectangle for the
+ * length of a 15 MB download, and a failed boot said nothing at all.
+ */
+
+interface Props {
+  /** Shown in the status line, e.g. "learn". */
+  session?: string;
+}
+
+const { session = 'learn' } = Astro.props;
+---
+
+{/* Height and flex behaviour live in global.css: on a short window the box has
+    to be able to give space back to the checklist below it. */}
+<section
+  class="learn-terminal-box relative overflow-hidden rounded-[9px] border border-line-strong bg-ink-term"
+  aria-label="Terminal"
+>
+  {/*
+    The padding is on this wrapper, never on the mount. xterm's fit addon reads
+    the computed height of the element it was opened in and only subtracts
+    padding declared on xterm's own node, so padding here would make it size the
+    grid to the full box and clip the tmux status line off the bottom.
+  */}
+  <div class="absolute inset-0 p-3">
+    <div class="h-full w-full" data-terminal-mount></div>
+  </div>
+
+  {/*
+    The start gate. The emulator is 15 MB and runs an x86 CPU on the main
+    thread, so it is never booted on page load: the learner asks for it.
+
+    It stays up through the download and the boot, with its own copy swapped for
+    what the machine is doing, and it comes back if the machine fails — a black
+    box with no way back into it is not a state to leave anyone in.
+  */}
+  <div
+    class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-ink-term px-6 text-center"
+    data-terminal-gate
+  >
+    <div class="flex flex-col gap-[6px]">
+      <p class="font-mono text-[13px] font-semibold text-fg" data-gate-title>
+        A real terminal, in this tab
+      </p>
+      <p class="max-w-[38ch] text-[12.5px] leading-[1.5] text-fg-dim" data-gate-body>
+        Alpine Linux and tmux 3.4 on an x86 emulator. Nothing to install, and no server behind it.
+      </p>
+    </div>
+    <button
+      type="button"
+      data-terminal-start
+      class="min-h-[44px] rounded-lg bg-accent px-[18px] py-[11px] text-[13px] font-bold text-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      Start the terminal
+    </button>
+    <p class="font-mono text-[11px] text-fg-faint" data-gate-note>about 15 MB, once</p>
+  </div>
+
+  {/* Boot progress, under the gate. */}
+  <div class="pointer-events-none absolute inset-x-0 top-0 z-20 h-[2px]">
+    <div class="h-full w-0 bg-accent transition-[width] duration-200" data-terminal-progress></div>
+  </div>
+</section>
+
+<div
+  class="learn-terminal-status flex items-center gap-3 font-mono text-[11.5px] font-medium text-fg-faint"
+>
+  <span class="min-w-0 truncate">
+    session <span class="text-fg-dim">{session}</span><span data-terminal-size></span>
+  </span>
+
+  {/*
+    What the machine is doing, when it is doing something. Empty at rest — the
+    session and its size are the whole line until there is news.
+  */}
+  <span
+    class="flex min-w-0 items-center gap-[7px]"
+    data-terminal-status
+    data-state="idle"
+    aria-live="polite"
+  >
+    <span class="h-[6px] w-[6px] flex-none rounded-full" data-terminal-dot hidden></span>
+    <span class="truncate" data-terminal-status-text></span>
+  </span>
+
+  <button
+    type="button"
+    data-lesson-reset
+    class="ml-auto flex-none px-2 py-3 -my-3 -mr-2 text-fg-dim transition-colors hover:text-alert disabled:cursor-not-allowed disabled:text-fg-faint disabled:opacity-60"
+    disabled
+  >
+    Reset
+  </button>
+</div>

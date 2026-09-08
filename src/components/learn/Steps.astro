@@ -1,0 +1,47 @@
+---
+/**
+ * The numbered steps, each with its own state marker.
+ *
+ * A step is done, the one you are on, or not reached yet — shown as a filled
+ * tick, a green ring, or a grey ring. The client sets `data-state` on each row
+ * as checks latch; the markup and numbering are all here, so the steps read
+ * correctly with no script at all.
+ *
+ * "The one you are on" is a green ring and nothing else, which is not a fact a
+ * screen reader can reach, so the client also sets `aria-current="step"` on it.
+ * The done and not-reached states stay paint-only on purpose: the steps are a
+ * procedure to read along, and the checks panel is what reports completion.
+ */
+import { parseSteps } from '../../lib/lesson-steps';
+
+interface Props {
+  /** Rendered HTML of the lesson's "Do this" section. */
+  html: string;
+}
+
+const { html } = Astro.props;
+const { steps, preamble } = parseSteps(html);
+---
+
+{
+  steps.length > 0 && (
+    <div class="flex flex-col gap-[14px]" data-steps>
+      {preamble && <div class="lesson-prose" set:html={preamble} />}
+
+      {steps.map((step, index) => (
+        <div class="step-row flex gap-[13px]" data-step-index={index} data-state="todo">
+          <span class="step-mark" aria-hidden="true">
+            {index + 1}
+          </span>
+          <div class="step-body min-w-0 flex-1 lesson-prose" set:html={step} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+{
+  steps.length === 0 && html && (
+    <div class="lesson-prose" set:html={html} />
+  )
+}

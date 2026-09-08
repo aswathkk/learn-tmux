@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Instrument Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Astro self-hosts these at build time and registers each @font-face under a
+     hashed family name, so the family cannot be named directly here — these
+     variables are the only handle on the local files. Each already carries a
+     metric-matched fallback and then the system stack, so naming further
+     families here would only shadow them. Declared in astro.config.mjs. */
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-jetbrains-mono);
 
   /* Palette is the learntmux brand guide v1 §03. Phosphor only ever means
      progress or a live signal; the three signal hues appear as dots, borders
@@ -19,14 +24,53 @@
   --color-ink-card-dim: #0a0b0e; /* Void — a locked card sinks back to the ground */
   --color-ink-sheet: #171b21;    /* Raised */
   --color-ink-key: #0a0b0e;      /* Void — keycap face */
+  /* The one ground below Void: the inside of the terminal, so the machine reads
+     as a hole in the page rather than another panel on it. Was written inline
+     as #07080a in two places and in the xterm theme object. */
+  --color-ink-term: #07080a;
 
   --color-fg: #e6e9ee;           /* Ink — primary text */
   --color-fg-muted: #c3c9d2;     /* prose and nav, the guide's own body colour */
   --color-fg-dim: #8b93a1;       /* Muted — secondary text, meta */
-  /* Dim. The guide carries the contrast note with the token: 4.58:1 on Surface. */
+  /* Dim. The guide carries the contrast note with the token: 4.58:1 on Surface.
+     This is the floor for text. The terminal status line, the header separator
+     and an unreached step number all used to sit a step below it on #5d6675,
+     which measures 3.39:1 on Void — under AA, and worst on the 10px step
+     numerals. There is no quieter text colour; quieter than this is a line. */
   --color-fg-faint: #77808f;     /* Dim — locked, not-yet-earned */
-  --color-fg-faintest: #2a3038;  /* ring on a locked checklist row */
+  --color-fg-faintest: #2a3038;  /* scrollbar thumb, and nothing that carries meaning */
+  /* The ring on an outstanding check or step. It is the only thing saying the
+     row exists and is not done yet, so it is a UI component boundary under
+     1.4.11 and needs 3:1, not the 1.42:1 --color-fg-faintest was giving it. */
+  --color-ring: #5e6775;         /* 3.44:1 on Void, 3.31:1 on Surface */
   --color-term: #c3c9d2;         /* terminal text */
+
+  /* The guest's 16 ANSI slots. tmux paints its status line and every program in
+     the pane out of these, so they are as much a part of the page as the CSS —
+     they were a second, unreachable palette inside src/lib/vm/terminal.ts until
+     the terminal started reading them from here. Near-monochrome for the same
+     reason as the code blocks: Phosphor means live, not syntax. */
+  --color-ansi-black: #0a0b0e;
+  --color-ansi-red: #ff6b6b;
+  --color-ansi-green: #3ddc84;
+  --color-ansi-yellow: #ffd479;
+  --color-ansi-blue: #6cb6ff;
+  --color-ansi-magenta: #d2a8ff;
+  --color-ansi-cyan: #76e3ea;
+  --color-ansi-white: #c3c9d2;
+  --color-ansi-bright-black: #77808f;
+  --color-ansi-bright-green: #7bf0ad;
+  --color-ansi-bright-white: #e6e9ee;
+  --color-term-selection: #264f78;
+
+  /* Hairlines. Every rule, divider and card edge on the site was written as a
+     one-off white alpha — six different values across eighteen files, chosen by
+     eye rather than from a scale. These are that scale. Over Void the three
+     steps are the only ones that read as separate weights; anything between
+     them lands within a couple of luminance values of a neighbour. */
+  --color-line-faint: rgb(255 255 255 / 0.06);  /* a division you should not notice */
+  --color-line: rgb(255 255 255 / 0.08);        /* the default rule */
+  --color-line-strong: rgb(255 255 255 / 0.13); /* an edge that holds a shape */
 }
 
 :root {
@@ -60,6 +104,15 @@
     text-decoration: none;
   }
 
+  /* Tailwind v4's preflight dropped the `button { cursor: pointer }` that v3
+     shipped, so every button on the site falls back to the UA arrow. Each one
+     here is a real control, so the hand goes back — except a disabled one,
+     which keeps whatever the UA or a utility class says. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
   /* surfaces the browser would otherwise style for us */
   :focus-visible {
     outline: 2px solid var(--color-accent);
@@ -72,17 +125,44 @@
     color: var(--color-ink);
   }
 
+  /* Tailwind's preflight has no rule for this, so `hidden` is only as strong as
+     whatever `display` a class or a layout rule happens to set. The learn screen
+     hides the completion panel, every unspent hint and the terminal gate with
+     the attribute, and the narrow layout gives some of the same elements
+     `display: contents`, which would win. The attribute has to mean hidden. */
+  [hidden] {
+    display: none !important;
+  }
+
   html {
     scrollbar-color: var(--color-fg-faintest) transparent;
   }
 }
 
+/* Reduced motion means no travel, not no feedback.
+   
+   Killing `transition` outright also killed the colour change on a hovered
+   link or card title — a state change with nothing vestibular about it, and
+   the only signal that the thing under the cursor is pressable. So the
+   property list is narrowed to the paint-only properties instead: anything
+   that moves, scales or resizes stops, and everything else keeps its 150ms.
+   Elements with no transition of their own are untouched, because their
+   duration is still 0s.
+   
+   `scroll-behavior` is not a transition and was surviving this block. A skip
+   link jumping to #main animated the whole viewport for exactly the people who
+   asked it not to. */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
     animation: none !important;
-    transition: none !important;
+    transition-property: color, background-color, border-color, outline-color, fill,
+      stroke, opacity !important;
   }
 }
 
@@ -268,11 +348,17 @@
 /* ---------------------------------------------------------------- terminal */
 .terminal-wrap { position: relative; }
 
-.terminal {
+/* Scoped to the landing page's drawn terminal on purpose.
+   xterm.js puts class="terminal xterm" on its own root element, so an unscoped
+   `.terminal` rule would land on the live terminal too — `display:flex` there
+   breaks the absolute positioning xterm's layers rely on, and the border and
+   radius clip characters at the edges. The real terminal is never inside
+   .terminal-wrap, which keeps this out of its way. */
+.terminal-wrap > .terminal {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / .12);
+  border: 1px solid var(--color-line-strong);
   border-radius: 16px;
   background: var(--color-ink);
   box-shadow: 0 40px 90px rgb(0 0 0 / .6);
@@ -285,7 +371,7 @@
   gap: 7px;
   height: 34px;
   padding: 0 14px;
-  border-bottom: 1px solid rgb(255 255 255 / .08);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .terminal__dot {
@@ -466,7 +552,7 @@
 }
 .key {
   padding: 7px 11px;
-  border: 1px solid rgb(255 255 255 / .14);
+  border: 1px solid var(--color-line-strong);
   border-radius: 7px;
   background: var(--color-ink-key);
   color: var(--color-fg);
@@ -486,79 +572,112 @@
 .terminal--lesson .tab--lesson .mark__star { opacity: 1; }
 .terminal--lesson .tab--lesson .mark__dash { opacity: 0; }
 
-/* ------------------------------------------------- live scroll choreography */
+/* ------------------------------------------------- live scroll choreography
+
+   Every rule below writes animation-name / -timing-function / -fill-mode as
+   longhands rather than the `animation` shorthand. That is not a style choice:
+   Lightning CSS (Tailwind's optimizer, and Vite's CSS minifier) folds a
+   neighbouring `animation-timeline` into the shorthand on build, emitting
+   `animation: linear both fadeIn --hero`. Timeline names were removed from the
+   `animation` grammar, so browsers drop that declaration whole and the section
+   sits dead in `dist` while it animates fine in dev. Longhands are left alone.
+   Do not collapse these back into a shorthand. */
 @media (min-width: 1024px) {
   .terminal--live .typed {
-    animation: type steps(12, end) both;
+    animation-name: type;
+    animation-timing-function: steps(12, end);
+    animation-fill-mode: both;
     animation-timeline: --hero;
     animation-range: exit 4% exit 20%;
   }
 
   /* the two layers never overlap — shell is gone before vim starts drawing */
   .terminal--live .layer--shell {
-    animation: fadeOut linear both;
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --hero;
     animation-range: exit 16% exit 20%;
   }
 
   .terminal--live .layer--vim {
-    animation: fadeIn linear both;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --hero;
     animation-range: exit 20% exit 24%;
   }
 
   .terminal--live .keys {
-    animation: keysCycle linear both;
+    animation-name: keysCycle;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 5% entry 25%;
   }
 
   .terminal--live .key--prefix {
-    animation: keyPress linear both;
+    animation-name: keyPress;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 8% entry 13%;
   }
 
   .terminal--live .key--window {
-    animation: keyPress linear both;
+    animation-name: keyPress;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 15% entry 20%;
   }
 
   .terminal--live .win--0 {
-    animation: fadeOut linear both;
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 19% entry 22%;
   }
 
   .terminal--live .win--3 {
-    animation: fadeIn linear both;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 22% entry 25%;
   }
 
   .terminal--live .tab--editor {
-    animation: tabOff linear both;
+    animation-name: tabOff;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 22.5% entry 23.5%;
   }
 
   .terminal--live .tab--lesson {
-    animation: tabOn linear both;
+    animation-name: tabOn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 22.5% entry 23.5%;
   }
 
   .terminal--live .tab--editor .mark__star,
   .terminal--live .tab--lesson .mark__dash {
-    animation: fadeOut linear both;
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 22.5% entry 23.5%;
   }
 
   .terminal--live .tab--editor .mark__dash,
   .terminal--live .tab--lesson .mark__star {
-    animation: fadeIn linear both;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --levels;
     animation-range: entry 22.5% entry 23.5%;
   }
@@ -566,13 +685,21 @@
   /* Each task drives the terminal from its own view timeline, so a step fires
      exactly when that card's top edge reaches the terminal's bottom edge —
      `cover <length>` measures from the card entering, and the offset below is
-     the distance it travels to get there, so it holds at any viewport height. */
-  .lesson-step { animation: stepOn linear both; }
+     the distance it travels to get there, so it holds at any viewport height.
+     The card's own animation-timeline is an inline style on the element, since
+     the name changes per card. */
+  .lesson-step {
+    animation-name: stepOn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
 
   .terminal--live .pane-col--lesson {
     flex-basis: 0%;
     opacity: 0;
-    animation: openRight linear both;
+    animation-name: openRight;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --step1;
   }
 
@@ -580,7 +707,9 @@
     flex-basis: 0%;
     opacity: 0;
     box-shadow: inset 0 0 0 1px var(--color-accent);
-    animation: openBottom linear both, paneFocusOff linear both;
+    animation-name: openBottom, paneFocusOff;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --step2, --step3;
     animation-range: cover var(--step-start) cover var(--step-end),
                      cover var(--step-start) cover var(--step-end);
@@ -588,29 +717,68 @@
 
   .terminal--live .pane--lesson-top {
     box-shadow: inset 0 0 0 1px var(--color-accent);
-    animation: paneFocusOff linear both;
+    animation-name: paneFocusOff;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --step2;
   }
 
   /* focus leaves the main pane on task 2 and comes back on task 4; one property
      can't do both, so the ring is two stacked overlays */
-  .terminal--live .ring--initial { animation: fadeOut linear both; animation-timeline: --step1; }
-  .terminal--live .ring--return { opacity: 0; animation: fadeIn linear both; animation-timeline: --step3; }
+  .terminal--live .ring--initial {
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step1;
+  }
 
-  .terminal--live .caret-gate--main-a { animation: fadeOut linear both; animation-timeline: --step1; }
-  .terminal--live .caret-gate--main-b { opacity: 0; animation: fadeIn linear both; animation-timeline: --step3; }
-  /* nested gates: appears on task 3, then leaves again on task 4 */
-  .terminal--live .caret-gate--bottom-in { opacity: 0; animation: fadeIn linear both; animation-timeline: --step2; }
-  .terminal--live .caret-gate--bottom-out { animation: fadeOut linear both; animation-timeline: --step3; }
-
-  .terminal--live .lesson-hint {
+  .terminal--live .ring--return {
     opacity: 0;
-    animation: fadeIn linear both;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: --step3;
   }
 
-  /* MUST come after the `animation` shorthands above — the shorthand resets
-     animation-range back to `normal`, silently discarding these offsets */
+  .terminal--live .caret-gate--main-a {
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step1;
+  }
+
+  .terminal--live .caret-gate--main-b {
+    opacity: 0;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step3;
+  }
+
+  /* nested gates: appears on task 3, then leaves again on task 4 */
+  .terminal--live .caret-gate--bottom-in {
+    opacity: 0;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step2;
+  }
+
+  .terminal--live .caret-gate--bottom-out {
+    animation-name: fadeOut;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step3;
+  }
+
+  .terminal--live .lesson-hint {
+    opacity: 0;
+    animation-name: fadeIn;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --step3;
+  }
+
   .lesson-step,
   .terminal--live .pane-col--lesson,
   .terminal--live .pane--lesson-top,
@@ -619,4 +787,562 @@
   .terminal--live .lesson-hint {
     animation-range: cover var(--step-start) cover var(--step-end);
   }
+}
+
+/* ---------------------------------------------------------------- learn screen
+
+   A 52px header across the top, the task on the left, the terminal on the
+   right. The task column scrolls on its own with the hint line pinned to its
+   floor; the terminal column never moves. Below lg the two stack, terminal
+   first, because on a phone the terminal is the part that cannot usefully be
+   made smaller. */
+
+.learn-body {
+  /* The shell owns the viewport; only the task column scrolls. */
+  overflow: hidden;
+}
+
+.learn-shell {
+  display: grid;
+  grid-template-rows: 52px minmax(0, 1fr);
+  /* The column must be declared. With no column definition the implicit
+     `auto` track sizes to the widest item's min-content — the header's — and
+     everything below it stretches to match, so at a width where the header
+     does not fit, the prose wraps for a column wider than the viewport and
+     runs off the right edge. minmax(0, 1fr) pins the track to the shell. */
+  grid-template-columns: minmax(0, 1fr);
+  height: 100dvh;
+}
+
+.learn-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.learn-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The task column is a scrolling body plus a pinned footer, so it gets no
+   padding of its own — each part carries its own. */
+.learn-column--task {
+  min-height: 0;
+}
+
+.learn-task-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px 8px;
+}
+
+.learn-column--terminal {
+  gap: 11px;
+  padding: 16px 20px 20px;
+  background: var(--color-ink);
+}
+
+/* The terminal is the point, so it takes the space it wants — but it is the one
+   that gives space back when there is not enough. It used to be `flex-none` at
+   a hard 300px floor, which on a short window left the checklist 5px tall. */
+.learn-terminal-box {
+  flex: 0 1 auto;
+  height: clamp(300px, 52vh, 480px);
+  min-height: 180px;
+}
+
+/* The checks panel takes what the terminal leaves, which on a short window is
+   less than the list needs. It used to overflow visible inside a column with
+   `overflow: hidden`, so the rows past the fold were not clipped-but-scrollable,
+   they were simply gone: at 1280×500 three of this lesson's four checks had no
+   way to be reached. The list is what the task is graded on, so it scrolls, and
+   the panel keeps enough height for the scroll to be worth having. */
+.learn-checks {
+  min-height: 132px;
+}
+
+.learn-checks-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 1024px) {
+  .learn-main {
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .learn-column--task {
+    border-right: 1px solid var(--color-line);
+    overflow: hidden;
+  }
+
+  .learn-task-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 30px 32px 8px;
+  }
+
+  .learn-column--terminal {
+    overflow: hidden;
+    padding: 18px 20px 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .learn-main {
+    grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  }
+}
+
+/* Below this the two-column screen cannot hold a usable terminal and a usable
+   checklist at once, so the column scrolls rather than choosing one to clip. A
+   half-height window on a laptop lands here. */
+@media (min-width: 1024px) and (max-height: 620px) {
+  .learn-column--terminal {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* On a narrow screen the terminal is what you came for — but not before you
+   know what you are being asked to do.
+
+   Stacking the whole terminal column first put the title 795px down a 812px
+   viewport, and the "Done when" list at 546px: the pass criteria arrived two
+   screens before the task that they grade. So the two columns are flattened
+   with `display: contents` and the pieces ordered as a single reading line —
+   what the task is, the machine, the steps, then what it takes to pass.
+
+   Flattening means the containers stop painting their own padding, so the
+   padding moves to .learn-main and the pieces that need to break out of it say
+   so themselves. */
+@media (max-width: 1023px) {
+  .learn-body {
+    overflow: auto;
+  }
+
+  .learn-shell {
+    height: auto;
+  }
+
+  .learn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 20px 0;
+    overflow: visible;
+  }
+
+  .learn-column--task,
+  .learn-task-scroll,
+  .learn-column--terminal {
+    display: contents;
+  }
+
+  .learn-intro { order: 1; }
+  .learn-terminal-box { order: 2; }
+  .learn-terminal-status { order: 3; }
+  .learn-task-body { order: 4; }
+  [data-completion] { order: 4; }
+  .learn-checks { order: 5; }
+  .learn-hint { order: 6; }
+
+  /* The hint keeps its hairline floor, so it spans the gutter rather than
+     sitting inside it. */
+  .learn-hint {
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* An unstarted terminal is an empty black rectangle. At 52vh it was the whole
+     first screen; gated, it only has to be big enough to hold its own invitation.
+     Browsers without :has() keep the full height, which is what shipped. */
+  .learn-terminal-box:has([data-terminal-gate]:not([hidden])) {
+    height: 208px;
+  }
+
+  /* Nothing is clipping the list here — the page scrolls. */
+  .learn-checks-list {
+    overflow-y: visible;
+  }
+}
+
+.task-picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ---------------------------------------------------------- numbered steps
+
+   Three states, driven by data-state: done is a filled tick and the whole row
+   recedes, current is a green ring, not-yet-reached is a grey ring. */
+
+.step-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  border: 1.5px solid var(--color-ring);
+  color: var(--color-fg-faint);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.step-row[data-state='current'] .step-mark {
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* A finished step keeps its number. The steps are a numbered procedure the
+   learner reads along, and swapping the number for a tick takes away the thing
+   they use to find their place — the checks panel is where completion is
+   reported. Done just recedes. */
+.step-row[data-state='done'] {
+  opacity: 0.5;
+}
+
+.step-row[data-state='done'] .step-mark {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.step-row[data-state='todo'] .step-body {
+  color: var(--color-fg-dim);
+}
+
+/* A step is a short instruction and often a command block, so it sits tighter
+   than running prose — but still far enough apart to read as separate beats. */
+.step-body.lesson-prose {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.step-body.lesson-prose > * + :is(p, ul, ol, pre, h2, h3, h4, blockquote, details, table) {
+  margin-top: 12px;
+}
+
+/* ------------------------------------------------------------------ checklist
+
+   Done rows are struck through and recede; the next outstanding check carries a
+   dot so there is always exactly one "you are here". */
+
+.check-row {
+  color: var(--color-fg-dim);
+  transition: color 160ms ease;
+}
+
+.check-row .check-mark {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-ring);
+  display: grid;
+  place-items: center;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.check-row[data-state='current'] {
+  color: var(--color-fg);
+}
+
+.check-row[data-state='current'] .check-mark {
+  border: 2px solid var(--color-accent);
+}
+
+.check-row[data-state='current'] .check-mark::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.check-row[data-state='done'] .check-mark {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.check-row[data-state='done'] .check-mark::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--color-ink);
+  border-bottom: 2px solid var(--color-ink);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.check-row[data-state='done'] .check-text {
+  text-decoration: line-through;
+  text-decoration-color: rgb(255 255 255 / 0.25);
+}
+
+/* ------------------------------------------------------------- lesson prose */
+
+.lesson-prose {
+  color: var(--color-fg-muted);
+  font-size: 14.5px;
+  line-height: 1.62;
+  /* Avoids a single word stranded on the last line of a paragraph, which is
+     common in a column this narrow. */
+  text-wrap: pretty;
+}
+
+/* Block children are spaced with margins, never a flex gap.
+   
+   A tight markdown list — no blank lines between items — leaves each item's
+   content as bare inline nodes: text runs and <code> with no <p> around them.
+   In a flex column every one of those becomes its own flex item, so
+   "run `tmux ls`. Three lines appear" would break into three stacked rows with
+   the full stop orphaned at the start of the third. Most of the lessons write
+   their steps that way, so this is the normal case, not an edge one.
+   
+   The gap must still exceed the leading (~23.5px at 1.62), or paragraphs sit
+   closer together than the lines inside them. */
+.lesson-prose > * + :is(p, ul, ol, pre, h2, h3, h4, blockquote, details, table) {
+  margin-top: 22px;
+}
+
+.lesson-concept {
+  line-height: 1.65;
+}
+
+/* Guides use h2 for their sections; a lesson's h2s were split out before
+   render, so this only ever applies in an article. */
+.lesson-prose h2 {
+  color: var(--color-fg);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-top: 16px;
+}
+
+.lesson-prose :is(h3, h4) {
+  color: var(--color-fg);
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.lesson-prose strong {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+
+/* Inline code sits inside sentences, so it is sized to match the surrounding
+   text optically rather than by point size. JetBrains Mono has a taller
+   x-height than Instrument Sans: equal px reads slightly large, and anything
+   near 0.88em visibly shrinks mid-sentence and breaks the rhythm of a
+   paragraph like "tmux new runs the new-session command". 0.94em lands the two
+   x-heights on the same line.
+
+   No background chip: the design separates code from prose by family and
+   colour alone, and chips at this density would speckle the paragraph. */
+.lesson-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+  letter-spacing: -0.01em;
+  color: var(--color-fg);
+  /* A command should not be split across a line break. */
+  white-space: nowrap;
+  /* A monospace space is a full character cell: 0.59em here, against 0.2em
+     for the space in the surrounding sans. Left alone, `tmux new` reads as
+     `tmux  new` — every command with a space in it looks like a typo. This
+     pulls the space back to roughly 0.3em: wide enough to separate tokens,
+     narrow enough not to leave a hole in the sentence. */
+  word-spacing: -0.3em;
+}
+
+/* Except in a code block, where the grid is the point and wrapping and spacing
+   are the block's own business. */
+.lesson-prose pre code {
+  white-space: pre;
+  letter-spacing: normal;
+  word-spacing: normal;
+}
+
+/* The code palette.
+   
+   Shiki's default theme was github-dark, so every config block on a tmux site
+   rendered in GitHub's blues and purples — three hues that appear nowhere in
+   the brand — and the stylesheet had to force the background back with
+   !important. `theme: 'css-variables'` in astro.config.mjs moves the decision
+   here, where the tokens are.
+   
+   The palette is deliberately near-monochrome, because that is what a terminal
+   looks like and because the brand guide reserves Phosphor for progress and
+   live state, which syntax highlighting is neither.
+   
+   It has three levels, taken from how a config line is actually read:
+   
+       set -g history-limit 50000
+       ^^^ command          ^^^^^ value
+           ^^ ^^^^^^^^^^^^^ flag and option
+   
+   The command is brightest, the way it separates from its arguments in a real
+   shell. Flags and option names sit at body weight — they are the sentence.
+   Values carry the one hue, because the value is the part a reader has come to
+   change. Fourteen amber tokens in a forty-line file, all of them the number
+   or string you would edit.
+   
+   Shiki's bash grammar reaches these through its own names: the command is
+   `function`, flags and option names are `string`, and only literals end up
+   under `constant` and `string-expression`. `keyword` catches the bare `|` in
+   `bind | split-window`, which is a key being bound rather than a pipe.
+   
+   Every colour clears 4.5:1 on Void. github-dark's comment grey did not — it
+   measured 4.09:1, which put the reason for each line, the whole point of these
+   guides, below AA. */
+.astro-code {
+  --astro-code-foreground: var(--color-fg-muted);
+  --astro-code-background: var(--color-ink);
+  --astro-code-token-comment: var(--color-fg-dim);
+  --astro-code-token-function: var(--color-fg);
+  --astro-code-token-string: var(--color-fg-muted);
+  --astro-code-token-keyword: var(--color-fg-muted);
+  --astro-code-token-parameter: var(--color-fg-muted);
+  --astro-code-token-constant: var(--color-hint);
+  --astro-code-token-string-expression: var(--color-hint);
+  --astro-code-token-punctuation: var(--color-fg-dim);
+  --astro-code-token-link: var(--color-accent);
+}
+
+.lesson-prose pre,
+.lesson-prose pre.astro-code {
+  background-color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 8px;
+  padding: 10px 13px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lesson-prose pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 500;
+}
+
+/* Lists stay in normal flow for the same reason: a flex container would make a
+   flex item of every inline run inside a tight item. */
+.lesson-prose :is(ol, ul) {
+  padding-left: 22px;
+}
+
+.lesson-prose li + li {
+  margin-top: 10px;
+}
+
+.lesson-prose ol {
+  list-style: decimal;
+}
+
+.lesson-prose ul {
+  list-style: disc;
+}
+
+/* A step's own body is already numbered by its marker. */
+.step-body.lesson-prose > :is(ol, ul) {
+  padding-left: 18px;
+}
+
+.lesson-prose li::marker {
+  color: var(--color-fg-faint);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.lesson-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--accent-rgb) / 0.4);
+}
+
+.lesson-prose a:hover {
+  color: var(--color-accent-soft);
+}
+
+/* A folded aside in the task column: present, but not competing with the steps.
+   The label is one quiet line; the target around it is a finger. */
+.lesson-aside > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--color-fg-faint);
+  width: fit-content;
+  padding: 12px 0;
+  margin: -12px 0;
+}
+
+.lesson-aside > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lesson-aside > summary::before {
+  content: '+ ';
+  font-family: var(--font-mono);
+}
+
+.lesson-aside[open] > summary::before {
+  content: '- ';
+}
+
+.lesson-aside > summary:hover {
+  color: var(--color-fg-dim);
+}
+
+/* ---------------------------------------------------------------- skip link */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* xterm's own stylesheet is imported by the terminal module. These are the only
+   overrides the theme needs, plus a guard: xterm's root also carries the class
+   `terminal`, which is generic enough to collide with page styles, and anything
+   that changes its layout or box model makes it clip its own output. */
+.xterm.terminal {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+}
+
+.xterm .xterm-viewport {
+  background: transparent !important;
+  scrollbar-width: thin;
 }

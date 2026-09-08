@@ -26,3 +26,8 @@ pnpm-debug.log*
 # editor / local agent config
 .claude/launch.json
 .vscode/
+
+# guest machine: fetched third-party binaries and build output.
+# Regenerate with `bun run guest:fetch` then `bun run guest:build` (see guest/README.md).
+public/vm/
+guest/build/

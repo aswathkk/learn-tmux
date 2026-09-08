@@ -1,0 +1,96 @@
+---
+/**
+ * The config gallery.
+ *
+ * Each entry is its own page rather than a card in a grid, because "tmux
+ * catppuccin config" and "minimal tmux status line" are separate searches and a
+ * single gallery page can only rank for one of them.
+ */
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import { breadcrumbJsonLd, itemListJsonLd } from '../../lib/seo';
+
+const configs = (await getCollection('configs', ({ data }) => !data.draft)).sort(
+  (a: CollectionEntry<'configs'>, b: CollectionEntry<'configs'>) =>
+    b.data.added.getTime() - a.data.added.getTime(),
+);
+
+const crumbs = [{ name: 'learntmux', href: '/' }, { name: 'Config gallery' }];
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  itemListJsonLd(
+    configs.map((config) => ({ name: config.data.title, href: `/gallery/${config.id.split('/')[0]}` })),
+    Astro.site,
+  ),
+];
+---
+<Base
+  title="tmux Config Gallery: Real Status Lines and Themes | learntmux"
+  description="A gallery of real tmux configurations with screenshots and the full tmux.conf behind each one, from minimal status lines to full themes."
+  jsonLd={jsonLd}
+>
+  <SiteHeader section="gallery" />
+
+  <main id="main" class="mx-auto max-w-[1100px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+
+    <header class="flex flex-col gap-4">
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">GALLERY</span>
+      <h1
+        class="m-0 max-w-[20ch] font-bold [text-wrap:balance]"
+        style="font-size:clamp(32px,4vw,52px); letter-spacing:-.03em; line-height:1.04;"
+      >
+        tmux configs worth stealing.
+      </h1>
+      <p class="max-w-[60ch] text-base leading-[1.6] text-fg-muted">
+        Screenshots and the whole tmux.conf behind each one. Take a line, take the file, or read
+        it next to <a href="/configure" class="text-accent hover:underline">Level 4</a> and
+        understand every option before you paste it.
+      </p>
+    </header>
+
+    {
+      configs.length === 0 ? (
+        <p class="mt-12 rounded-xl border border-dashed border-line-strong p-8 text-center text-fg-dim">
+          The first configs are being written up. Check back shortly.
+        </p>
+      ) : (
+        <ul class="mt-12 grid gap-6" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">
+          {configs.map((config) => (
+            <li>
+              <a
+                href={`/gallery/${config.id.split('/')[0]}`}
+                class="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-ink-card transition-colors hover:border-accent/30"
+              >
+                <Image
+                  src={config.data.screenshot}
+                  alt={`Screenshot of the ${config.data.title} tmux configuration`}
+                  widths={[360, 720]}
+                  sizes="(min-width: 1024px) 360px, 100vw"
+                  class="aspect-[16/10] w-full object-cover"
+                  loading="lazy"
+                />
+                <div class="flex flex-1 flex-col gap-2 p-5">
+                  <h2 class="text-[16px] font-semibold text-fg group-hover:text-accent">
+                    {config.data.title}
+                  </h2>
+                  <p class="text-[13.5px] leading-[1.5] text-fg-muted">{config.data.description}</p>
+                  <div class="mt-auto flex flex-wrap gap-2 pt-2">
+                    {config.data.tags.map((tag) => (
+                      <span class="rounded-full bg-white/[.06] px-2 py-[3px] font-mono text-[10.5px] text-fg-dim">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</Base>

@@ -1,0 +1,120 @@
+---
+/**
+ * The completion state (mockup 4b).
+ *
+ * Present in the HTML from the start and hidden, so finishing a task is an
+ * instant swap rather than a fetch. What it shows is the point of the design:
+ * the terminal already proved the task, so this column explains *why* it
+ * worked, banks the keys, and points at the next task.
+ */
+import { renderInline } from '../../lib/inline-markdown';
+import type { LessonEntry } from '../../lib/lessons';
+import { lessonPath } from '../../lib/lessons';
+import Kbd from '../ui/Kbd.astro';
+
+interface Props {
+  lesson: LessonEntry;
+  /** Rendered HTML of the "What just happened" section. */
+  whatHappened: string;
+  /** Rendered HTML of the "Go further" section. */
+  goFurther: string;
+  next?: LessonEntry;
+  /** True when the next lesson starts a new level. */
+  nextStartsLevel?: boolean;
+}
+
+const { lesson, whatHappened, goFurther, next, nextStartsLevel = false } = Astro.props;
+const { keys, challenge } = lesson.data;
+---
+<section class="flex flex-col gap-5" data-completion hidden>
+  <div class="flex flex-wrap items-center gap-3">
+    <span
+      class="inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-[6px] font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-accent"
+    >
+      <span aria-hidden="true">&#10003;</span> Done
+    </span>
+    <span class="font-mono text-[11px] text-fg-dim">
+      <span data-completion-time>—</span>
+      <span aria-hidden="true" class="mx-1 text-ring">·</span>
+      <span data-completion-hints>no hints</span>
+    </span>
+  </div>
+
+  <h2 class="text-[22px] font-bold tracking-[-.02em] text-fg">
+    {challenge ? 'Challenge cleared.' : 'Here is what just happened.'}
+  </h2>
+
+  <div class="lesson-prose" set:html={whatHappened} />
+
+  {
+    keys.length > 0 && (
+      <div class="flex flex-col gap-[10px] rounded-xl border border-line bg-ink-card p-4">
+        <div class="flex items-baseline justify-between">
+          <span class="text-[13px] font-semibold text-fg">Added to your cheat sheet</span>
+          <span class="font-mono text-[11px] text-fg-dim">
+            {keys.length} new
+          </span>
+        </div>
+        <ul class="flex flex-col gap-[6px]">
+          {keys.map((entry) => (
+            <li class="flex flex-wrap items-center justify-between gap-3 rounded-[9px] bg-ink px-3 py-[10px]">
+              <span class="text-[13px] text-fg-muted" set:html={renderInline(entry.description)} />
+              <Kbd keys={entry.key} size="sm" class="flex-none" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    goFurther && (
+      <details class="rounded-xl border border-line p-4">
+        <summary class="cursor-pointer list-none py-2 -my-2 text-[13px] font-semibold text-fg-muted hover:text-fg">
+          Go further
+        </summary>
+        <div class="lesson-prose mt-3" set:html={goFurther} />
+      </details>
+    )
+  }
+
+  {
+    next ? (
+      <a
+        href={lessonPath(next)}
+        class="group flex items-center gap-4 rounded-xl border border-accent/25 bg-accent/[.06] p-4 transition-colors hover:border-accent/50"
+      >
+        <div class="flex flex-col gap-1">
+          <span class="font-mono text-[11px] font-medium uppercase tracking-[.1em] text-accent">
+            {nextStartsLevel ? 'Next level' : 'Next task'}
+          </span>
+          <span class="text-[15px] font-semibold text-fg">{next.data.title}</span>
+          <span class="text-[12px] text-fg-dim">
+            {next.data.estimatedMinutes} min · your terminal will be reset for it
+          </span>
+        </div>
+        <span
+          aria-hidden="true"
+          class="ml-auto text-accent transition-transform group-hover:translate-x-1"
+        >
+          &rarr;
+        </span>
+      </a>
+    ) : (
+      <a
+        href="/cheatsheet"
+        class="rounded-xl border border-accent/25 bg-accent/[.06] p-4 text-[15px] font-semibold text-fg"
+      >
+        That was the last task. See everything you learned &rarr;
+      </a>
+    )
+  }
+
+  <button
+    type="button"
+    data-keep-playing
+    class="self-start py-3 -my-3 text-[13px] font-medium text-fg-dim underline decoration-line-strong hover:text-accent"
+  >
+    Keep playing in this terminal
+  </button>
+</section>

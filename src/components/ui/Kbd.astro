@@ -1,0 +1,35 @@
+---
+/**
+ * A key as it is pressed. Splits "C-b %" into a prefix chip and the key that
+ * follows it, because that two-step is the single hardest idea in tmux and the
+ * design guide asks for it to read as two presses everywhere it appears.
+ */
+interface Props {
+  /** e.g. "C-b %", "C-b", "tmux new -s". */
+  keys: string;
+  size?: 'sm' | 'md';
+  class?: string;
+}
+
+const { keys, size = 'md', class: className = '' } = Astro.props;
+
+// Anything that is not a prefix sequence renders as one chip: shell commands
+// such as "tmux new -s" must not be chopped at their spaces.
+const isPrefixSequence = /^C-[a-z]\s+\S/.test(keys);
+const parts = isPrefixSequence ? keys.split(/\s+/) : [keys];
+
+const chip =
+  size === 'sm'
+    ? 'rounded-[5px] px-[7px] py-[3px] text-[11px]'
+    : 'rounded-[6px] px-[10px] py-[6px] text-[13px]';
+---
+<span class:list={['inline-flex items-center gap-2 font-mono font-semibold', className]}>
+  {
+    parts.map((part, index) => (
+      <>
+        {index > 0 && <span class="text-[11px] font-normal text-fg-dim">then</span>}
+        <kbd class:list={['border border-line-strong bg-ink-key text-fg', chip]}>{part}</kbd>
+      </>
+    ))
+  }
+</span>

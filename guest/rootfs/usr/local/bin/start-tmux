@@ -1,0 +1,40 @@
+#!/bin/sh
+# First process inside the Alpine chroot.
+# Usage: start-tmux <cols> <rows>
+export TERM=xterm-256color
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+COLS=${1:-100}
+ROWS=${2:-30}
+
+# The prompt is `\w \$ ` and does not show this, but tmux does: the status
+# line's right-hand side carries the pane title, which defaults to the hostname.
+# It must never read "tmux" — a machine claiming to be tmux while the learner
+# sits at a plain shell is the exact confusion this course exists to clear up.
+hostname learntmux 2>/dev/null
+
+# The serial line has no SIGWINCH, so the size is pushed in from the browser.
+stty cols "$COLS" rows "$ROWS" 2>/dev/null
+
+# The page has no SIGWINCH to send, so it resizes the guest by running stty on
+# this console from the control channel. That runs as `alpine`, and the console
+# is root-only by default, so opening it would fail and the guest would sit at
+# its boot-time size forever while the browser window said otherwise.
+chown alpine /dev/ttyS0 2>/dev/null || true
+
+# The lesson harness drives the guest over the second serial port, so it never
+# has to type into the terminal the learner is using. Only root can open
+# /dev/ttyS1, so the redirections happen here, before privileges are dropped.
+if [ -c /dev/ttyS1 ]; then
+    setsid su alpine -c \
+        'HOME=/home/alpine; PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin; \
+         PS1=""; export HOME PATH PS1; cd "$HOME"; \
+         stty -echo 2>/dev/null; exec sh' \
+        < /dev/ttyS1 > /dev/ttyS1 2>&1 &
+fi
+
+# The lessons address /home/alpine and expect an ordinary user account, so the
+# session runs as one rather than as root.
+# A plain login shell, with tmux's stock defaults and nothing loaded from ~.
+# Every lesson starts from what a fresh install actually gives you.
+exec su -l alpine

@@ -1,0 +1,166 @@
+---
+/**
+ * One guide.
+ *
+ * Guides are the search-facing half of the site: the queries people type before
+ * they know they want a course. Each one links into the lessons it builds on,
+ * which is what turns a reader into a learner, and on into the next guide,
+ * which is what keeps one who is not ready for a course yet.
+ */
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Article from '../../layouts/Article.astro';
+import { guideCategoryNames } from '../../content.config';
+import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
+import { getLessons, lessonPath } from '../../lib/lessons';
+import { readingTime } from '../../lib/reading-time';
+
+export async function getStaticPaths() {
+  const guides = await getCollection('guides', ({ data }) => !data.draft);
+  return guides.map((guide: CollectionEntry<'guides'>) => ({
+    params: { slug: guide.id },
+    props: { guide, guides },
+  }));
+}
+
+interface Props {
+  guide: CollectionEntry<'guides'>;
+  guides: CollectionEntry<'guides'>[];
+}
+
+const { guide, guides } = Astro.props;
+const { Content } = await render(guide);
+const data = guide.data;
+const reading = readingTime(guide.body ?? '');
+
+const lessons = await getLessons();
+const related = data.relatedLessons
+  .map((slug: string) => lessons.find((lesson) => lesson.data.slug === slug))
+  .filter((lesson): lesson is (typeof lessons)[number] => Boolean(lesson));
+
+/** Named guides first, in the author's order, then anything else recent. */
+const named = data.relatedGuides
+  .map((id: string) => guides.find((other) => other.id === id && other.id !== guide.id))
+  .filter((other): other is CollectionEntry<'guides'> => Boolean(other));
+
+const readNext = [
+  ...named,
+  ...guides
+    .filter((other) => other.id !== guide.id && !named.includes(other))
+    .sort((a, b) => b.data.published.getTime() - a.data.published.getTime()),
+].slice(0, 2);
+
+const path = `/guides/${guide.id}`;
+const crumbs = [
+  { name: 'learntmux', href: '/' },
+  { name: 'Guides', href: '/guides' },
+  { name: data.title },
+];
+
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  articleJsonLd({
+    title: data.title,
+    description: data.description,
+    path,
+    published: data.published,
+    updated: data.updated,
+    site: Astro.site,
+  }),
+];
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<Article
+  title={`${data.seoTitle ?? data.title} | learntmux`}
+  description={data.description}
+  crumbs={crumbs}
+  jsonLd={jsonLd}
+  publishedTime={data.published}
+  modifiedTime={data.updated}
+>
+  <article class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      {/* The same map the index reads from, so one guide cannot be filed under
+          two different names on two different pages. */}
+      <span class="font-mono text-[11px] font-medium uppercase tracking-[.12em] text-accent">
+        {guideCategoryNames[data.category]}
+      </span>
+      <h1
+        class="m-0 font-bold [text-wrap:balance]"
+        style="font-size:clamp(30px,3.6vw,46px); letter-spacing:-.03em; line-height:1.08;"
+      >
+        {data.title}
+      </h1>
+      <p class="text-[17px] leading-[1.55] text-fg-muted">{data.description}</p>
+      <p class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-fg-dim">
+        <time datetime={data.published.toISOString()}>{formatDate(data.published)}</time>
+        {data.updated && (
+          <>
+            <span aria-hidden="true" class="text-fg-faint">·</span>
+            <span>
+              updated <time datetime={data.updated.toISOString()}>{formatDate(data.updated)}</time>
+            </span>
+          </>
+        )}
+        <span aria-hidden="true" class="text-fg-faint">·</span>
+        <span>{reading.label}</span>
+      </p>
+    </header>
+
+    <div class="lesson-prose text-[16px]">
+      <Content />
+    </div>
+
+    {
+      related.length > 0 && (
+        <aside class="mt-6 flex flex-col gap-3 rounded-xl border border-accent/20 bg-accent/[.05] p-5">
+          <h2 class="text-[15px] font-semibold text-fg">Practise this in a real terminal</h2>
+          <ul class="flex flex-col gap-2">
+            {related.map((lesson) => (
+              <li>
+                <a
+                  href={lessonPath(lesson)}
+                  class="-my-1 inline-flex py-1 text-[14px] text-accent transition-colors hover:underline"
+                >
+                  {lesson.data.title}
+                </a>
+                <span class="ml-2 text-[13px] text-fg-dim">{lesson.data.summary}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+
+    {
+      readNext.length > 0 && (
+        <nav class="mt-2 flex flex-col gap-4 border-t border-line pt-8" aria-label="Read next">
+          <h2 class="m-0 font-mono text-[11px] font-medium uppercase tracking-[.12em] text-fg-dim">
+            Read next
+          </h2>
+          <ul class="flex flex-col">
+            {readNext.map((other) => (
+              <li class="group relative flex flex-col gap-1 border-b border-line py-4 last:border-b-0 last:pb-0">
+                <span class="font-mono text-[11px] text-accent">
+                  {guideCategoryNames[other.data.category]}
+                </span>
+                <h3 class="m-0 text-[17px] font-semibold tracking-[-.015em]">
+                  <a
+                    href={`/guides/${other.id}`}
+                    class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+                  >
+                    {other.data.title}
+                  </a>
+                </h3>
+                <p class="m-0 max-w-[62ch] text-[13.5px] leading-[1.55] text-fg-dim [text-wrap:pretty]">
+                  {other.data.description}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+  </article>
+</Article>

@@ -1,0 +1,70 @@
+---
+/**
+ * The "Done when" panel.
+ *
+ * One line of plain English per check: no commands, no format strings. What
+ * proves a check is the harness's business, not the learner's.
+ *
+ * Three states, as designed. Done is a filled tick with the text struck
+ * through; the next outstanding check gets a ring with a dot in it; the rest
+ * are a plain empty ring. Every row ships in the HTML — the client only sets
+ * `data-state`, so the list is readable before any script runs.
+ *
+ * All three of those states are paint: a border colour, a background, a
+ * line-through. None of it reaches a screen reader, and the live region only
+ * ever said "2 of 4" — never which two. So each row also carries its state in
+ * words, off-screen, and the client rewrites that alongside the attribute.
+ */
+import type { Check } from '../../lib/harness/types';
+
+interface Props {
+  checks: Check[];
+  /** Challenges state an end state rather than steps, so the heading changes. */
+  challenge?: boolean;
+}
+
+const { checks, challenge = false } = Astro.props;
+---
+
+<section
+  class="learn-checks flex min-h-0 flex-1 flex-col gap-3 rounded-[10px] border border-line bg-ink-card p-4 sm:px-[18px] sm:py-4"
+  aria-labelledby="done-when-heading"
+>
+  <div class="flex flex-none items-center gap-[9px]">
+    <h2 id="done-when-heading" class="text-[13px] font-semibold text-fg">
+      {challenge ? 'What needs to be true at the end' : 'Done when'}
+    </h2>
+    <span
+      class="ml-auto flex items-center gap-[7px] text-[12.5px] text-fg-faint"
+      data-checks-status
+      aria-live="polite"
+    >
+      <span class="h-[6px] w-[6px] rounded-full bg-ring" data-checks-dot></span>
+      <span data-checks-status-text>not started</span>
+    </span>
+  </div>
+
+  {
+    checks.length === 0 ? (
+      <p class="text-[13px] text-fg-dim">
+        Nothing to grade here. Read on, and move to the next task when you are ready.
+      </p>
+    ) : (
+      <ol class="learn-checks-list flex flex-col gap-[10px]" data-checklist>
+        {checks.map((check, index) => (
+          <li
+            class="check-row flex items-center gap-[11px] text-[14px]"
+            data-check-index={index}
+            data-state="todo"
+          >
+            <span class="check-mark" aria-hidden="true" />
+            <span class="check-text">{check.description}</span>
+            <span class="sr-only" data-check-state>
+              — not done yet
+            </span>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</section>

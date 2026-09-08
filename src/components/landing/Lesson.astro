@@ -1,0 +1,95 @@
+---
+/**
+ * How a lesson works.
+ *
+ * These three cards are captions for the terminal to their right, not links
+ * into the course. The pinned terminal is driven by the same scroll timelines
+ * the cards are: `--step1` opens a pane to the right, `--step2` opens one along
+ * the bottom, `--step3` moves the focus ring between them. So the cards are
+ * written to match that animation and are hardcoded on purpose: deriving them
+ * from the lesson list would let the words drift away from the picture.
+ *
+ * They are not linked for the same reason: they describe what the terminal is
+ * doing, and a click that jumped into a task mid-demonstration would break the
+ * one thing this section is trying to show.
+ */
+import DemoTerminal from './DemoTerminal.astro';
+import Kbd from '../ui/Kbd.astro';
+
+const steps = [
+  {
+    eyebrow: 'SPLIT',
+    title: 'Split the pane side by side',
+    keys: 'C-b %',
+  },
+  {
+    eyebrow: 'SPLIT AGAIN',
+    title: 'Split the pane top and bottom',
+    keys: 'C-b "',
+  },
+  {
+    eyebrow: 'MOVE',
+    title: 'Move between panes',
+    keys: 'C-b ←',
+    /** The live state: this is what the checks do while you work. */
+    watching: true,
+  },
+];
+---
+
+<section id="lesson" class="lesson-section px-5 pt-[8vh] sm:px-[clamp(20px,5vw,72px)]">
+  <div class="mx-auto max-w-[1200px]">
+    <div class="rail-grid lesson-rail items-start">
+      <div class="lesson-left">
+        <div class="lesson-intro">
+          <div class="max-w-[46ch]">
+            <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">
+              HOW A LESSON WORKS
+            </span>
+            <h2
+              class="m-0 mt-[10px] font-bold [text-wrap:balance]"
+              style="font-size:clamp(30px,3.6vw,50px); letter-spacing:-.03em; line-height:1.04;"
+            >
+              The terminal stays put. It changes as you do.
+            </h2>
+            <p class="m-0 mt-[14px] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
+              One tmux session, running in the tab, for the whole level. Each task stages it,
+              then watches it. There is no button to press: the list ticks itself off the
+              moment the machine says you are right.
+            </p>
+          </div>
+        </div>
+
+        <ol class="lesson-steps flex flex-col gap-[28vh] pb-[10vh] pt-[37vh]">
+          {
+            steps.map((step, index) => (
+              <li
+                class="lesson-step flex flex-col gap-3 rounded-[14px] border border-white/10 bg-ink-card p-[22px]"
+                style={`view-timeline-name:--step${index + 1};animation-timeline:--step${index + 1};`}
+              >
+                <span class="font-mono text-[11px] font-medium tracking-[.1em] text-accent">
+                  {step.eyebrow}
+                </span>
+                <h3 class="text-[22px] font-bold tracking-[-.02em]">{step.title}</h3>
+
+                <div class="flex flex-wrap items-center gap-3 rounded-[10px] bg-ink p-3">
+                  <Kbd keys={step.keys} size="sm" />
+                  {step.watching && (
+                    <span class="ml-auto flex items-center gap-[6px] font-mono text-xs font-medium text-accent">
+                      <span class="h-[6px] w-[6px] rounded-full bg-accent" />
+                      watching
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+
+      <div>
+        <DemoTerminal mode="lesson" class="terminal-static" />
+      </div>
+    </div>
+  </div>
+</section>
