@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import Levels from '../components/Levels.astro';
+import Lesson from '../components/Lesson.astro';
+import LevelComplete from '../components/LevelComplete.astro';
+import CheatSheet from '../components/CheatSheet.astro';
+import Terminal from '../components/Terminal.astro';
+
+const title = 'tmux in minutes — Learn tmux by doing it, not reading about it';
+const description =
+  'Four short levels, 42 hands-on tasks, one real terminal. Learn tmux sessions, panes, windows and your own .tmux.conf by actually doing it — about 40 minutes total, nothing to install.';
+---
+<Layout title={title} description={description}>
+  <main>
+    <div class="stage">
+      <div class="pin px-5 sm:px-[clamp(20px,5vw,72px)]">
+        <div class="rail-grid mx-auto max-w-[1200px]">
+          <div aria-hidden="true"></div>
+          <Terminal />
+        </div>
+      </div>
+      <Hero />
+      <Levels />
+      <Lesson />
+    </div>
+    <LevelComplete />
+    <CheatSheet />
+  </main>
+</Layout>

@@ -1,0 +1,92 @@
+---
+const stats = [
+  { value: '8:56', label: 'time in level' },
+  { value: '1', label: 'hint used' },
+  { value: '+9', label: 'shortcuts learned', accent: true },
+];
+
+const newKeys = [
+  { label: 'rename window / session', key: 'C-b , / $' },
+  { label: 'window by number', key: 'C-b 0–9' },
+  { label: 'zoom pane', key: 'C-b z' },
+  { label: 'resize pane', key: 'C-b C-←→' },
+  { label: 'kill pane / window', key: 'C-b x / &' },
+  { label: 'cycle layouts', key: 'C-b Space' },
+  { label: 'pane numbers', key: 'C-b q' },
+  { label: 'tree mode', key: 'C-b w / s' },
+  { label: 'command prompt', key: 'C-b :' },
+];
+---
+<section id="level-complete" class="mx-auto max-w-[1200px] px-5 py-[16vh] sm:px-[clamp(20px,5vw,72px)]">
+  <div
+    class="relative grid overflow-hidden rounded-[22px] border border-white/10 bg-ink-raised [animation-range:entry_0%_entry_60%] [animation-timeline:view()] [animation:upSoft_linear_both] md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+  >
+    <div class="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--color-accent),transparent)]"></div>
+    <div class="pointer-events-none absolute inset-x-0 -top-[140px] h-[280px] [background:radial-gradient(closest-side_at_50%_50%,rgb(var(--accent-rgb)/.16),transparent)]"></div>
+
+    <div class="relative flex flex-col gap-[22px] p-7 sm:p-[clamp(28px,4vw,52px)]">
+      <div class="flex items-center gap-[14px]">
+        <div
+          class="relative grid h-14 w-14 flex-none place-items-center rounded-full"
+          style="background:conic-gradient(var(--color-accent) 100%, rgba(255,255,255,.08) 0);"
+        >
+          <div class="grid h-11 w-11 place-items-center rounded-full bg-ink-raised font-mono text-[18px] font-bold text-accent">
+            ✓
+          </div>
+        </div>
+        <div>
+          <div class="font-mono text-xs font-medium tracking-[.12em] text-accent">LEVEL 2 · INTERMEDIATE</div>
+          <div class="mt-[3px] text-[13px] text-fg-dim">Completed just now · 11 of 11 tasks</div>
+        </div>
+      </div>
+
+      <h2
+        class="m-0 font-bold [text-wrap:balance]"
+        style="font-size:clamp(30px,3.8vw,54px); letter-spacing:-.03em; line-height:1.02;"
+      >
+        You can shape a workspace now.
+      </h2>
+      <p class="m-0 max-w-[46ch] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
+        Renamed, zoomed, resized, killed and re-laid-out panes — and used the command prompt
+        without touching the mouse once.
+      </p>
+
+      <div class="grid grid-cols-3 gap-[10px]">
+        {stats.map((s) => (
+          <div class="rounded-xl border border-white/[.08] bg-ink px-4 py-[14px]">
+            <div class:list={['font-mono text-2xl font-semibold leading-none tracking-[-.02em]', s.accent && 'text-accent']}>
+              {s.value}
+            </div>
+            <div class="mt-[6px] text-xs text-fg-dim">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-[14px] pt-1">
+        <a href="#levels" class="inline-flex items-center gap-[10px] rounded-[10px] bg-accent px-5 py-[13px] text-sm font-bold text-ink">
+          Start Level 3 · Advanced <span aria-hidden="true">→</span>
+        </a>
+        <a href="#lesson" class="inline-flex min-h-[44px] items-center py-1 text-sm font-medium text-fg-muted">Replay Level 2</a>
+      </div>
+    </div>
+
+    <div class="relative flex flex-col gap-[14px] border-l border-white/[.08] bg-ink p-7 sm:p-[clamp(28px,4vw,52px)]">
+      <div class="flex items-baseline justify-between">
+        <span class="text-sm font-semibold">Added to your cheat sheet</span>
+        <span class="font-mono text-[11px] font-medium text-fg-dim">9 new</span>
+      </div>
+      <div class="flex flex-col gap-[6px] text-sm">
+        {newKeys.map((k) => (
+          <div class="flex items-center justify-between rounded-[9px] bg-ink-card px-3 py-[10px]">
+            <span class="text-fg-muted">{k.label}</span>
+            <span class="font-mono text-[13px] font-semibold text-accent">{k.key}</span>
+          </div>
+        ))}
+      </div>
+      <div class="mt-auto flex items-center justify-between pt-[10px] text-[12.5px] text-fg-dim">
+        <span>Next: Level 3 · 11 tasks · ~12 min</span>
+        <span class="font-medium text-fg">Download PDF</span>
+      </div>
+    </div>
+  </div>
+</section>

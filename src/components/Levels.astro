@@ -1,0 +1,151 @@
+---
+const levels = [
+  {
+    n: '01',
+    status: 'done',
+    badge: '✓ 7:42',
+    title: 'Basics',
+    desc: 'Sessions, the prefix key, panes, windows, detach & reattach.',
+    keys: ['tmux new -s', 'C-b %  ·  C-b "', 'C-b ←↑↓→', 'C-b c  ·  n  ·  p', 'C-b d  ·  tmux attach'],
+    progress: 100,
+  },
+  {
+    n: '02',
+    status: 'current',
+    badge: '3 / 11',
+    title: 'Intermediate',
+    desc: 'Rename, zoom, resize, kill, layouts, tree mode, the command prompt.',
+    keys: [
+      { text: 'C-b ,  ·  C-b $', accent: true },
+      { text: 'C-b 0–9', accent: true },
+      { text: 'C-b z  ← you are here', current: true },
+      { text: 'C-b x  ·  &  ·  Space' },
+      { text: 'C-b w  ·  C-b :' },
+    ],
+    progress: 27,
+  },
+  {
+    n: '03',
+    status: 'locked',
+    badge: 'locked · 11',
+    title: 'Advanced',
+    desc: 'Copy mode, paste buffers, mark & swap, mouse, floating panes, switch mode.',
+    keys: ['C-b [  ·  C-b ]', 'C-b =  ·  C-b f', 'C-b m  ·  {  ·  }', 'set -g mouse on', 'C-b *  ·  C-b Tab'],
+    progress: 0,
+  },
+  {
+    n: '04',
+    status: 'locked',
+    badge: 'locked · 10',
+    title: 'Configure',
+    desc: '.tmux.conf, a new prefix, key bindings, status line styles, vi keys.',
+    keys: ['set -g prefix C-a', 'bind  ·  unbind', 'source ~/.tmux.conf', 'status-style', 'mode-keys vi'],
+    progress: 0,
+  },
+];
+---
+<section id="levels" class="sheet">
+  <div
+    class="mx-auto flex max-w-[1200px] flex-col gap-12 px-5 pb-[12vh] pt-[10vh] sm:px-[clamp(20px,5vw,72px)]"
+  >
+  <div
+    class="grid items-end gap-8 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both] sm:grid-cols-2"
+  >
+    <div>
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">THE PATH</span>
+      <h2
+        class="m-0 mt-[10px] font-bold [text-wrap:balance]"
+        style="font-size:clamp(30px,3.6vw,50px); letter-spacing:-.03em; line-height:1.04;"
+      >
+        Four levels, in the order the official guide teaches them.
+      </h2>
+    </div>
+    <p class="m-0 max-w-[44ch] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
+      Each level is about ten minutes and ends with a small challenge that combines what you
+      just did. Finish one to unlock the next.
+    </p>
+  </div>
+
+  <div class="relative h-[2px] overflow-hidden rounded-[1px] bg-white/[.08]">
+    <div
+      class="absolute inset-0 w-[34%] origin-left bg-accent [animation-range:entry_0%_entry_100%] [animation-timeline:view()] [animation:fill_linear_both]"
+    ></div>
+  </div>
+
+  <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
+    {levels.map((level, i) => (
+      <div
+        class:list={[
+          'flex min-h-[340px] flex-col gap-[14px] rounded-2xl border p-6',
+          level.status === 'current'
+            ? 'border-accent/50 bg-ink-card'
+            : level.status === 'done'
+              ? 'border-white/10 bg-ink-card'
+              : 'border-white/[.08] bg-ink-card-dim',
+        ]}
+        style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${i * 8}% entry ${60 + i * 8}%;`}
+      >
+        <div class="flex items-baseline justify-between">
+          <span
+            class:list={[
+              'font-mono text-[13px] font-semibold',
+              level.status === 'locked' ? 'text-fg-faint' : level.status === 'current' ? 'text-fg' : 'text-accent',
+            ]}
+          >
+            {level.n}
+          </span>
+          <span
+            class:list={[
+              'font-mono text-[11px] font-medium',
+              level.status === 'current'
+                ? 'rounded-[4px] bg-accent px-2 py-[3px] text-ink'
+                : level.status === 'locked'
+                  ? 'text-fg-dim'
+                  : 'text-accent',
+            ]}
+          >
+            {level.badge}
+          </span>
+        </div>
+        <div>
+          <h3
+            class:list={[
+              "text-[21px] font-bold tracking-[-.02em]",
+              level.status === 'locked' && 'text-fg-muted',
+            ]}
+          >
+            {level.title}
+          </h3>
+          <p
+            class:list={[
+              'mt-[6px] text-sm leading-[1.5]',
+              level.status === 'locked' ? 'text-fg-dim' : 'text-fg-muted',
+            ]}
+          >
+            {level.desc}
+          </p>
+        </div>
+        <div
+          class:list={[
+            'mt-auto flex flex-col gap-[5px] font-mono text-[12.5px] leading-[1.5]',
+            level.status === 'locked' ? 'text-fg-faint' : 'text-fg-dim',
+          ]}
+        >
+          {level.keys.map((k) =>
+            typeof k === 'string' ? (
+              <div>{k}</div>
+            ) : (
+              <div class:list={[k.accent && 'text-accent', k.current && 'text-fg']}>{k.text}</div>
+            )
+          )}
+        </div>
+        <div class:list={['h-[3px] rounded-[2px]', level.status === 'locked' ? 'bg-white/[.06]' : 'bg-white/[.08]']}>
+          {level.progress > 0 && (
+            <div class="h-full rounded-[2px] bg-accent" style={`width:${level.progress}%`}></div>
+          )}
+        </div>
+      </div>
+    ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,68 @@
+---
+const items = [
+  { key: 'tmux new -s', label: 'new named session' },
+  { key: 'C-b %', label: 'split left / right' },
+  { key: 'C-b "', label: 'split top / bottom' },
+  { key: 'C-b ←↑↓→', label: 'move between panes' },
+  { key: 'C-b c', label: 'new window' },
+  { key: 'C-b n / p / 0–9', label: 'switch windows' },
+  { key: 'C-b d', label: 'detach' },
+  { key: 'tmux attach -t', label: 'reattach' },
+  { key: 'C-b , / $', label: 'rename window / session' },
+  { key: 'C-b z', label: 'zoom pane' },
+  { key: 'C-b C-←→', label: 'resize pane' },
+  { key: 'C-b x / &', label: 'kill pane / window' },
+  { key: 'C-b Space', label: 'cycle layouts' },
+  { key: 'C-b w / s', label: 'tree mode' },
+  { key: 'C-b :', label: 'command prompt' },
+];
+---
+<section
+  id="cheatsheet"
+  class="mx-auto flex max-w-[1200px] flex-col gap-9 px-5 pb-[14vh] pt-[4vh] sm:px-[clamp(20px,5vw,72px)]"
+>
+  <div class="flex flex-wrap items-end justify-between gap-6 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both]">
+    <div>
+      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">YOUR CHEAT SHEET</span>
+      <h2
+        class="m-0 mt-[10px] font-bold"
+        style="font-size:clamp(30px,3.6vw,50px); letter-spacing:-.03em; line-height:1.04;"
+      >
+        Only what you've actually done.
+      </h2>
+    </div>
+    <span class="rounded-[10px] border border-white/[.14] px-[18px] py-3 text-sm font-semibold">Download PDF</span>
+  </div>
+
+  <div class="grid gap-[10px]" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));">
+    {items.map((item, i) => (
+      <div
+        class="rounded-xl border border-white/10 bg-ink-card px-[18px] py-4"
+        style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${(i % 5) * 6}% entry ${50 + (i % 5) * 6}%;`}
+      >
+        <div class="font-mono text-sm font-semibold text-accent">{item.key}</div>
+        <div class="mt-[5px] text-[13px] text-fg-muted">{item.label}</div>
+      </div>
+    ))}
+    <div
+      class="rounded-xl border border-dashed border-white/[.14] px-[18px] py-4 text-fg-faint"
+      style="animation:upSoft linear both;animation-timeline:view();animation-range:entry 0% entry 50%;"
+    >
+      <div class="font-mono text-sm font-semibold">21 more</div>
+      <div class="mt-[5px] text-[13px]">unlock in Levels 3 &amp; 4</div>
+    </div>
+  </div>
+
+  <footer class="flex flex-wrap items-center justify-between gap-5 border-t border-white/[.08] pt-9 text-[13px] text-fg-dim">
+    <div class="flex items-center gap-[10px] font-bold text-fg">
+      <span class="h-[10px] w-[10px] rounded-full bg-accent"></span>
+      tmux in minutes
+    </div>
+    <span>
+      Built on the official tmux Getting Started guide ·
+      <a href="https://github.com/tmux/tmux/wiki/Getting-Started" class="text-fg-dim underline decoration-white/20 hover:text-fg">
+        tmux wiki
+      </a>
+    </span>
+  </footer>
+</section>

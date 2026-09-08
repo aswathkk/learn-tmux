@@ -1,0 +1,613 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-accent: #3ddc84;
+  --color-alert: #e35d7a;
+  --color-ink: #0b0c10;
+  --color-ink-raised: #0e1014;
+  --color-ink-card: #10131a;
+  --color-ink-card-dim: #0d0f14;
+  --color-ink-sheet: #12151c;
+  --color-ink-key: #1a1e26;
+  --color-fg: #eef0f4;
+  --color-fg-muted: #aeb5c0;
+  --color-fg-dim: #8b93a1;
+  /* 4.58:1 at its worst ground — the old #5d6675 sat at 3.15:1 */
+  --color-fg-faint: #77808f;
+  --color-fg-faintest: #2a3038;
+  --color-term: #c3c9d2;
+}
+
+:root {
+  /* channels, so accent alphas stay tied to the accent token */
+  --accent-rgb: 61 220 132;
+  --rail: 52%;
+  --rail-gap: clamp(28px, 4vw, 60px);
+  --pin-top: 26vh;
+  --term-body: clamp(280px, 40vh, 380px);
+  --term-h: calc(var(--term-body) + 60px);
+  /* distance a task card travels before its top meets the terminal bottom */
+  --step-start: calc(100vh - var(--pin-top) - var(--term-h));
+  --step-end: calc(100vh - var(--pin-top) - var(--term-h) + 140px);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* surfaces the browser would otherwise style for us */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  html {
+    scrollbar-color: var(--color-fg-faintest) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------- keyframes */
+@keyframes up {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes upSoft {
+  from { opacity: 0; transform: translateY(24px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes stepOn {
+  from { opacity: .35; }
+  to { opacity: 1; }
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes type {
+  from { width: 0; }
+  to { width: 12ch; }
+}
+@keyframes keysCycle {
+  0% { opacity: 0; transform: translateY(10px); }
+  18% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes keyPress {
+  0% { background: var(--color-ink-key); color: var(--color-fg); box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0); transform: translateY(0); }
+  30% { background: var(--color-accent); color: var(--color-ink); box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / .16); transform: translateY(2px); }
+  68% { background: var(--color-accent); color: var(--color-ink); box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / .10); transform: translateY(2px); }
+  100% { background: var(--color-ink-key); color: var(--color-fg); box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0); transform: translateY(0); }
+}
+@keyframes tabOff {
+  from { background: var(--color-ink); color: var(--color-accent); }
+  to { background: transparent; color: var(--color-ink); }
+}
+@keyframes tabOn {
+  from { background: transparent; color: var(--color-ink); }
+  to { background: var(--color-ink); color: var(--color-accent); }
+}
+@keyframes openRight {
+  from { flex-basis: 0%; opacity: 0; }
+  to { flex-basis: 46%; opacity: 1; }
+}
+@keyframes openBottom {
+  from { flex-basis: 0%; opacity: 0; }
+  to { flex-basis: 50%; opacity: 1; }
+}
+@keyframes paneFocusOff {
+  from { box-shadow: inset 0 0 0 1px var(--color-accent); }
+  to { box-shadow: inset 0 0 0 1px transparent; }
+}
+
+/* ------------------------------------------------------------ stage & rail */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.rail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rail-gap);
+}
+
+.sheet {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--color-ink-sheet) 0, var(--color-ink) 240px);
+  border-top: 1px solid rgb(255 255 255 / .16);
+  border-radius: 18px 18px 0 0;
+}
+
+/* Only the sheet's top edge is ever seen as an edge, so the lift is drawn just
+   above it. A box-shadow would spill past the bottom edge as well and smear a
+   band across the top of the lesson section. */
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 100% 0;
+  height: 130px;
+  background: linear-gradient(to top, rgb(0 0 0 / .9), transparent);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .stage {
+    timeline-scope: --hero, --levels, --step1, --step2, --step3;
+  }
+
+  .rail-grid {
+    grid-template-columns: minmax(0, 1fr) var(--rail);
+  }
+
+  .hero-section { view-timeline-name: --hero; }
+  .sheet { view-timeline-name: --levels; margin-top: 20vh; }
+
+  /* The heading holds while all three task cards scroll past behind it. It
+     sticks at top:0 with the offset as padding, so its opaque backing reaches
+     the viewport edge — stuck at 9vh instead leaves a gap above it where the
+     outgoing card stays visible. */
+  .lesson-section { padding-top: 0; }
+  .lesson-left { position: relative; }
+  .lesson-intro {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-top: 9vh;
+    padding-bottom: 20px;
+    background: var(--color-ink);
+  }
+  .lesson-steps { position: relative; z-index: 1; }
+
+  /* The sticky box sits at the terminal's BOTTOM edge and the terminal is drawn
+     upward from it. Anchoring the other way round makes the terminal hang below
+     the box, so it overruns whatever follows the stage unless the stage carries
+     a terminal's worth of padding — which reads as the terminal refusing to
+     leave. This way its bottom edge lands exactly on the stage's end. */
+  .pin {
+    position: sticky;
+    top: calc(var(--pin-top) + var(--term-h));
+    height: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .pin .rail-grid {
+    height: 0;
+    align-items: start;
+  }
+
+  /* draw the terminal upward from the sticky box rather than down from it */
+  .pin .terminal-wrap { transform: translateY(-100%); }
+
+  .terminal-static { display: none; }
+}
+
+/* ------------------------------------------------------------- static mode */
+/* No pinning: terminal sits inline after the hero copy, lesson gets its own. */
+@media (max-width: 1023px) {
+  .pin { order: 2; padding-top: 6vh; }
+  .hero-section { order: 1; }
+  .sheet { order: 3; }
+  .lesson-section { order: 4; }
+  /* the tall gaps only exist to give the pinned terminal scroll room */
+  .lesson-steps { gap: 32px; padding-top: 4vh; padding-bottom: 4vh; }
+  .terminal--live .win--3,
+  .terminal--live .keys { display: none; }
+  .terminal--live .layer--shell { opacity: 0; }
+  .terminal--live .layer--vim { opacity: 1; }
+}
+
+.no-scroll-motion .pin { order: 2; position: static; height: auto; padding-top: 6vh; pointer-events: auto; }
+.no-scroll-motion .hero-section { order: 1; }
+.no-scroll-motion .sheet { order: 3; margin-top: 0; }
+.no-scroll-motion .lesson-section { order: 4; }
+.no-scroll-motion .pin .rail-grid { height: auto; }
+.no-scroll-motion .pin .terminal-wrap { transform: none; }
+.no-scroll-motion .rail-grid { grid-template-columns: minmax(0, 1fr); }
+.no-scroll-motion .terminal--live .win--3,
+.no-scroll-motion .terminal--live .keys { display: none; }
+.no-scroll-motion .terminal--live .layer--shell { opacity: 0; }
+.no-scroll-motion .terminal--live .layer--vim { opacity: 1; }
+.no-scroll-motion .terminal-static { display: block; }
+.no-scroll-motion .lesson-steps { gap: 32px; padding-top: 4vh; padding-bottom: 4vh; }
+
+/* ---------------------------------------------------------------- terminal */
+.terminal-wrap { position: relative; }
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / .12);
+  border-radius: 16px;
+  background: var(--color-ink-raised);
+  box-shadow: 0 40px 90px rgb(0 0 0 / .6);
+}
+
+.terminal__bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgb(255 255 255 / .08);
+}
+
+.terminal__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-fg-faintest);
+}
+
+.terminal__title {
+  margin: 0 auto;
+  font: 12px var(--font-mono);
+  color: var(--color-fg-dim);
+}
+
+.terminal__body {
+  position: relative;
+  height: var(--term-body);
+  /* the pane splits animate flex-basis; contain keeps that relayout inside the
+     terminal instead of walking the whole document on every scroll frame */
+  contain: layout paint;
+  font: 13.5px/1.7 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-term);
+}
+
+.win {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  min-height: 0;
+}
+
+.win--3 { opacity: 0; }
+
+.pane { padding: 14px 18px; }
+.pane--main { position: relative; flex: 1 1 auto; min-width: 0; }
+.pane-col {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 46%;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid var(--color-accent);
+}
+.pane-col > .pane { min-height: 0; overflow: hidden; }
+.pane-col > .pane:first-child { flex: 1 1 auto; }
+.pane-col > .pane:last-child { flex: 0 0 50%; }
+
+/* window 0 is always split three ways; the divider can be permanent */
+.win--0 .pane-col > .pane:first-child { border-bottom: 1px solid var(--color-accent); }
+
+/* window 3's divider belongs to the bottom pane, so it only exists once that
+   pane is opened — otherwise it reads as a top/bottom split during task 2.
+   Padding lives on an inner box so flex-basis:0 collapses to nothing; padding
+   on the pane itself would floor its height and leave an empty pane showing. */
+.pane--lesson-bottom { padding: 0; border-top: 1px solid var(--color-accent); }
+.pane__inner { padding: 14px 18px; }
+
+.caret-gate { display: inline-block; }
+
+/* two carets share one slot so focus can leave the pane and come back */
+.caret-slot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  vertical-align: -3px;
+}
+.caret-slot .caret-gate { position: absolute; inset: 0; }
+.caret-gate--main-b { opacity: 0; }
+
+/* stacked focus rings, for the same reason */
+.ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+.ring--return { opacity: 0; }
+.terminal--lesson .ring--initial { opacity: 0; }
+
+.layer { position: absolute; inset: 0; padding: 14px 18px; }
+.layer--vim { opacity: 0; }
+
+.lesson-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+
+.prompt { color: var(--color-accent); }
+.muted { color: var(--color-fg-dim); }
+
+.typed {
+  display: inline-block;
+  width: 12ch;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.caret {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--color-fg);
+  vertical-align: -3px;
+  animation: blink 1s steps(1) infinite;
+}
+
+/* vim buffer */
+.vim__row { display: flex; gap: 14px; }
+.vim__ln { width: 2ch; text-align: right; color: var(--color-fg-faint); }
+.vim__tilde { color: var(--color-fg-faint); }
+.vim__status {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  gap: 16px;
+  padding: 2px 18px;
+  background: rgb(255 255 255 / .06);
+  font-size: 12px;
+  color: var(--color-fg-muted);
+}
+.vim__mode { color: var(--color-accent); font-weight: 600; }
+.vim__pos { margin-left: auto; }
+
+/* live log stream */
+.log { display: flex; flex-direction: column; }
+.log__line { display: flex; gap: 8px; font-size: 12.5px; white-space: nowrap; }
+.log__time { color: var(--color-fg-faint); }
+.log__path { color: var(--color-fg-dim); overflow: hidden; text-overflow: ellipsis; }
+.log__ok { color: var(--color-accent); }
+.log__bad { color: var(--color-alert); }
+.log__new { animation: fadeIn .5s ease both; }
+
+/* status bar */
+.terminal__status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  height: 24px;
+  padding: 0 10px;
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font: 12px var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.terminal__session { font-weight: 700; }
+.tab { padding: 0 6px; }
+.tab--active { background: var(--color-ink); color: var(--color-accent); }
+.terminal__clock { margin-left: auto; }
+
+.mark { position: relative; display: inline-block; width: 1ch; }
+.mark > span { position: absolute; left: 0; }
+.mark__dash { opacity: 0; }
+.tab--lesson .mark__star { opacity: 0; }
+.tab--lesson .mark__dash { opacity: 1; }
+
+/* keycap overlay */
+.keys {
+  position: absolute;
+  top: calc(100% + 22px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateX(-50%);
+  font: 500 13px var(--font-mono);
+}
+.key {
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / .14);
+  border-radius: 7px;
+  background: var(--color-ink-key);
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.keys__sep { color: var(--color-fg-faint); font-size: 12px; }
+.keys__label { color: var(--color-fg-dim); font-size: 12px; }
+
+/* the static copy renders the lesson window, already split */
+.terminal--lesson .win--0 { display: none; }
+.terminal--lesson .win--3 { opacity: 1; }
+.terminal--lesson .tab--editor { background: transparent; color: var(--color-ink); }
+.terminal--lesson .tab--editor .mark__star { opacity: 0; }
+.terminal--lesson .tab--editor .mark__dash { opacity: 1; }
+.terminal--lesson .tab--lesson { background: var(--color-ink); color: var(--color-accent); }
+.terminal--lesson .tab--lesson .mark__star { opacity: 1; }
+.terminal--lesson .tab--lesson .mark__dash { opacity: 0; }
+
+/* ------------------------------------------------- live scroll choreography */
+@media (min-width: 1024px) {
+  .terminal--live .typed {
+    animation: type steps(12, end) both;
+    animation-timeline: --hero;
+    animation-range: exit 4% exit 20%;
+  }
+
+  /* the two layers never overlap — shell is gone before vim starts drawing */
+  .terminal--live .layer--shell {
+    animation: fadeOut linear both;
+    animation-timeline: --hero;
+    animation-range: exit 16% exit 20%;
+  }
+
+  .terminal--live .layer--vim {
+    animation: fadeIn linear both;
+    animation-timeline: --hero;
+    animation-range: exit 20% exit 24%;
+  }
+
+  .terminal--live .keys {
+    animation: keysCycle linear both;
+    animation-timeline: --levels;
+    animation-range: entry 5% entry 25%;
+  }
+
+  .terminal--live .key--prefix {
+    animation: keyPress linear both;
+    animation-timeline: --levels;
+    animation-range: entry 8% entry 13%;
+  }
+
+  .terminal--live .key--window {
+    animation: keyPress linear both;
+    animation-timeline: --levels;
+    animation-range: entry 15% entry 20%;
+  }
+
+  .terminal--live .win--0 {
+    animation: fadeOut linear both;
+    animation-timeline: --levels;
+    animation-range: entry 19% entry 22%;
+  }
+
+  .terminal--live .win--3 {
+    animation: fadeIn linear both;
+    animation-timeline: --levels;
+    animation-range: entry 22% entry 25%;
+  }
+
+  .terminal--live .tab--editor {
+    animation: tabOff linear both;
+    animation-timeline: --levels;
+    animation-range: entry 22.5% entry 23.5%;
+  }
+
+  .terminal--live .tab--lesson {
+    animation: tabOn linear both;
+    animation-timeline: --levels;
+    animation-range: entry 22.5% entry 23.5%;
+  }
+
+  .terminal--live .tab--editor .mark__star,
+  .terminal--live .tab--lesson .mark__dash {
+    animation: fadeOut linear both;
+    animation-timeline: --levels;
+    animation-range: entry 22.5% entry 23.5%;
+  }
+
+  .terminal--live .tab--editor .mark__dash,
+  .terminal--live .tab--lesson .mark__star {
+    animation: fadeIn linear both;
+    animation-timeline: --levels;
+    animation-range: entry 22.5% entry 23.5%;
+  }
+
+  /* Each task drives the terminal from its own view timeline, so a step fires
+     exactly when that card's top edge reaches the terminal's bottom edge —
+     `cover <length>` measures from the card entering, and the offset below is
+     the distance it travels to get there, so it holds at any viewport height. */
+  .lesson-step { animation: stepOn linear both; }
+
+  .terminal--live .pane-col--lesson {
+    flex-basis: 0%;
+    opacity: 0;
+    animation: openRight linear both;
+    animation-timeline: --step1;
+  }
+
+  .terminal--live .pane--lesson-bottom {
+    flex-basis: 0%;
+    opacity: 0;
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    animation: openBottom linear both, paneFocusOff linear both;
+    animation-timeline: --step2, --step3;
+    animation-range: cover var(--step-start) cover var(--step-end),
+                     cover var(--step-start) cover var(--step-end);
+  }
+
+  .terminal--live .pane--lesson-top {
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    animation: paneFocusOff linear both;
+    animation-timeline: --step2;
+  }
+
+  /* focus leaves the main pane on task 2 and comes back on task 4; one property
+     can't do both, so the ring is two stacked overlays */
+  .terminal--live .ring--initial { animation: fadeOut linear both; animation-timeline: --step1; }
+  .terminal--live .ring--return { opacity: 0; animation: fadeIn linear both; animation-timeline: --step3; }
+
+  .terminal--live .caret-gate--main-a { animation: fadeOut linear both; animation-timeline: --step1; }
+  .terminal--live .caret-gate--main-b { opacity: 0; animation: fadeIn linear both; animation-timeline: --step3; }
+  /* nested gates: appears on task 3, then leaves again on task 4 */
+  .terminal--live .caret-gate--bottom-in { opacity: 0; animation: fadeIn linear both; animation-timeline: --step2; }
+  .terminal--live .caret-gate--bottom-out { animation: fadeOut linear both; animation-timeline: --step3; }
+
+  .terminal--live .lesson-hint {
+    opacity: 0;
+    animation: fadeIn linear both;
+    animation-timeline: --step3;
+  }
+
+  /* MUST come after the `animation` shorthands above — the shorthand resets
+     animation-range back to `normal`, silently discarding these offsets */
+  .lesson-step,
+  .terminal--live .pane-col--lesson,
+  .terminal--live .pane--lesson-top,
+  .terminal--live .ring,
+  .terminal--live .caret-gate,
+  .terminal--live .lesson-hint {
+    animation-range: cover var(--step-start) cover var(--step-end);
+  }
+}

@@ -1,0 +1,192 @@
+---
+interface Props {
+  mode?: 'live' | 'lesson';
+  class?: string;
+}
+
+const { mode = 'live', class: className = '' } = Astro.props;
+
+const seedLogs = [
+  { time: '14:11:02', method: 'GET', path: '/levels', status: '200', ms: '8ms' },
+  { time: '14:11:06', method: 'GET', path: '/assets/app.css', status: '200', ms: '3ms' },
+  { time: '14:11:11', method: 'POST', path: '/api/progress', status: '201', ms: '24ms' },
+];
+---
+<div class:list={['terminal-wrap', `terminal--${mode}`, className]}>
+  <div class="terminal">
+  <div class="terminal__bar">
+    <span class="terminal__dot"></span>
+    <span class="terminal__dot"></span>
+    <span class="terminal__dot"></span>
+    <span class="terminal__title">learn — tmux</span>
+  </div>
+
+  <div class="terminal__body">
+    <div class="win win--0">
+      <div class="pane pane--main">
+        <div class="layer layer--shell">
+          <div><span class="prompt">~</span> $ tmux new -s learn</div>
+          <div class="muted">[detached (from session learn)]</div>
+          <div><span class="prompt">~</span> $ tmux attach -t learn</div>
+          <div><span class="prompt">~</span> $ cd projects/api</div>
+          <div><span class="prompt">~</span> $ <span class="typed">vim notes.md</span><span class="caret"></span></div>
+        </div>
+        <div class="layer layer--vim">
+          <div class="vim__row"><span class="vim__ln">1</span><span class="muted"># tmux notes</span></div>
+          <div class="vim__row"><span class="vim__ln">2</span><span>- prefix is C-b</span></div>
+          <div class="vim__row"><span class="vim__ln">3</span><span>- windows are tabs, panes are splits</span></div>
+          <div class="vim__row"><span class="vim__ln">4</span><span class="caret"></span></div>
+          <div class="vim__row"><span class="vim__tilde">~</span></div>
+          <div class="vim__row"><span class="vim__tilde">~</span></div>
+          <div class="vim__status">
+            <span class="vim__mode">-- INSERT --</span>
+            <span>notes.md</span>
+            <span class="vim__pos">4,1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane-col">
+        <div class="pane">
+          <div><span class="prompt">~</span> $ npm run dev</div>
+          <div class="muted">ready on :3000</div>
+        </div>
+        <div class="pane">
+          <div><span class="prompt">~</span> $ tail -f app.log</div>
+          <div class="log" data-log-stream aria-hidden="true">
+            {seedLogs.map((entry) => (
+              <div class="log__line">
+                <span class="log__time">{entry.time}</span>
+                <span>{entry.method}</span>
+                <span class="log__path">{entry.path}</span>
+                <span class="log__ok">{entry.status}</span>
+                <span class="log__time">{entry.ms}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- in the live terminal this window is only ever revealed by opacity, which
+         leaves it in the accessibility tree; without this a screen reader reads
+         both window states as if they were on screen at once -->
+    <div class="win win--3" aria-hidden={mode === 'live' ? 'true' : undefined}>
+      <div class="pane pane--main pane--lesson-main">
+        <div><span class="prompt">~</span> $ ls</div>
+        <div class="muted">notes.md&nbsp;&nbsp;projects&nbsp;&nbsp;scratch</div>
+        <div><span class="prompt">~</span> $ git status -sb</div>
+        <div class="muted">## main...origin/main</div>
+        <div class="muted">&nbsp;M notes.md</div>
+        <div>
+          <span class="prompt">~</span> $
+          <span class="caret-slot">
+            <span class="caret-gate caret-gate--main-a"><span class="caret"></span></span>
+            <span class="caret-gate caret-gate--main-b"><span class="caret"></span></span>
+          </span>
+        </div>
+        <div class="lesson-hint">← cursor lands back here</div>
+        <span class="ring ring--initial"></span>
+        <span class="ring ring--return"></span>
+      </div>
+
+      <div class="pane-col pane-col--lesson">
+        <div class="pane pane--lesson-top">
+          <div><span class="prompt">~</span> $ htop</div>
+          <div class="muted">CPU [||||||&nbsp;&nbsp;&nbsp;&nbsp;28%]</div>
+        </div>
+        <div class="pane pane--lesson-bottom">
+          <div class="pane__inner">
+            <span class="prompt">~</span> $
+            <span class="caret-gate caret-gate--bottom-in">
+              <span class="caret-gate caret-gate--bottom-out"><span class="caret"></span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal__status">
+    <span class="terminal__session">[learn]</span>
+    <span class="tab tab--active tab--editor">0:editor<span class="mark"><span class="mark__star">*</span><span class="mark__dash">-</span></span></span>
+    <span class="tab">1:server-</span>
+    <span class="tab">2:logs</span>
+    <span class="tab tab--lesson">3:lesson<span class="mark"><span class="mark__star">*</span><span class="mark__dash">-</span></span></span>
+    <span class="terminal__clock">14:11</span>
+  </div>
+  </div>
+
+  {mode === 'live' && (
+    <div class="keys" aria-hidden="true">
+      <span class="key key--prefix">Ctrl</span>
+      <span class="keys__sep">+</span>
+      <span class="key key--prefix">b</span>
+      <span class="keys__sep">then</span>
+      <span class="key key--window">3</span>
+      <span class="keys__label">switch to window 3</span>
+    </div>
+  )}
+</div>
+
+<script>
+  const streams = document.querySelectorAll<HTMLElement>('[data-log-stream]');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (streams.length && !reduced) {
+    const routes = [
+      { method: 'GET', path: '/levels' },
+      { method: 'GET', path: '/api/session' },
+      { method: 'GET', path: '/cheatsheet' },
+      { method: 'GET', path: '/assets/term.woff2' },
+      { method: 'POST', path: '/api/progress' },
+      { method: 'GET', path: '/api/levels/2/tasks' },
+      { method: 'GET', path: '/assets/app.css' },
+      { method: 'POST', path: '/api/session/keys' },
+      { method: 'GET', path: '/favicon.svg' },
+    ];
+    const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+
+    streams.forEach((stream) => {
+      let clock = 14 * 3600 + 11 * 60 + 11;
+      let timer: ReturnType<typeof setTimeout>;
+
+      const append = () => {
+        clock += 1 + Math.floor(Math.random() * 6);
+        const hh = String(Math.floor(clock / 3600) % 24).padStart(2, '0');
+        const mm = String(Math.floor(clock / 60) % 60).padStart(2, '0');
+        const ss = String(clock % 60).padStart(2, '0');
+        const route = pick(routes);
+        const roll = Math.random();
+        const status = roll > 0.94 ? '404' : roll > 0.82 ? '304' : route.method === 'POST' ? '201' : '200';
+        const ms = `${1 + Math.floor(Math.random() * 60)}ms`;
+
+        const line = document.createElement('div');
+        line.className = 'log__line log__new';
+        line.innerHTML =
+          `<span class="log__time">${hh}:${mm}:${ss}</span>` +
+          `<span>${route.method}</span>` +
+          `<span class="log__path">${route.path}</span>` +
+          `<span class="${status === '404' ? 'log__bad' : 'log__ok'}">${status}</span>` +
+          `<span class="log__time">${ms}</span>`;
+
+        stream.append(line);
+        while (stream.childElementCount > 4) stream.firstElementChild?.remove();
+      };
+
+      const schedule = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          if (!document.hidden) append();
+          schedule();
+        }, 1600 + Math.random() * 2400);
+      };
+
+      schedule();
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearTimeout(timer);
+        else schedule();
+      });
+    });
+  }
+</script>
