@@ -1,43 +1,34 @@
-# Astro Starter Kit: Minimal
+# learntmux
 
-```sh
-bun create astro@latest -- --template minimal
-```
+Learn tmux by doing it, not reading about it — four short levels, 42 hands-on
+tasks, one real terminal in the browser. Live at [learntmux.dev](https://learntmux.dev).
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Built with [Astro](https://astro.build) and Tailwind CSS.
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+## Project structure
 
 ```text
 /
-├── public/
+├── public/            # static assets (favicon, og-image, robots.txt)
 ├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── components/    # Hero, Levels, Lesson, Terminal, CheatSheet, ...
+│   ├── layouts/       # Layout.astro — head, meta, JSON-LD
+│   ├── pages/         # index.astro
+│   └── styles/        # global.css
+└── astro.config.mjs
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Commands
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Run from the project root:
 
-Any static assets, like images, can be placed in the `public/` directory.
+| Command         | Action                                          |
+| :-------------- | :---------------------------------------------- |
+| `bun install`   | Install dependencies                            |
+| `bun dev`       | Start the dev server at `localhost:4321`        |
+| `bun build`     | Build the production site to `./dist/`          |
+| `bun preview`   | Preview the build locally before deploying      |
+| `bun astro ...` | Run CLI commands like `astro add`, `astro check` |
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Content is based on the official
+[tmux Getting Started guide](https://github.com/tmux/tmux/wiki/Getting-Started).

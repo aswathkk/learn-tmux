@@ -13,13 +13,13 @@ const ogImageURL = new URL('/og-image.png', Astro.site);
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Course',
-  name: 'tmux in minutes',
+  name: 'learntmux',
   description,
   url: canonicalURL.toString(),
   inLanguage: 'en',
   provider: {
     '@type': 'Organization',
-    name: 'tmux in minutes',
+    name: 'learntmux',
     url: Astro.site?.toString(),
   },
   hasCourseInstance: {
@@ -52,7 +52,7 @@ const jsonLd = {
     />
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="tmux in minutes" />
+    <meta property="og:site_name" content="learntmux" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />

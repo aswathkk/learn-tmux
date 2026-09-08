@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tmuxinminutes.com/sitemap-index.xml
+Sitemap: https://learntmux.dev/sitemap-index.xml

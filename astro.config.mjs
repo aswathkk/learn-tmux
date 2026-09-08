@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://tmuxinminutes.com',
+  site: 'https://learntmux.dev',
 
   vite: {
     plugins: [tailwindcss()]
