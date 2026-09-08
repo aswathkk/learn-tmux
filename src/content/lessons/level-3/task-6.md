@@ -13,13 +13,13 @@ keys:
     description: "Enable mouse support for every session"
   - key: ":bind MouseDown1Pane"
     command: "select-pane (mouse key binding)"
-    description: "Left click a pane to make it active; drag a border to resize; drag inside a pane to copy on release"
+    description: "Left click a pane to activate it; drag a border to resize; drag over text to copy"
   - key: ":bind MouseDown1Status"
     command: "select-window (mouse key binding)"
-    description: "Left click a window name in the status line to make it current; right click opens the pane, window or session menu"
+    description: "Click a window name in the status line to switch to it; right click opens a menu"
 wikiSections: ["Using the mouse", "Changing options"]
 challenge: false
-objective: "Enable the mouse, click the right pane of window 0 to activate it, click window 2 in the status line, then drag over some text so a buffer appears."
+objective: "Mouse on, right pane active, window `logs` current, and a drag has copied text."
 setup:
   - "printf 'left pane\\nright pane\\n' > /home/alpine/notes.txt"
   - "tmux new-session -d -s learn -n shell -x 120 -y 36 \"sh -c 'cat ~/notes.txt; exec sh'\""
@@ -51,39 +51,31 @@ checks:
     command: "list-buffers -F '#{buffer_name}'"
     expect: "^buffer"
 hints:
-  - "The mouse is off by default. Turn it on with the command prompt: `C-b :`, then type `set -g mouse on` and press Enter."
-  - "With the mouse on, left click the right pane to activate it, left click `logs` in the status line to switch windows, then left click and drag over a word in a pane and release."
-  - "No mouse forwarded? Use `C-b Right` for the pane, `C-b 2` for the window, and in copy mode (`C-b [`) select with `C-Space` then copy with `M-w` to fill a buffer."
-  - "Check the option with `:show-options -gv mouse`, it must read `on`, not `off`."
+  - "No mouse events reaching tmux? `C-b Right` for the pane, `C-b 2` for the window, and `C-b [` `C-Space` `M-w` for the buffer."
+  - "Turn it on first: `C-b :` then `set -g mouse on`. Nothing visibly changes."
+  - "Click the right pane; click `logs` in the status line; drag across a word and release."
 ---
-
-Reaching for arrow keys to switch panes works, but a terminal with mouse support built in should just let you click. tmux can hand off clicks and drags to the programs running inside it, or use them itself to move focus and copy text.
 
 ## Concept
 
-Mouse support is off by default and turned on with the `mouse` option. An option is a named setting the server, a session or a window holds; you change one with the `set-option` command, or `set` for short. `set -g` sets a global session option, which applies to every session unless something overrides it. Level 4 covers the different kinds of option in more detail.
+`set -g mouse on` at the prompt turns on mouse support. Then a click on a pane makes it active, a click on a window name in the status line switches to it, and dragging over text copies it into a buffer on release.
 
-Once `mouse` is on, tmux binds several mouse events to commands, the same way it binds keys. A left click on a pane runs `select-pane` and makes that pane active. A left click on a window name in the status line runs `select-window` and makes that window current. Dragging on a pane border resizes the pane, and dragging inside a pane selects text; releasing the button copies the selection into a buffer, the same kind of buffer copy mode fills from Level 3, Task 1. A right click on a pane, window or session name opens a menu of commands, each with its key shortcut shown in brackets.
+`mouse` is an option, a named setting on the server, a session or a window, changed with `set-option` (`set`). `-g` sets it globally for every session.
+
+With it on, mouse events are key bindings like any other: a click runs `select-pane` or `select-window`, a border drag runs `resize-pane`, and a right click opens a menu with each command's key shown.
 
 ## Do this
 
-1. Press `C-b :` to open the command prompt. Type `set -g mouse on` and press Enter. Nothing visibly changes yet.
-
-2. Left click the right pane of window 0, the one showing `right pane`. Its border highlights: that pane is now active.
-
-3. Left click `logs` in the status line. Window `logs` becomes current and its shell replaces the split view.
-
-4. Left click and hold on a word in the pane, drag across it, then release the button. The text is copied into a new buffer.
-
-**Done when** the mouse is on, the right pane of window 0 is active, window `logs` is current, and a drag has copied text into a buffer.
+1. Press `C-b :`, type `set -g mouse on`, Enter.
+2. Click the right pane, the one showing `right pane`. Its border highlights.
+3. Click `logs` in the status line. Window `logs` is current.
+4. Drag across a word in the pane and release. The text is now in a buffer.
 
 ## What just happened
 
-`set -g mouse on` sets the global `mouse` option, and tmux starts listening for mouse events from the terminal. Clicking the right pane ran `select-pane` with that pane as the target, the same command `C-b Right` runs from Level 1, Task 9, just chosen by position instead of direction. Clicking `logs` on the status line ran `select-window` targeting that window, in place of `C-b n` or a number key.
-
-The drag matters for the model too: dragging inside a pane selects text, and releasing the button copies it, so the pane border you release over decides which pane's scrollback gets read. The buffer this creates has an automatic name like `buffer0`, exactly as copying in copy mode does; `C-b ]` pastes it and `C-b =` lists it, both from Level 3, Task 2 and Task 3.
+The click ran `select-pane` with that pane as target, the same command `C-b Right` runs. The status line click ran `select-window`. The drag selected in copy mode and the release copied, making an automatic buffer that `C-b ]` would paste.
 
 ## Go further
 
-- `set -gu mouse` unsets the option and restores its default, off.
-- Holding `Shift` while dragging tells the terminal to do its own selection instead of sending the drag to tmux, useful for copying text into another application.
+- `set -gu mouse` unsets the option, back to off.
+- Hold Shift while dragging to let the terminal select text itself, for copying into another application.

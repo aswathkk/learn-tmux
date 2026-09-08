@@ -16,7 +16,7 @@ keys:
     description: "Do nothing on release; copy with the keyboard instead"
 wikiSections: ["Mouse copying behaviour", "Using the mouse", "Copy mode key bindings"]
 challenge: false
-objective: "Enable the mouse, make a mouse drag copy without clearing the selection, and copy the token line by dragging over it."
+objective: "Mouse on, `MouseDragEnd1Pane` copies without clearing, and the token line is in a buffer."
 setup:
   - "echo 'token: mouse-copy-4d9e2b' > /home/alpine/notes.txt"
   - "echo '# my tmux config' > /home/alpine/.tmux.conf"
@@ -39,64 +39,32 @@ checks:
     command: "list-buffers -F '#{buffer_sample}'"
     expect: "mouse-copy-4d9e2b"
 hints:
-  - "Turn the mouse on first: `:set -g mouse on`. Without it a drag just selects text in your terminal emulator, not in tmux."
-  - "The binding to change is `MouseDragEnd1Pane` in the `copy-mode` table: `:bind -Tcopy-mode MouseDragEnd1Pane send -X copy-selection-no-clear`."
-  - "Check the default first with `C-b /` or `tmux lsk -Tcopy-mode MouseDragEnd1Pane` from another pane: it runs `copy-pipe-and-cancel`, which is why a drag normally exits copy mode."
-  - "Once the mouse is on and the binding is set, hold the left button down on the `token:` line, drag across it, then release. If your terminal does not forward mouse drags to tmux, enter copy mode with `C-b [`, press `C-Space`, move to the end of the line, and press `M-w` instead."
+  - "Turn the mouse on first with `:set -g mouse on`; without it a drag selects in your terminal, not in tmux."
+  - "The binding is in the `copy-mode` table: `:bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear`."
+  - "Then drag across the `token:` line and release. No mouse events? `C-b [`, `C-Space`, `C-e`, `M-w` fills the buffer just as well."
 ---
-
-Dragging the mouse to select text in a pane is convenient, but by default tmux copies the selection and immediately leaves copy mode. That is often the wrong moment to lose your place.
 
 ## Concept
 
-Every mouse action in tmux is a key binding, the same as a key press. A drag inside a pane generates `MouseDragEnd1Pane` when the button is released, and that name is bound in a key table exactly like `C-a` or `M-w`. Level 3, Task 6 turned the `mouse` option on so tmux starts reading these events at all.
+A mouse drag ends with `MouseDragEnd1Pane`, a key like any other, bound in the `copy-mode` table to `copy-pipe-and-cancel`: copy, then leave copy mode. Rebind it to `copy-selection-no-clear` and a drag copies but keeps the selection and copy mode.
 
-The binding lives in the `copy-mode` key table, because releasing the mouse after a drag only means something while tmux is already in copy mode selecting text. Task 9 put vi-style bindings in `copy-mode-vi`; this server has not set `mode-keys vi`, so `copy-mode` is the table that matters here.
+Mouse events are bindings, so `bind`, `unbind` and `list-keys` work on them. The `copy-mode` table is the one that matters here because the drag has already put the pane in copy mode, and this server uses emacs keys.
 
-The default binding runs `copy-pipe-and-cancel`, a copy mode command from the table in the wiki's "Copy mode key bindings" section. It copies the selection to a buffer, pipes it to the configured command if there is one, and cancels copy mode, closing the pane back to normal view. That is why a drag both copies and exits in one motion.
-
-The wiki lists two more useful choices for `MouseDragEnd1Pane`: `copy-selection-no-clear`, which copies but leaves the selection highlighted and copy mode open, and an unbound key, which does nothing at all so only the keyboard can copy.
+Unbinding the event instead makes a drag only highlight; copying then needs the keyboard.
 
 ## Do this
 
-1. Attach to session `learn`. Window 0 runs `notes` and has already printed the file `notes.txt`, which ends with a line starting `token:`.
-
-2. Turn the mouse on.
-
-   ```text
-   :set -g mouse on
-   ```
-
-3. Check the current binding for the release event.
-
-   ```text
-   :list-keys -T copy-mode MouseDragEnd1Pane
-   ```
-
-   The command shown is `send-keys -X copy-pipe-and-cancel`.
-
-4. Rebind it so a drag copies without clearing the selection or leaving copy mode.
-
-   ```text
-   :bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear
-   ```
-
-5. Confirm the change with the same `list-keys` command from step 3. It now shows `copy-selection-no-clear`.
-
-6. Hold the left mouse button down at the start of the `token:` line, drag to its end, and release. The line stays highlighted and the pane stays in copy mode. If your terminal does not send mouse drags through to tmux, press `C-b [` to enter copy mode by hand, `C-Space` to begin a selection, move to the end of the line, then `M-w` to copy it.
-
-**Done when** the mouse option is on, `MouseDragEnd1Pane` in the `copy-mode` table runs `copy-selection-no-clear`, and a buffer holds the token line.
+1. Press `C-b :`, type `set -g mouse on`, Enter.
+2. Press `C-b :`, type `list-keys -T copy-mode MouseDragEnd1Pane`, Enter. It shows `copy-pipe-and-cancel`.
+3. Press `C-b :`, type `bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear`, Enter.
+4. Drag across the `token:` line and release. The line stays highlighted, the pane stays in copy mode, and a buffer holds it.
 
 ## What just happened
 
-`:set -g mouse on` set the session option that makes tmux read mouse events at all; without it a drag just selects text in the terminal emulator, never reaching tmux. `:bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear` is an ordinary `bind-key` command, the same one Task 3 used for regular keys, aimed at the `copy-mode` table and at a mouse event name instead of a key name.
-
-The command it now runs, `copy-selection-no-clear`, is passed with the `-X` flag to `send-keys`, exactly like every other copy mode command in the wiki's table (`cursor-down`, `search-again`, and so on). It copies the pane's selection into a buffer, the same buffer mechanism from Level 3, Task 1, but skips the `-cancel` step that the default binding performs, so the highlight and copy mode both stay put.
-
-Unbinding instead of rebinding, with `unbind -T copy-mode MouseDragEnd1Pane`, removes the release action entirely: a drag then only highlights text, and copying needs the keyboard, with `C-Space` and `M-w` from Level 3, Task 1.
+`bind -T copy-mode` wrote into the copy mode table with a mouse event as the key. The new command is a copy mode command sent with `-X`, like every other; it does the copy but skips the `-cancel` step the default performs.
 
 ## Go further
 
-- `copy-selection` (without `-no-clear`) copies and clears the highlight but leaves copy mode open, a middle ground between the two rebinds above.
-- The same approach works for other mouse events: `MouseDown1Pane`, `MouseDrag1Pane`, and the ones for the status line and pane borders, all listed under "Mouse key bindings" in the manual page.
-- Put the working binding in `~/.tmux.conf` with `echo` as in Task 2, so it survives the next time the server starts.
+- `copy-selection` copies and clears the highlight but stays in copy mode: a middle ground.
+- `MouseDown1Pane`, `MouseDrag1Pane` and the status line and border events are listed under "Mouse key bindings" in `man tmux`.
+- Put the working binding in `~/.tmux.conf` so it survives a restart.

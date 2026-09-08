@@ -14,8 +14,6 @@
 import type { CollectionEntry } from 'astro:content';
 
 export interface LessonSections {
-  /** Prose before the first heading. Usually the one-paragraph scene-setter. */
-  intro: string;
   concept: string;
   /**
    * The first paragraph of Concept, shown inline.
@@ -33,7 +31,6 @@ export interface LessonSections {
 }
 
 const EMPTY: LessonSections = {
-  intro: '',
   concept: '',
   conceptLead: '',
   conceptRest: '',
@@ -74,9 +71,6 @@ export function splitLessonHtml(html: string): LessonSections {
   const sections: LessonSections = { ...EMPTY };
   // Capture each <h2 ...>text</h2> and everything up to the next one.
   const pattern = /<h2\b[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2\b|$)/g;
-
-  const firstHeading = html.search(/<h2\b/);
-  sections.intro = (firstHeading === -1 ? html : html.slice(0, firstHeading)).trim();
 
   for (const match of html.matchAll(pattern)) {
     // Heading text can contain inline markup; strip it before matching.

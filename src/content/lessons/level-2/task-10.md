@@ -19,7 +19,7 @@ keys:
     description: "Run a command such as kill-session on every tagged item"
 wikiSections: ["Choosing sessions, windows and panes", "Killing a session, window or pane"]
 challenge: false
-objective: "Kill the windows scratch1 and scratch2 of learn from C-b w, then the sessions junk1 and junk2 from C-b s, leaving only learn with shell and logs."
+objective: "`learn` keeps only `shell` and `logs`, and is the only session left."
 setup:
   - "tmux new-session -d -s learn -n shell -x 120 -y 36"
   - "tmux new-window -d -t learn -n scratch1"
@@ -40,44 +40,31 @@ checks:
     command: "tmux ls -F '#{session_name}' | tr '\\n' ','"
     expect: "^learn,$"
 hints:
-  - "Open `C-b w`, move to `scratch1`, press `t` to tag it, move to `scratch2`, press `t` again, then press `X` and confirm."
-  - "Tagged items are bold with a `*` after the name. `X` kills every tagged item at once, not just the one under the cursor."
-  - "For the sessions, open `C-b s`, tag `junk1` and `junk2` with `t`, then press `:` and type `kill-session` followed by Enter."
-  - "Do not tag `learn` itself: killing the session you are attached to detaches your client."
+  - "Do not tag `learn` itself: killing the session you are attached to detaches you."
+  - "In the tree, `t` tags the selected item, `X` kills every tagged item after a confirmation. `:` runs a command once per tagged item."
+  - "`C-b w`: tag `scratch1` and `scratch2` with `t`, press `X`, `y`. Then `C-b s`: tag `junk1` and `junk2`, press `:`, type `kill-session`, Enter."
 ---
-
-Killing panes and windows one at a time with `C-b x` and `C-b &` is fine for one item. Tree mode can do several at once: tag what you want gone, then kill or command them together.
 
 ## Concept
 
-Tree mode, opened with `C-b w` or `C-b s` (Level 2, Task 9), lists sessions, windows and panes without needing the prefix key for its own controls. Beyond `Enter`, `Right` and `Left`, it has a tagging system built for bulk operations.
+In tree mode, `t` tags the selected item and `X` kills every tagged item after one confirmation. `:` opens a prompt and runs your command once for each tagged item, which is how you kill several sessions at once.
 
-Pressing `t` tags the item under the cursor; pressing `t` again untags it. A tagged item is drawn bold with a `*` after its name. `T` clears every tag, and `C-t` tags everything currently listed. Tags stick as you move the cursor with `Up` and `Down`, so you can walk down a list tagging several items in a row.
+Tagged lines are bold with a `*`. `T` clears all tags, `C-t` tags everything listed, and lowercase `x` kills only the selected item whatever is tagged.
 
-Two keys act on the tagged set. `X` kills every tagged item after asking for confirmation; `x` still kills only the single selected item, tags or no tags. `:` opens a command prompt and runs whatever you type once for the selected item, or once for each tagged item if any are tagged. This is how the wiki reaches `kill-session`: tree mode has no dedicated key for it, so you tag the sessions and run it from the `:` prompt.
+`X` runs `kill-window` or `kill-pane` for whichever level you tagged. There is no key for `kill-session`, so sessions go through the `:` prompt.
 
 ## Do this
 
-1. From the attached session `learn`, open `C-b w`. The tree shows `learn` expanded, its four windows listed below it.
-2. Move the cursor to `scratch1` with `Down` and press `t`. Its line turns bold with a `*`.
-3. Move to `scratch2` and press `t` as well. Two windows are now tagged; `shell` and `logs` are not.
-4. Press `X`. tmux asks for confirmation. Confirm with `y`. Both tagged windows close and you land back in `learn` with `shell` and `logs` left.
-5. Open `C-b s`. The tree lists sessions: `junk1`, `junk2` and `learn`, collapsed.
-6. Tag `junk1` and `junk2` with `t` on each. Do not tag `learn`.
-7. Press `:`. A prompt opens at the bottom for the tagged items. Type `kill-session` and press Enter. Both junk sessions close; you stay attached to `learn`.
-
-**Done when** window 0 of `learn` is `shell` and window 1 is `logs` with no scratch windows, and `learn` is the only session left on the server.
+1. Press `C-b w`. Move to `scratch1`, press `t`; move to `scratch2`, press `t`. Both turn bold.
+2. Press `X`, then `y`. Both windows close; `shell` and `logs` remain.
+3. Press `C-b s`. Tag `junk1` and `junk2` with `t`. Do not tag `learn`.
+4. Press `:`, type `kill-session`, Enter. Both sessions close; you stay on `learn`.
 
 ## What just happened
 
-`t` and `X` in tree mode are shorthand for tagging then running `kill-window` or `kill-pane` on every tagged entry, whichever level of the tree you tagged at. Confirming once covers the whole batch, so two windows closed together instead of two separate `C-b &` prompts.
-
-The `:` prompt in tree mode is different from the ordinary `C-b :` command prompt (Level 1, Task 4): here, if any items are tagged, the command you type runs once per tagged item instead of once. `kill-session` has no key binding anywhere in tmux, so tagging the sessions and typing it at this prompt is the only way to kill several sessions from the tree at once.
-
-Tagging `learn` itself would have been a mistake: `kill-session` kills the attached session and detaches the client running it, so killing your own session from inside it ends your terminal's view of tmux entirely. That is worse than `C-b &` on a single window (Level 2, Task 3), which only ever closes what you are looking at.
+Tagging then `X` ran one confirmed `kill-window` over the whole batch instead of two `C-b &` prompts. The `:` prompt inside tree mode differs from `C-b :`: with tags set, the command runs once per tagged item, each as its target.
 
 ## Go further
 
-- `C-t` tags every item currently listed, useful for "keep only this one" by tagging all then untagging the exception with `t`.
-- `T` clears all tags without leaving tree mode, if you tagged the wrong things.
-- The confirmation before `X` is the same `confirm-before` wrapper used by `C-b &` and `C-b x`.
+- `C-t` then untagging one item with `t` is the fast way to keep only that one.
+- The confirmation before `X` is the same `confirm-before` behind `C-b &` and `C-b x`.

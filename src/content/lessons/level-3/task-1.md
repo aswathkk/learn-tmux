@@ -19,7 +19,7 @@ keys:
     description: "Copy the selection into a new buffer and leave copy mode"
 wikiSections: ["Copy and paste", "Help keys"]
 challenge: false
-objective: "Copy the deploy key line from the notes shown in the pane into a paste buffer."
+objective: "A paste buffer holds the `deploy key` line."
 setup:
   - "printf 'line one\\nline two\\ndeploy key: deploy-key-7f3a9c2e\\nline four\\n' > /home/alpine/notes.txt"
   - "tmux new-session -d -s learn -n notes -x 120 -y 36 \"sh -c 'cat ~/notes.txt; exec sh'\""
@@ -36,41 +36,33 @@ checks:
     command: "list-buffers -F '#{buffer_sample}'"
     expect: "deploy-key-7f3a9c2e"
 hints:
-  - "Press `C-b [` to enter copy mode. The pane freezes and a position indicator appears in the top right."
-  - "Move the cursor onto the deploy key line with `Up` and `Down`, then `C-a` to reach the start of the line."
-  - "Press `C-Space` to start the selection, move to the end of the line with `C-e`, then press `M-w` to copy it."
-  - "If `C-Space` does nothing in your terminal, press `C-b :` and run `send-keys -X begin-selection` instead, then `C-e` and `M-w` as before."
+  - "If `C-Space` does nothing in your terminal, press `C-b :` and run `send-keys -X begin-selection` instead."
+  - "`C-b [` enters copy mode. `Up` and `Down` move; `C-a` and `C-e` go to the start and end of the line."
+  - "On the deploy key line: `C-a`, `C-Space`, `C-e`, then `M-w` to copy and leave."
 ---
-
-Scrolling back through a pane's output is one thing. Getting a line out of it and into your shell is another. tmux does this with copy mode and its own clipboard.
 
 ## Concept
 
-Copy mode is a mode a pane can be in, alongside the view mode you used in Level 1, Task 3 and the tree mode of Level 2, Task 9. It freezes whatever the pane is showing and turns the keyboard over to a set of keys for moving around and selecting text, none of which need the prefix. View mode is in fact a read-only form of copy mode: the same freeze, the same movement keys, but no selecting or copying.
+`C-b [` enters copy mode: the pane freezes and the cursor moves with the arrows, `C-a` to line start, `C-e` to line end. `C-Space` starts a selection, `M-w` copies it into a paste buffer and leaves copy mode.
 
-Copy mode uses emacs-style keys by default, the same style command mode uses. That is because the `VISUAL` and `EDITOR` environment variables are unset in this sandbox; tmux falls back to vi-style keys only when one of them names something containing `vi`. Level 4, Task 9 covers switching to vi keys on purpose.
+Copy mode is the read-and-select mode for a pane's screen and its scrollback. Its keys need no prefix. `q` leaves without copying; `C-g` drops a selection and stays.
 
-A piece of copied text is called a paste buffer. Each buffer tmux creates on its own gets an automatic name like `buffer0` or `buffer1`; up to 50 automatic buffers are kept, and the oldest is dropped once a new one would exceed that. Named buffers, covered in Task 4, are never dropped this way.
+The copied text becomes an automatic buffer, `buffer0`, `buffer1` and so on; tmux keeps the last 50. `C-w` copies like `M-w`, but many browsers close the tab on `C-w` first.
+
+The keys are emacs-style by default; a vi-style table exists too, and the `mode-keys` option switches between them.
 
 ## Do this
 
-1. Read the notes shown in the pane. One line reads `deploy key: deploy-key-7f3a9c2e`.
-2. Press `C-b [`. The pane freezes and a position indicator appears at the top right: you are now in copy mode.
-3. Move the cursor onto the deploy key line with `Up` and `Down`, then press `C-a` to put the cursor at the start of the line.
-4. Press `C-Space` to start a selection at the cursor.
-5. Press `C-e` to extend the selection to the end of the line.
-6. Press `M-w` to copy the selection into a new paste buffer. Copy mode ends and the pane unfreezes.
-
-**Done when** the pane has been in copy mode and a paste buffer holds the deploy key line.
+1. Press `C-b [`. The pane freezes and a position counter appears top right.
+2. Press `Up` until the cursor is on `deploy key: deploy-key-7f3a9c2e`, then `C-a`.
+3. Press `C-Space`, then `C-e`. The line highlights.
+4. Press `M-w`. The highlight goes, copy mode ends, and the line is in a buffer.
 
 ## What just happened
 
-`C-b [` runs the `copy-mode` command, which puts the active pane into copy mode without touching anything else in the session. `C-Space` runs `send-keys -X begin-selection`, marking the cursor's current position as one end of a selection; `C-a` and `C-e` are the same start-of-line and end-of-line moves the command prompt uses. `M-w` runs `send-keys -X copy-selection-and-cancel`, which copies the marked text into a new automatic buffer and cancels copy mode in one step. `C-w` does exactly the same thing; this lesson leads with `M-w` because some browsers treat `C-w` as "close this tab" before tmux ever sees it.
-
-The copy landed in a buffer named something like `buffer0`, since no name was given. Task 4 shows how to name a buffer with `set-buffer -n` so it survives longer than the automatic ones. If a selection goes wrong, `C-g` cancels it without copying and copy mode stays open, so you can start again.
+`C-b [` runs `copy-mode`. Inside, keys send copy mode commands: `C-Space` is `begin-selection` and `M-w` is `copy-selection-and-cancel`, both via `send-keys -X`. The copy landed in an automatic buffer, ready to paste.
 
 ## Go further
 
-- `C-b ?` lists every default key binding with its description, including the ones copy mode uses, and `C-b /` shows the description for one key you press next.
-- The manual page has the full copy mode key table for both emacs and vi styles, since only a handful are shown here.
-- `q` exits copy mode without copying anything, the same key that exits view mode.
+- `C-b ?` lists copy mode's keys along with everything else; `man tmux` has the full table for both key styles.
+- `q` leaves copy mode without copying.

@@ -19,7 +19,7 @@ keys:
     description: "Unset a global option, restoring its default"
 wikiSections: ["Types of option", "Showing options", "Changing options", "List of useful options"]
 challenge: false
-objective: "Set escape-time to 10, turn renumber-windows on and kill the middle window to see the list close up, then unset status-position so the status line returns to the bottom."
+objective: "`escape-time` 10, `renumber-windows` on with the gap closed, `status-position` back to bottom."
 setup:
   - "tmux new-session -d -s learn -n editor -x 120 -y 36"
   - "tmux new-window -d -t learn -n scratch"
@@ -48,75 +48,34 @@ checks:
     command: "show-options -gv status-position"
     expect: "^bottom$"
 hints:
-  - "Open the prompt with `C-b :`. Everything below is typed there, then Enter."
-  - "`show -g name` reads an option, `set -g name value` writes it. You don't need `-s` or `-w` when you give a name; tmux works out the type."
-  - "Turn `renumber-windows` on first, then `kill-window -t learn:1`. The list closes the gap by itself."
-  - "The last step is `set -gu status-position`. The `-u` unsets it, no value needed."
+  - "Everything is typed at `C-b :`. You do not need `-s` or `-w` when you name the option; tmux knows its type."
+  - "`show -g name` reads, `set -g name value` writes, `set -gu name` unsets."
+  - "`set -s escape-time 10`, `set -g renumber-windows on`, `kill-window -t :1`, `set -gu status-position`."
 ---
-
-Every part of tmux you have used so far, the prefix, the status line, key bindings, is controlled by an option. This task shows you how to read and change them directly, which is what a `.tmux.conf` does under the hood.
 
 ## Concept
 
-tmux is configured by setting options, and there are several types: server options affect the whole server, session options affect one or all sessions, window options affect one or all windows, pane options work the same way for panes, and user options are reserved for you and unused by tmux itself. Session and window options each have a global set plus a set for the specific session or window; when an option is missing from the specific set, tmux falls back to the global one.
+`show -g name` at the prompt reads an option and `set -g name value` writes it. `set -gu name` unsets it, back to the default. Every part of tmux you have used, from the prefix to the status line, is an option like these.
 
-You show an option with `show-options`, or `show` for short. `-s` shows server options, `-g` alone shows global session options, and `-g` with `-w` shows global window options. Giving a specific option name to `show-options` makes `-s` and `-w` unnecessary: tmux looks up the name and knows its type.
+Options come in types: server options apply to everything; session and window options have a global set plus overrides per session or window; pane options work like window ones. When you name the option, tmux knows which type it is, so `show` and `set` need only `-g`.
 
-`set-option`, or `set`, works the same way. `-g` is needed to change a global session or window option; for a server option it does nothing, since server options have no per-session or per-window copy to override. The `-u` flag unsets an option. Unsetting a global option restores its default value.
+`-g` matters on `set`: without it you change only the current session or window, and some options have no such override.
 
 ## Do this
 
-1. Open the command prompt with `C-b :` and check the status line's current position.
-
-   ```text
-   show -g status-position
-   ```
-
-   It reads `top`, which is why the status line is at the top of your screen right now.
-
-2. Open the prompt again and set the server option `escape-time` to 10 milliseconds.
-
-   ```text
-   set -s escape-time 10
-   ```
-
-   No output appears; the prompt just closes. `-s` marks it as a server option, though tmux would infer that from the name alone.
-
-3. Open the prompt and turn on `renumber-windows`, a session option.
-
-   ```text
-   set -g renumber-windows on
-   ```
-
-4. Look at the window list in the status line: `0:editor* 1:scratch 2:logs`. Open the prompt and kill window 1.
-
-   ```text
-   kill-window -t :1
-   ```
-
-5. Read the window list again. It now shows `0:editor* 1:logs`: window 2 moved down to close the gap left by window 1, because `renumber-windows` is on.
-
-6. Open the prompt one more time and unset `status-position`.
-
-   ```text
-   set -gu status-position
-   ```
-
-   The status line jumps back down to the bottom, its default position.
-
-**Done when** `escape-time` is 10, `renumber-windows` is on, killing window 1 left the list as `0` and `1` with no gap, and `status-position` is back to `bottom`.
+1. Press `C-b :`, type `show -g status-position`, Enter. It says `top`, which is where the bar is now.
+2. Press `C-b :`, type `set -s escape-time 10`, Enter. No output; the server option is set.
+3. Press `C-b :`, type `set -g renumber-windows on`, Enter.
+4. Press `C-b :`, type `kill-window -t :1`, Enter. The list goes from `0 1 2` to `0 1`: `logs` moved down to fill the gap.
+5. Press `C-b :`, type `set -gu status-position`, Enter. The bar jumps back to the bottom.
 
 ## What just happened
 
-`set -s escape-time 10` changed a server option, so it applies to every session on this server, not just `learn`. `set -g renumber-windows on` changed a global session option: `-g` was required here, because without it `set-option` would only try to override the value for whichever session was current, and `renumber-windows` has no per-session override to set.
-
-With `renumber-windows on`, `kill-window` did more than remove window 1. tmux renumbered every window after the gap so the indexes stay contiguous starting at 0, turning `0, 1, 2` into `0, 1`. Without that option, killing window 1 would have left a hole and window 2 would have kept its index.
-
-`set -gu status-position` shows what `-u` does: it removes your override of the global option, and the option reverts to the default that shipped with tmux, `bottom`. Unsetting is different from setting a value yourself; there is no need to remember what the default was.
+`escape-time` is a server option, so `-s` marked it and it applies everywhere. `renumber-windows` made `kill-window` renumber what was left instead of leaving index 2 in place. `-u` removed your override rather than setting a value, so `status-position` fell back to the shipped default without you needing to know it.
 
 ## Go further
 
-- `show -s` with no name lists every server option, and `show -g` or `show -wg` do the same for global session or window options; pipe to `less` if the pane is not tall enough.
-- `escape-time` exists because tmux has to tell an `Escape` keypress apart from the start of a longer escape sequence (arrow keys, function keys); 10ms is a common low-latency setting for local terminals.
-- `synchronize-panes`, also set with `set -g`, sends everything you type to every pane in the window at once. The wiki calls this out for special care, since a stray command goes everywhere.
-- `base-index`, a session option, changes where window numbering starts. Level 4's challenge task puts it to use.
+- `show -s`, `show -g` and `show -wg` with no name list every option of that type.
+- `escape-time` is how long tmux waits to tell Escape from the start of an arrow-key sequence; 10 ms suits local terminals.
+- `synchronize-panes on` sends your typing to every pane in the window at once. Handle with care.
+- `base-index 1` starts window numbering at 1.

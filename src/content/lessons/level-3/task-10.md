@@ -10,7 +10,7 @@ concepts: [find-window, copy-mode, search, named-buffers, save-buffer, paste, mo
 keys: []
 wikiSections: ["Finding windows and panes", "Copy and paste", "Using the mouse"]
 challenge: true
-objective: "Find the window that reported a crash, copy the tok- token from its scrollback, store it in a buffer named token, save that buffer to ~/token.txt, paste it into window 0 and leave the mouse enabled."
+objective: "Buffer `token` holds the token, saved to `~/token.txt` and pasted into window 0, with the mouse on."
 setup:
   - "seq 1 300 > /home/alpine/worker.log"
   - "echo 'FATAL auth failed token=tok-8a1f4c9e2b' >> /home/alpine/worker.log"
@@ -44,60 +44,33 @@ checks:
     command: "show-options -g -v mouse"
     expect: "^on$"
 hints:
-  - "`C-b f` searches the visible content of every pane, not the scrollback. The crash line is on screen; the token is not."
-  - "Once you are in the right window, `C-b [` then `C-r` searches backwards through the scrollback for text you type."
-  - "After `M-w` copies the token, rename `buffer0` with `:setb -bbuffer0 -ntoken`, then `:saveb -btoken ~/token.txt`."
-  - "Switch to window 0 with `C-b 0`, paste with `C-b ]`, then turn the mouse on with `:set -g mouse on`."
+  - "`C-b f` searches what is on screen, not the scrollback. The crash line is visible; the token is not."
+  - "In the right window, `C-b [` then `C-r` searches backward through the scrollback for text you type."
+  - "After `M-w`, rename with `:setb -b buffer0 -n token`, then `:saveb -b token ~/token.txt`."
+  - "`C-b 0`, `C-b ]` to paste, then `:set -g mouse on`."
 ---
-
-The pager went off. Some worker crashed and printed a token to its own scrollback before the crash notice pushed it off screen. An on-call engineer needs that token in a file and in the shell, right now.
 
 ## Concept
 
-This task chains together everything Level 3 taught: finding a window, searching scrollback in copy mode, naming and saving a buffer, and pasting it back out. Nothing new is introduced. The point is choosing the right tool at each step, the way an incident unfolds: you know something crashed, you don't know where, and the detail you need has already scrolled past.
+Nothing new. `C-b f` finds the window, `C-b [` and `C-r` find the line in its history, `C-Space` and `M-w` copy it, `setb -n` and `saveb` name and save the buffer, `C-b ]` pastes it, `set -g mouse on` finishes.
 
-`find-window` filters by what a pane shows right now, not by its full history. A crash message printed last is visible; a line printed earlier is not, even though it is in the same pane's scrollback. That gap is exactly what makes the token worth searching for separately once you have found the pane.
+The catch is the gap between the two searches: `find-window` reads what a pane shows now, so it finds the crash notice printed last, while the token printed earlier is only in the scrollback, where copy mode's search can reach it.
 
 ## Do this
 
-1. Look for the crash. Press `C-b f`, type `crashed`, and press Enter. Tree mode opens filtered to panes whose visible content, title, or window name matches. One pane matches: it is running the worker's log.
+Reach this state:
 
-2. Press Enter to jump to that window. The crash notice is the last line on screen; the token is further up, out of view.
-
-3. Enter copy mode and search backwards for it: press `C-b [`, then `C-r`, type `token=`, and press Enter. The cursor jumps to the `FATAL` line carrying `token=tok-8a1f4c9e2b`.
-
-4. Move the cursor to the start of `tok-8a1f4c9e2b`, press `C-Space` to start a selection, move to the end of the token, then press `M-w` to copy it and leave copy mode.
-
-5. Open the command prompt with `C-b :` and rename the automatic buffer:
-
-   ```text
-   setb -bbuffer0 -ntoken
-   ```
-
-6. Open the command prompt again and save the named buffer to a file:
-
-   ```text
-   saveb -btoken ~/token.txt
-   ```
-
-7. Switch to window 0 with `C-b 0`, then paste the token into its shell with `C-b ]`.
-
-8. Turn the mouse on for the rest of the session:
-
-   ```text
-   set -g mouse on
-   ```
-
-**Done when** a buffer named `token` holds the value, `~/token.txt` contains it, the shell in window 0 has it pasted in, and the mouse option is on.
+1. The window that printed `crashed` is current, found with `C-b f`.
+2. The `tok-` value from its scrollback is copied into a buffer.
+3. That buffer is named `token` and saved to `~/token.txt`.
+4. The token is pasted into the shell in window 0.
+5. The `mouse` option is on.
 
 ## What just happened
 
-`C-b f` runs `find-window` and filters tree mode by visible pane content, titles, and window names, which is why it found the crash line but not the token above it. `C-r` inside copy mode runs a backward incremental search through the pane's full scrollback, which is where the earlier line still lives.
-
-`M-w` runs `send-keys -X copy-selection-and-cancel`, dropping the selection into a fresh automatic buffer such as `buffer0`. `setb -bbuffer0 -ntoken` runs `set-buffer -b -n`, which renames that buffer to `token` and turns it into a named buffer, so it will not be recycled once 50 automatic buffers pile up. `saveb -btoken ~/token.txt` runs `save-buffer -b`, writing the buffer's contents straight to disk. Back in window 0, `C-b ]` runs `paste-buffer`, which pastes the most recently used buffer, still `token`, into the active pane. Finally, `set -g mouse on` runs `set-option -g mouse on`, so the session responds to clicks and drags for the rest of your work.
+`find-window` filtered by visible content; `search-backward-incremental` walked the full scrollback. `copy-selection-and-cancel` made `buffer0`; `set-buffer -n` turned it into a named buffer that will not be recycled; `save-buffer` wrote it out; `paste-buffer` typed it back in.
 
 ## Go further
 
-- `list-buffers` shows every buffer with `#{buffer_name}` and a sample of its text, useful for checking which one is current before pasting.
-- `load-buffer` is the reverse of `save-buffer`: it reads a file straight into a named buffer.
-- With the mouse on, dragging over text in a pane copies it the same way `M-w` does, without touching copy mode at all.
+- `list-buffers` shows every buffer and a sample of its text.
+- With the mouse on, a drag copies text the same way `M-w` does.

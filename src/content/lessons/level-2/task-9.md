@@ -19,7 +19,7 @@ keys:
     description: "Choose the selected session, window or pane; keys in tree mode need no prefix"
 wikiSections: ["Choosing sessions, windows and panes", "Sessions, windows and panes"]
 challenge: false
-objective: "Switch to session deploy with C-b s, then to window 1 of session build with C-b w."
+objective: "Attached to `deploy` by tree, then to `build` with window `output` current."
 setup:
   - "tmux new-session -d -s learn -n shell -x 120 -y 36"
   - "tmux new-window -d -t learn -n notes"
@@ -49,50 +49,29 @@ checks:
     command: "list-clients -F '#{client_session}'"
     expect: "^build$"
 hints:
-  - "Press `C-b s` to see every session in a tree. Move to `deploy` with `Down`, then press `Enter`."
-  - "Tree mode keys need no prefix once you are in it: just `Up`, `Down`, `Enter`, `Right`, `Left` and `q`."
-  - "Press `C-b w` for the window tree. `build` starts on window `make`; press `Right` on it to expand, move down to `output`, then press `Enter`."
-  - "If `Enter` on `build` lands you on `make` instead of `output`, you chose the session line instead of the window. Expand it first with `Right`."
+  - "Pressing Enter on a session line attaches to whichever window it already had current. Expand the session with `Right` and choose the window line."
+  - "`C-b s` lists sessions; `C-b w` lists windows too. Inside, `Up`, `Down`, `Right`, `Left`, `Enter` and `q` need no prefix."
+  - "`C-b s`, `Down` to `deploy`, Enter. Then `C-b w`, move to `output` under `build`, Enter."
 ---
-
-Three sessions are open: `learn`, `build` and `deploy`. Switching between them by name means remembering exact spellings, and jumping to one particular window means remembering its index too. Tree mode shows you everything at once and lets you point at what you want.
 
 ## Concept
 
-Tree mode is a mode where sessions, windows and panes are chosen from a tree instead of typed by name. It can browse the whole server, change the attached session or current window, and (Level 2, Task 10) kill or tag several items at once.
+`C-b s` opens a tree of sessions; `C-b w` opens it with windows shown. Move with `Up` and `Down`, expand with `Right`, collapse with `Left`, choose with `Enter`, leave with `q`. No prefix needed inside.
 
-Two keys open it. `C-b s` starts with just sessions listed, the attached session already selected. `C-b w` starts with sessions expanded so windows are shown too, the current window already selected.
+The top half is the tree, the bottom a preview of the selected item's panes. Choosing a session attaches you to it; choosing a window makes it current in its session and attaches you there.
 
-The screen splits into two halves: a tree of sessions, windows and panes on top, and a preview of the panes around the cursor on the bottom. For a session the preview shows its active panes; for a window, its panes; for a pane, just that pane.
-
-Like view mode (Level 1, Task 3), keys inside tree mode need no prefix. `Up` and `Down` move the selection. `Right` expands the selected item, so a session opens to show its windows. `Left` collapses it again. `Enter` chooses the selected item: on a session it becomes the attached session, on a window it becomes the current window, and either way tree mode exits. `q` exits without choosing anything.
+Tree mode is one of tmux's modes, like view mode: the pane's keys are borrowed until you leave.
 
 ## Do this
 
-1. Press `C-b s`. The window splits: a tree of sessions on top, a preview below. `learn` is selected, since it is the attached session.
-
-2. Press `Down` twice to move the selection down past `build` to `deploy`.
-
-3. Press `Enter`. Tree mode exits and the status line now reads `[deploy]`: you are attached to session `deploy`.
-
-4. Press `C-b w`. This time the tree starts expanded, showing every window under every session, with the current window of `deploy` selected.
-
-5. Move the selection up to the line for window `make` under `build`. Press `Right` to make sure `build` is expanded (it already is, from step 4), then move `Down` one line to `output`.
-
-6. Press `Enter`. The status line reads `[build]` and the window list shows `output` as the current window.
-
-**Done when** you are attached to session `deploy`, then attached to session `build` with window `output` current.
+1. Press `C-b s`. `learn` is selected. Press `Down` twice to `deploy`, then Enter. The status line reads `[deploy]`.
+2. Press `C-b w`. Every session shows its windows. Move to `output` under `build` and press Enter. The status line reads `[build]` with `output` current.
 
 ## What just happened
 
-`C-b s` runs `choose-tree -s`, opening tree mode with sessions collapsed. `C-b w` runs `choose-tree -w`, the same mode but with windows already expanded and the current window pre-selected. Both are the same underlying mode; the flags only change the starting view.
-
-Pressing `Enter` on a line in the tree runs the equivalent of `attach-session` for a session or `select-window` for a window, then closes the mode. That is why choosing `deploy` changed the attached session, while choosing `output` under `build` changed the current window of `build` without touching which session you were attached to at that point.
-
-A common mistake is pressing `Enter` on the session line itself instead of on one of its windows: that attaches you to whichever window was already current, not the one you wanted. Expand the session with `Right` first and move down onto the specific window line.
+`C-b s` runs `choose-tree -s`, `C-b w` runs `choose-tree -w`; same mode, different starting view. Enter on a session runs the equivalent of `attach-session`, and on a window `select-window`, then closes the mode.
 
 ## Go further
 
-- Each line in the tree shows a shortcut key in brackets: the first ten items get digits `0` to `9`, and the rest get `M-a` upward. Pressing that key chooses the item immediately, without moving the selection first.
-- `O` cycles the sort order of the tree, useful when many sessions or windows are open.
-- `<` and `>` scroll the preview left and right if a pane is wider than the space available.
+- Each line shows a shortcut in brackets, `0` to `9` then `M-a` on; pressing it chooses that item at once.
+- `O` cycles the sort order; `<` and `>` scroll a wide preview.

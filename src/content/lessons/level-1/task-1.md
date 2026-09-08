@@ -19,7 +19,7 @@ keys:
     description: "Name the first window instead of naming it after its program"
 wikiSections: ["Basic concepts", "The tmux server and clients", "Using tmux interactively", "Creating sessions", "The status line"]
 challenge: false
-objective: "Start a tmux session named learn and be attached to it with the green status line showing [learn] at the bottom."
+objective: "Be attached to a session named `learn`, with `[learn]` on the green status line."
 setup: []
 checks:
   - id: session-learn-exists
@@ -33,60 +33,31 @@ checks:
     command: "display-message -p -t learn '#{session_attached}'"
     expect: "^1$"
 hints:
-  - "The command is `new-session`, or `new` for short. Run it from the shell prompt, not from inside tmux."
-  - "The `-s` flag sets the session name. The name has to be exactly `learn`."
-  - "If the status line shows `[0]`, type `exit` and press Enter to close that session, then run `tmux new -s learn -n shell`."
+  - "Run it at the plain shell prompt, not inside tmux. If the status line already shows `[0]`, type `exit` first."
+  - "`tmux new -s learn` names the session; `-n shell` names its first window."
+  - "The full command is `tmux new -s learn -n shell`."
 ---
-
-You are logged in to the build box and every long job dies the moment your connection drops. tmux fixes that, and the first step is to start a session.
 
 ## Concept
 
-tmux keeps all its state in a single main process called the tmux server. It runs in the background and manages every program running inside tmux. It starts the first time you run a tmux command and by default exits when no programs are left running.
+`tmux new -s name` starts tmux and drops you into a session called `name`. The green bar at the bottom is the status line: `[learn]` on the left is the session, `0:shell*` next to it is its one window.
 
-You talk to the server through a client. A client takes over the terminal where it runs and talks to the server through a socket file in `/tmp`.
+tmux runs as a server in the background, and your terminal talks to it through a client. The server holds sessions; a session holds windows; a window holds panes; a pane runs a program, usually a shell. The server starts on your first tmux command and exits when nothing is left running in it.
 
-The programs the server manages are grouped into sessions. A session has one or more windows, a window has one or more panes, and a pane is where a program such as a shell runs. This task uses one of each.
-
-The command that creates a session is `new-session`, or `new` for short. With no arguments it creates a session called `0`, then `1`, and so on. The `-s` flag gives the session a name. The first window is named after whatever is running in it unless you pick a name with the `-n` flag.
-
-While a client is attached, the bottom line of the screen is the green status line.
+Without `-s` the session is called `0`, then `1`, and so on. Without `-n` the first window is named after the program running in it, `sh` here.
 
 ## Do this
 
-1. At the shell prompt, run the command below. The screen clears, the shell prompt moves to the top and a green status line appears at the bottom.
-
-   ```bash
-   tmux new
-   ```
-
-2. Read the left end of the status line. It says `[0]`: tmux started the server, created a session called `0` and attached this terminal to it as a client.
-
-3. Read the middle. It says `0:sh*`: one window at index 0, named `sh` after the program running in it, and the `*` marks the current window. On the right is the pane title in quotes, which defaults to the host name, then the time and the date.
-
-4. Type `exit` and press Enter. The shell ends, so its window and session close. Nothing is left running, so the server exits too and you are back at the plain shell.
-
-5. Create the session for this level, naming both the session and its first window.
-
-   ```bash
-   tmux new -s learn -n shell
-   ```
-
-6. Check the status line. The left end now reads `[learn]` and the window list reads `0:shell*`. Stay attached.
-
-**Done when** a session named `learn` exists and your terminal is attached to it.
+1. Run `tmux new`. The screen clears and a green status line appears, reading `[0] 0:sh*`: session `0`, one window named after the shell.
+2. Type `exit`. The shell ends, the session with it, and you are back at the plain prompt.
+3. Run `tmux new -s learn -n shell`. The status line now reads `[learn] 0:shell*`. Stay attached.
 
 ## What just happened
 
-`tmux new` runs the `new-session` command. There was no server, so tmux started one, created the session and made the tmux you ran from the shell the first client. The session got one window at index 0 with a single pane running a shell, hence `sh` in the window list.
-
-Typing `exit` ended that shell, and with nothing left to manage the server went away too. Level 1, Task 5 introduces `C-b d`, which leaves a session without closing anything in it.
-
-The second command used two flags. `-s learn` set the session name, so the status line shows `[learn]`. `-n shell` named window 0, so the window list shows `0:shell` instead of `0:sh`. You will use `-n` again in Level 1, Task 6.
-
-Two mistakes are common. Plain `tmux new` gives a session called `0`: type `exit` and run it again with `-s learn`. Running `tmux new` while already inside tmux is refused with an error (a duplicate session, or a warning that sessions should be nested with care). Run it at the plain shell.
+`tmux new` runs `new-session`. There was no server, so tmux started one, made a session with one window and one pane, and attached your terminal to it. `exit` ended the shell, then the pane, the window and the session, and the server quit because nothing was left in it. `-s` and `-n` only changed the names.
 
 ## Go further
 
-- A flag and its argument can be written together: `tmux new -slearn` is the same as `tmux new -s learn`.
-- Extra arguments name a program to run instead of a shell: from a plain shell, `tmux new -s monitor -n top top` starts a session whose window runs `top`.
+- Extra arguments run a program instead of a shell: `tmux new -s monitor -n top top`.
+- A flag and its value can be joined: `-slearn` is the same as `-s learn`.
+- Running `tmux new` while already inside tmux is refused. Leaving a session running is detaching, not exiting.

@@ -19,7 +19,7 @@ keys:
     description: "Remove a binding completely"
 wikiSections: ["Key bindings", "Help keys", "Changing the current window"]
 challenge: false
-objective: "Bind a prefix key that selects window 10 and press it, bind | to split left/right and - to split top/bottom, bind M-n in the root table to next-window, then unbind the window-10 key."
+objective: "A key selected window 10 and was unbound; `|` and `-` split; `M-n` switches windows with no prefix."
 setup:
   - "tmux new-session -d -s learn -n shell -x 120 -y 36"
   - "tmux new-window -d -t learn:10 -n far"
@@ -57,28 +57,23 @@ checks:
     command: "tmux list-keys -T prefix M-0 >/dev/null 2>&1 && echo bound || echo unbound"
     expect: "^unbound$"
 hints:
-  - "Every key binding lives in a key table. Open the command prompt with `C-b :` and run `bind-key` to add one."
-  - "The command is `bind M-0 selectw -t:=10`. Type it at the prompt, press Enter, then press `C-b M-0` to try it."
-  - "For a key that works without the prefix, add `-n` to `bind-key`. Put the `|`, `-` and `M-n` bindings in `~/.tmux.conf` and load it with `:source ~/.tmux.conf`, same as Level 4, Task 2."
-  - "To remove the window-10 binding completely, run `unbind M-0` at the command prompt. `list-keys -T prefix` should no longer mention it."
+  - "`-n` means no prefix. Leave it off `|` and `-`, or they fire on every keystroke."
+  - "`bind M-0 selectw -t:=10` at the prompt, then press `C-b M-0` to use it."
+  - "Put the three `bind` lines in `~/.tmux.conf` with `open ~/.tmux.conf`, then `:source ~/.tmux.conf`. Finish with `:unbind M-0`."
 ---
-
-`C-b c`, `C-b z` and every other key you have pressed is a line in a key table. You can add your own, and remove any binding that gets in your way.
 
 ## Concept
 
-A key binding maps a key to a command. tmux keeps them in four default key tables. The `root` table holds keys pressed with no prefix at all, the same table `C-b` itself is not in. The `prefix` table holds keys pressed after the prefix, which is everything you have used until now. `copy-mode` and `copy-mode-vi` hold the keys active inside copy mode.
+`bind key command` adds a prefix binding: `bind M-0 selectw -t:=10` makes `C-b M-0` jump to window 10. `bind -n key command` binds without the prefix. `unbind key` removes a binding. `list-keys -T prefix key` shows what a key does.
 
-`bind-key` adds or replaces a binding. Written with no `-T` flag it targets the `prefix` table, so `bind-key M-0 selectw -t:=10` makes `C-b M-0` run `select-window -t :=10`. The `-t` target uses `:=10`, where `:` means the target is a window and `=` means match the name or index exactly, so it jumps to window 10 and nothing else. `bind-key` needs no confirmation and silently replaces whatever was there before. The `-n` flag is shorthand for `-T root`, so `bind-key -n M-n next-window` makes plain `M-n` run `next-window` with no prefix at all.
+Bindings live in key tables: `prefix` for keys after `C-b`, `root` for keys with no prefix (`-n` is short for `-T root`), and `copy-mode` and `copy-mode-vi` inside copy mode. `bind` silently replaces whatever the key did before.
 
-`list-keys`, `C-b /`, is how you check a table before trusting it. `list-keys -T prefix` prints every prefix binding as a `bind-key` command; give it a single key, like `list-keys -T prefix 9`, to see just that one. `unbind-key` removes a binding outright; you only need it when a key should do nothing, since binding over an old key already replaces it.
+In `-t :=10`, `:` says the target is a window and `=` demands an exact match on index 10. In the file, `|` needs no quoting; only the shell treats it specially.
 
 ## Do this
 
-1. Press `C-b :` to open the command prompt. Type `bind M-0 selectw -t:=10` and press Enter. Nothing appears to change yet.
-2. Press `C-b M-0`. The window list on the status line now shows window 10 as current.
-3. Press `C-b :` again and run `list-keys -T prefix M-0`. It prints back the `bind-key` line you just created.
-4. Open `~/.tmux.conf` with `open ~/.tmux.conf` and add three lines:
+1. Press `C-b :`, type `bind M-0 selectw -t:=10`, Enter. Then press `C-b M-0`. Window 10, `far`, is current.
+2. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    bind | split-window -h
@@ -86,20 +81,15 @@ A key binding maps a key to a command. tmux keeps them in four default key table
    bind -n M-n next-window
    ```
 
-   Save and quit. `|` needs no quoting here because the configuration file, unlike the shell, does not treat it specially.
-5. Press `C-b :`, run `source ~/.tmux.conf`, and press Enter. The three new bindings are now live in the running server, same as Level 4, Task 2.
-6. Press `C-b :` once more and run `unbind M-0`. Run `list-keys -T prefix M-0` again: it now reports an unknown key, because the binding is gone.
-
-**Done when** a prefix key selects window 10 and you have pressed it, `|` and `-` split the window, `M-n` changes windows with no prefix, and the window-10 key no longer has a binding.
+3. Press `C-b :`, type `source ~/.tmux.conf`, Enter. `C-b |` now splits; plain `M-n` changes window.
+4. Press `C-b :`, type `unbind M-0`, Enter. `list-keys -T prefix M-0` now reports an unknown key.
 
 ## What just happened
 
-Step 1 ran `bind-key`, which by default writes into the `prefix` table, so the new key needed `C-b` first, same as every default binding. `select-window -t :=10` is the same command the wiki shows behind `C-b 9`, just aimed at window 10 instead. Step 4 put two more `bind-key` commands and one `bind-key -n` command into the configuration file. `-n` is shorthand for `-T root`, tmux's table for keys with no prefix, so `M-n` alone now runs `next-window`, the command behind `C-b n`.
-
-Step 6 used `unbind-key` to delete the window-10 binding entirely. `bind-key` alone would have been enough to change it to something else, since a new `bind-key` silently overwrites whatever key it names; `unbind-key` is for when you want the key to do nothing at all afterward.
+Each `bind` wrote into the `prefix` table, so the keys needed `C-b` first; `-n` wrote `M-n` into `root`, so it needs nothing. `unbind` deleted the window-10 binding outright, where another `bind` would only have replaced it.
 
 ## Go further
 
-- `list-keys` with no `-T` lists every table at once; `list-keys -N` shows the short help text instead of the raw commands, the same text `C-b ?` shows.
-- Binding over `C-b t` (`bind t clock-mode`, its own default) shows the replace-on-bind behaviour without adding anything new; `unbind t` then removes clock mode from the prefix table until you bind it again.
-- A common mistake is adding `-n` when you meant a prefix binding, which then fires on every keystroke in every pane. Check `list-keys -T root` after any new binding that should still need `C-b`.
+- `list-keys` with no table lists everything; `-N` shows the help text `C-b ?` uses.
+- `bind t clock-mode` is its own default; binding over it shows how silently a bind replaces.
+- `list-keys -T root` after any new `-n` binding is the way to catch one that fires on every keystroke.
