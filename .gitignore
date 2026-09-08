@@ -31,3 +31,7 @@ pnpm-debug.log*
 # Regenerate with `bun run guest:fetch` then `bun run guest:build` (see guest/README.md).
 public/vm/
 guest/build/
+
+# wrangler's local state: simulated R2, caches. `wrangler pages dev` fills this
+# with a copy of the guest machine.
+.wrangler/

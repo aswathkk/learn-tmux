@@ -1,0 +1,17 @@
+# Cloudflare Pages header rules.
+#
+# These apply only to paths Pages serves as static assets. /vm/* is owned by a
+# Pages Function (functions/vm/[[path]].ts) and never reaches this file — the
+# guest machine's caching and content types live there.
+#
+# Every rule below matches a disjoint set of URLs, and that is load-bearing: a
+# request matching two rules inherits both, and a header named by both is
+# *joined with a comma* rather than overridden.
+
+# Astro fingerprints everything it emits here — scripts, styles and the
+# self-hosted font files — so the bytes behind one of these URLs can never
+# change. A rebuild publishes new names rather than new content, which is
+# exactly the case `immutable` exists for: no conditional request on a repeat
+# visit, for any of it.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

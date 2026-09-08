@@ -101,6 +101,7 @@ a lesson grading itself.
 | `bun run guest:fetch` | Download v86, SeaBIOS and the kernel |
 | `bun run guest:build` | Build the guest rootfs (needs Docker with `linux/386`) |
 | `bun run guest:state` | Regenerate the boot snapshot |
+| `bun run guest:publish` | Upload the guest machine to R2 (needs `wrangler login`) |
 
 Lesson content is based on the official
 [tmux Getting Started guide](https://github.com/tmux/tmux/wiki/Getting-Started).

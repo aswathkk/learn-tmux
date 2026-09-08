@@ -13,7 +13,8 @@
     "astro": "astro",
     "guest:fetch": "./guest/fetch-assets.sh",
     "guest:build": "./guest/build.sh",
-    "guest:state": "bun run guest/make-state.ts 64 public/vm/state.bin"
+    "guest:state": "bun run guest/make-state.ts 64 public/vm/state.bin.zst",
+    "guest:publish": "./guest/publish.sh"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20260908.1",
     "typescript": "^6"
   }
 }

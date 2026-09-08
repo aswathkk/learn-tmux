@@ -1,4 +1,6 @@
 // @ts-check
+import { rm } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
@@ -12,6 +14,35 @@ const site = 'https://learntmux.dev';
  * see scripts/content-index.mjs.
  */
 const { lessonSlugs, datesBySlug } = buildContentIndex();
+
+/**
+ * Drop the guest machine from the build output.
+ *
+ * public/vm/ has to sit in public/ so `astro dev` serves it, but in production
+ * /vm/* is a Pages Function reading from R2 (functions/vm/[[path]].ts), and a
+ * Function takes precedence over a static asset at the same path. Copying the
+ * files anyway would upload 22 MB per deploy that nothing can ever reach.
+ *
+ * The escape hatch is for `astro preview`, which serves dist/ and so has no
+ * guest without them: KEEP_VM_ASSETS=1 bun run build.
+ *
+ * @returns {import('astro').AstroIntegration}
+ */
+function dropGuestAssets() {
+  return {
+    name: 'learntmux:drop-guest-assets',
+    hooks: {
+      'astro:build:done': async ({ dir, logger }) => {
+        if (process.env.KEEP_VM_ASSETS) {
+          logger.info('keeping vm/ in the build output (KEEP_VM_ASSETS)');
+          return;
+        }
+        await rm(fileURLToPath(new URL('vm/', dir)), { recursive: true, force: true });
+        logger.info('dropped vm/ from the build output; /vm/* is served from R2');
+      },
+    },
+  };
+}
 
 /**
  * The date the author gave the page behind a URL, or undefined if it has none.
@@ -81,6 +112,7 @@ export default defineConfig({
   },
 
   integrations: [
+    dropGuestAssets(),
     sitemap({
       // Anything thin or duplicated is noindex in the page head, so it must not
       // be advertised here either.

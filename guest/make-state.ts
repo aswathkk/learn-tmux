@@ -20,7 +20,20 @@ import { zstdCompressSync, constants as zlibConstants } from 'node:zlib';
 // number is the one the browser ends up with. 64 MB leaves room for a few panes
 // and costs about 1 MB of snapshot.
 const MEMORY_MB = Number(process.argv[2]) || 64;
-const OUT = process.argv[3] || 'public/vm/state.bin';
+
+/**
+ * The only snapshot the site serves. libv86 decompresses by URL suffix, so the
+ * browser asks for the .zst and never for the raw state; publishing both would
+ * put 28 MB into the deploy that nothing ever fetches.
+ */
+const OUT = process.argv[3] || 'public/vm/state.bin.zst';
+
+/**
+ * The uncompressed snapshot, for reading with a hex editor when the guest wakes
+ * up wrong. Written under guest/build/ rather than public/vm/ precisely so it
+ * stays out of the deploy.
+ */
+const RAW_OUT = 'guest/build/state.bin';
 
 // Not import.meta.dir: that is Bun-only, and this file is type-checked
 // against the standard lib alongside the rest of the repo.
@@ -114,20 +127,19 @@ async function snapshot(): Promise<void> {
   const bootSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
   const state: ArrayBuffer = await emulator.save_state();
 
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, Buffer.from(state));
+  mkdirSync(dirname(RAW_OUT), { recursive: true });
+  writeFileSync(RAW_OUT, Buffer.from(state));
 
-  // libv86 decompresses by URL suffix, so the browser only ever needs the .zst.
-  // The raw file stays for local work.
   const packed = zstdCompressSync(Buffer.from(state), {
     params: { [zlibConstants.ZSTD_c_compressionLevel]: 19 },
   });
-  writeFileSync(OUT + '.zst', packed);
+  mkdirSync(dirname(OUT), { recursive: true });
+  writeFileSync(OUT, packed);
 
   const mb = (bytes: number) => (bytes / 1e6).toFixed(1);
   console.log(
-    `${MEMORY_MB}MB  boot=${bootSeconds}s  raw=${mb(statSync(OUT).size)} MB  ` +
-      `zstd=${mb(packed.length)} MB  ${OUT}[.zst]`,
+    `${MEMORY_MB}MB  boot=${bootSeconds}s  raw=${mb(statSync(RAW_OUT).size)} MB (${RAW_OUT})  ` +
+      `zstd=${mb(packed.length)} MB (${OUT})`,
   );
   process.exit(0);
 }

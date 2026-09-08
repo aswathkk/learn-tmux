@@ -1,6 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "comment": "public/ holds v86's generated UMD bundle and dist/ is build output; neither is ours to type-check. .astro must stay includable: it is where the content collection types are generated.",
-  "exclude": ["dist", "public"]
+  "comment": "public/ holds v86's generated UMD bundle and dist/ is build output; neither is ours to type-check. .astro must stay includable: it is where the content collection types are generated. functions/ runs on workerd and is checked against its own lib by functions/tsconfig.json, because the workers globals and the DOM ones disagree about Response and Headers.",
+  "exclude": ["dist", "public", "functions"]
 }

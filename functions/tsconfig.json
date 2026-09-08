@@ -1,0 +1,11 @@
+{
+  "comment": "Pages Functions run on workerd, not in a browser. Their globals collide with the DOM lib the site is checked against — Response and Headers differ — so they are excluded from the root tsconfig and checked here instead.",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": []
+}
