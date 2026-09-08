@@ -1,0 +1,35 @@
+---
+/**
+ * The brand lockup: split-pane mark + `learn` / `tmux` / `.dev`.
+ * Guide v1 §02 — mono only, never a sans, never recoloured.
+ *
+ * Every part is sized in em off `size`, at the guide's own ratios (9px cell /
+ * 2px gap / 1.5px radius / 11px lockup gap against a 21px wordmark), so `size`
+ * can be a clamp() and the mark tracks it. Keep the result at or above the
+ * 96px minimum wordmark width.
+ */
+interface Props {
+  /** any CSS length; the guide's site-header lockup is 21px */
+  size?: string;
+  class?: string;
+}
+
+const { size = '21px', class: className } = Astro.props;
+---
+<span
+  class:list={['inline-flex items-center', className]}
+  style={`font-size:${size};gap:.5238em`}
+>
+  <span
+    aria-hidden="true"
+    class="grid flex-none"
+    style="grid-template-columns:repeat(2,.4286em);grid-template-rows:repeat(2,.4286em);gap:.0952em"
+  >
+    <span class="row-span-2 rounded-[.0714em] bg-accent"></span>
+    <span class="rounded-[.0714em] bg-accent opacity-60"></span>
+    <span class="rounded-[.0714em] bg-accent opacity-30"></span>
+  </span>
+  <span class="whitespace-nowrap font-mono font-semibold leading-none tracking-[-.02em]">
+    <span class="text-fg-dim">learn</span><span class="text-fg">tmux</span><span class="text-accent">.dev</span>
+  </span>
+</span>

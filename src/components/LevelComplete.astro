@@ -30,7 +30,7 @@ const newKeys = [
           class="relative grid h-14 w-14 flex-none place-items-center rounded-full"
           style="background:conic-gradient(var(--color-accent) 100%, rgba(255,255,255,.08) 0);"
         >
-          <div class="grid h-11 w-11 place-items-center rounded-full bg-ink-raised font-mono text-[18px] font-bold text-accent">
+          <div class="grid h-11 w-11 place-items-center rounded-full bg-ink-raised font-mono text-[18px] font-semibold text-accent">
             ✓
           </div>
         </div>
@@ -47,8 +47,8 @@ const newKeys = [
         You can shape a workspace now.
       </h2>
       <p class="m-0 max-w-[46ch] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
-        Renamed, zoomed, resized, killed and re-laid-out panes — and used the command prompt
-        without touching the mouse once.
+        You renamed, zoomed, resized, killed and re-laid-out panes, and used the command
+        prompt without touching the mouse once.
       </p>
 
       <div class="grid grid-cols-3 gap-[10px]">
@@ -57,7 +57,7 @@ const newKeys = [
             <div class:list={['font-mono text-2xl font-semibold leading-none tracking-[-.02em]', s.accent && 'text-accent']}>
               {s.value}
             </div>
-            <div class="mt-[6px] text-xs text-fg-dim">{s.label}</div>
+            <div class="mt-[6px] text-[13px] text-fg-dim">{s.label}</div>
           </div>
         ))}
       </div>
@@ -83,7 +83,7 @@ const newKeys = [
           </div>
         ))}
       </div>
-      <div class="mt-auto flex items-center justify-between pt-[10px] text-[12.5px] text-fg-dim">
+      <div class="mt-auto flex items-center justify-between pt-[10px] text-[13px] leading-[1.5] text-fg-dim">
         <span>Next: Level 3 · 11 tasks · ~12 min</span>
         <span class="font-medium text-fg">Download PDF</span>
       </div>

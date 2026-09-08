@@ -1,4 +1,5 @@
 ---
+import Wordmark from './Wordmark.astro';
 ---
 <section
   id="hero"
@@ -9,10 +10,7 @@
   ></div>
 
   <nav class="relative mx-auto flex max-w-[1200px] items-center justify-between py-[26px]">
-    <div class="flex items-center gap-[10px] whitespace-nowrap text-[15px] font-bold">
-      <span class="h-[10px] w-[10px] flex-none rounded-full bg-accent"></span>
-      learntmux
-    </div>
+    <a href="/" aria-label="learntmux.dev — home"><Wordmark size="clamp(17px, 4.4vw, 21px)" /></a>
     <div class="flex items-center gap-[26px] text-sm font-medium">
       <span class="hidden items-center gap-[26px] md:flex">
         <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
@@ -41,7 +39,7 @@
       </h1>
       <p class="m-0 max-w-[46ch] text-lg leading-[1.55] text-fg-muted [text-wrap:pretty]">
         Short levels from your first session to your own config. Every task happens in a
-        live terminal — we watch it and tick things off the moment you get them right.
+        live terminal. We watch it and tick things off the moment you get them right.
       </p>
       <div class="flex flex-wrap items-center gap-3">
         <a href="#levels" class="rounded-[10px] bg-accent px-[22px] py-[14px] text-[15px] font-bold text-ink">

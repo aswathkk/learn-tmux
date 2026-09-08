@@ -40,7 +40,7 @@ const steps = [
         The terminal stays put. It changes as you do.
       </h2>
       <p class="m-0 mt-[14px] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
-        Still the same session you started at the top of the page — window
+        Still the same session you started at the top of the page: window
         <span class="font-mono text-fg">3:lesson</span>, opened when you pressed the prefix.
         Every task below drives it.
       </p>
@@ -60,12 +60,12 @@ const steps = [
             <span class="text-fg-dim">then</span>
             <span class="rounded-[6px] border border-white/[.12] bg-ink-key px-[10px] py-[6px]">{step.keys[1]}</span>
             {step.watching ? (
-              <span class="ml-auto flex items-center gap-[6px] text-xs font-medium text-accent">
+              <span class="ml-auto flex items-center gap-[6px] font-mono text-xs font-medium text-accent">
                 <span class="h-[6px] w-[6px] rounded-full bg-accent"></span>
                 {step.badge}
               </span>
             ) : (
-              <span class="ml-auto text-xs font-medium text-accent">{step.badge}</span>
+              <span class="ml-auto font-mono text-xs font-medium text-accent">{step.badge}</span>
             )}
           </div>
         </div>
