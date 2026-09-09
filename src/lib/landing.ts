@@ -22,8 +22,13 @@ export interface LandingLevel {
   ordinal: string;
   href: string;
   count: number;
-  minutes: number;
   keyCount: number;
+  /**
+   * Roughly how long one task in this level takes. The per-task figure is the
+   * one the card shows: a level total reads as a commitment, and nobody has to
+   * make one to start.
+   */
+  perTaskMinutes: number;
   /** The first few key bindings the level teaches, for the card. */
   keys: string[];
   /** Where the level starts. */
@@ -36,19 +41,36 @@ export interface LandingCompletion {
   level: Level;
   lessonTitle: string;
   href: string;
-  minutes: number;
+  perTaskMinutes: number;
   /** The bindings this level adds to the cheat sheet. */
   keys: Array<{ key: string; description: string }>;
   keyCount: number;
   taskCount: number;
 }
 
+/**
+ * The one task a first-time visitor is being asked to do. Naming it, and how
+ * long it takes, is the whole ask — the course total is not.
+ *
+ * The objective and the keys come with it so the page can show the task itself
+ * rather than only promising one. Both are the lesson's own, so neither can
+ * describe a task that is no longer there.
+ */
+export interface LandingFirstTask {
+  title: string;
+  minutes: number;
+  href: string;
+  /** The lesson's end state, as inline markdown. */
+  objective: string;
+  keys: Array<{ key: string; description: string }>;
+}
+
 export interface LandingContent {
   stats: CourseStats;
-  hours: string;
   levels: LandingLevel[];
   /** Where a first-time visitor starts. */
   startHref: string;
+  firstTask: LandingFirstTask;
   completion: LandingCompletion;
   cheatSheet: {
     rows: CheatSheetRow[];
@@ -58,12 +80,21 @@ export interface LandingContent {
   };
 }
 
-/** "2h 52m", or "52m" under an hour. Used wherever the course length is quoted. */
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (!hours) return `${rest}m`;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+/**
+ * A challenge's title without its "Challenge:" prefix.
+ *
+ * Challenge lessons title themselves "Challenge: tidy a messy session", which
+ * is right on the lesson page and doubles up wherever a label already says the
+ * word — "Ends with a challenge: Challenge: tidy a messy session".
+ */
+function challengeTitle(title: string): string {
+  return title.replace(/^challenge:\s*/i, '');
+}
+
+/** Minutes per task, rounded, never zero. Always quoted as an approximation. */
+function perTask(minutes: number, count: number): number {
+  if (count <= 0) return minutes;
+  return Math.max(1, Math.round(minutes / count));
 }
 
 /** At most `limit` key bindings taught in this set of lessons, de-duplicated. */
@@ -92,8 +123,8 @@ export async function getLandingContent(): Promise<LandingContent> {
     ordinal: String(summary.level.n).padStart(2, '0'),
     href: levelPath(summary.level),
     count: summary.count,
-    minutes: summary.minutes,
     keyCount: summary.keyCount,
+    perTaskMinutes: perTask(summary.minutes, summary.count),
     keys: keysOf(summary.lessons, 5),
     startHref: summary.lessons[0] ? lessonPath(summary.lessons[0]) : levelPath(summary.level),
     slugs: summary.lessons.map((lesson) => lesson.data.slug),
@@ -110,16 +141,27 @@ export async function getLandingContent(): Promise<LandingContent> {
       (entry, index, all) => all.findIndex((other) => other.key === entry.key) === index,
     );
 
+  const opener = summaries[0]?.lessons[0];
+
   return {
     stats,
-    hours: formatDuration(stats.minutes),
     levels,
     startHref: levels[0]?.startHref ?? '/',
+    firstTask: {
+      title: opener?.data.title ?? 'Start your first session',
+      minutes: opener?.data.estimatedMinutes ?? 3,
+      href: opener ? lessonPath(opener) : (levels[0]?.startHref ?? '/'),
+      objective: opener?.data.objective ?? '',
+      keys: (opener?.data.keys ?? []).map((entry) => ({
+        key: entry.key,
+        description: entry.description,
+      })),
+    },
     completion: {
       level: completionLevel.level,
-      lessonTitle: finale.data.title,
+      lessonTitle: challengeTitle(finale.data.title),
       href: lessonPath(finale),
-      minutes: completionLevel.minutes,
+      perTaskMinutes: perTask(completionLevel.minutes, completionLevel.count),
       keys: completionKeys
         .slice(0, 6)
         .map((entry) => ({ key: entry.key, description: entry.description })),

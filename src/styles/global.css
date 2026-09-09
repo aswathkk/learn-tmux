@@ -319,7 +319,11 @@
 /* ------------------------------------------------------------- static mode */
 /* No pinning: terminal sits inline after the hero copy, lesson gets its own. */
 @media (max-width: 1023px) {
-  .pin { order: 2; padding-top: 6vh; }
+  /* The terminal follows the hero copy directly on a phone. At 6vh, with the
+     hero's own bottom padding under it, the first screen ended in ~170px of
+     nothing and the terminal — the only proof of the claim above it — started
+     below the fold. */
+  .pin { order: 2; padding-top: 3vh; }
   .hero-section { order: 1; }
   .sheet { order: 3; }
   .lesson-section { order: 4; }
@@ -331,7 +335,7 @@
   .terminal--live .layer--vim { opacity: 1; }
 }
 
-.no-scroll-motion .pin { order: 2; position: static; height: auto; padding-top: 6vh; pointer-events: auto; }
+.no-scroll-motion .pin { order: 2; position: static; height: auto; padding-top: 3vh; pointer-events: auto; }
 .no-scroll-motion .hero-section { order: 1; }
 .no-scroll-motion .sheet { order: 3; margin-top: 0; }
 .no-scroll-motion .lesson-section { order: 4; }

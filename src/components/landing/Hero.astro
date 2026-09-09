@@ -2,39 +2,46 @@
 /**
  * The hero.
  *
- * Every number on it is counted from the lessons at build time. The nav points
- * at pages that exist, and the primary action goes to the first task rather
- * than to an anchor further down the page.
+ * One ask, stated small: the first task, by name, with the minutes it takes.
+ * The course total is deliberately absent — the whole course is not what anyone
+ * is being asked to agree to here, and quoting hours in the first screen turns
+ * a three-minute try into a decision.
+ *
+ * There is one button and nothing beside it competing for the eye. Everything
+ * that was a second and third way in — the playground, the levels, the counts —
+ * is either in the nav above or further down the page, where someone who wants
+ * it will look for it.
  */
 import Wordmark from '../ui/Wordmark.astro';
-import { formatDuration } from '../../lib/landing';
-import type { CourseStats } from '../../lib/lessons';
+import type { LandingFirstTask } from '../../lib/landing';
 
 interface Props {
-  stats: CourseStats;
   startHref: string;
-  levelCount: number;
+  firstTask: LandingFirstTask;
 }
 
-const { stats, startHref, levelCount } = Astro.props;
-
-const facts = [
-  { value: formatDuration(stats.minutes), label: 'end to end' },
-  { value: '0', label: 'installs' },
-  { value: String(stats.keys), label: 'shortcuts' },
-];
+const { startHref, firstTask } = Astro.props;
 ---
 <section
   id="hero"
-  class="hero-section relative overflow-hidden px-5 pb-[8vh] sm:px-[clamp(20px,5vw,72px)] lg:min-h-screen lg:pb-0"
+  class="hero-section relative overflow-hidden px-5 pb-[4vh] sm:px-[clamp(20px,5vw,72px)] lg:min-h-screen lg:pb-0"
 >
   <div
     class="pointer-events-none absolute -inset-x-[10%] bottom-[4%] top-auto h-[46%] [background:radial-gradient(ellipse_at_50%_50%,rgb(var(--accent-rgb)/.09),transparent_70%)]"
   ></div>
 
-  <nav class="relative mx-auto flex max-w-[1200px] items-center justify-between py-[26px]">
-    <a href="/" aria-label="learntmux.dev — home"><Wordmark size="clamp(17px, 4.4vw, 21px)" /></a>
-    <div class="flex items-center gap-[26px] text-sm font-medium">
+  {/* Three navs on the page — this one and the footer's two — so it says which. */}
+  <nav
+    aria-label="Main"
+    class="relative mx-auto flex max-w-[1200px] items-center justify-between gap-3 py-[26px]"
+  >
+    {/*
+      The lower clamp bound is set by the narrowest phone, not by taste: at
+      320px the wordmark and the resume button are the only two things in this
+      row and they add up to more than the row.
+    */}
+    <a href="/" aria-label="learntmux.dev — home"><Wordmark size="clamp(15px, 4.4vw, 21px)" /></a>
+    <div class="flex shrink-0 items-center gap-[26px] text-sm font-medium">
       <span class="hidden items-center gap-[26px] md:flex">
         <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
         <a href="/playground" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Playground</a>
@@ -50,9 +57,9 @@ const facts = [
       <a
         href={startHref}
         data-resume-link
-        class="inline-flex min-h-[44px] items-center whitespace-nowrap rounded-lg bg-fg px-4 font-semibold text-ink"
+        class="inline-flex min-h-[44px] items-center whitespace-nowrap rounded-lg bg-fg px-3 font-semibold text-ink sm:px-4"
       >
-        <span data-resume-label>Start Level 1</span>
+        <span data-resume-label>Start task 1</span>
       </a>
     </div>
   </nav>
@@ -60,7 +67,7 @@ const facts = [
   <div class="rail-grid relative mx-auto max-w-[1200px] items-start">
     <div class="flex flex-col gap-[26px] pt-[3vh]">
       <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">
-        {levelCount} LEVELS · {stats.lessons} TASKS · REAL TERMINAL
+        REAL TMUX · IN THIS TAB · NOTHING TO INSTALL
       </span>
       <h1
         class="m-0 font-bold [text-wrap:balance]"
@@ -69,48 +76,32 @@ const facts = [
         Learn tmux by doing it, not reading about it.
       </h1>
       <p class="m-0 max-w-[46ch] text-lg leading-[1.55] text-fg-muted [text-wrap:pretty]">
-        Short levels from your first session to your own config. Every task happens in a real
-        tmux session running in this tab. We watch it and tick things off the moment you get
-        them right.
+        A real tmux session runs in this tab. You type, it watches, and the list ticks itself
+        off the moment you get it right. Nothing to install, no account.
       </p>
-      <div class="flex flex-wrap items-center gap-3">
-        <a
-          href={startHref}
-          class="rounded-[10px] bg-accent px-[22px] py-[14px] text-[15px] font-bold text-ink"
-        >
-          Start the first task
-        </a>
-        <a
-          href="#levels"
-          class="rounded-[10px] border border-line-strong px-[18px] py-[14px] text-[15px] font-semibold"
-        >
-          See the levels ↓
-        </a>
-        {/*
-          Not everyone arriving here wants to be taught. The third way in is a
-          terminal with nothing attached to it, which is also the page people
-          search for by name.
-        */}
-        <a href="/playground" class="py-[14px] text-[15px] text-fg-dim underline decoration-line-strong hover:text-accent">
-          Or just open a terminal
-        </a>
+      {/*
+        The loudest button on the page has to know what the nav knows. Grouped
+        with its caption so the two are rewritten together: a button offering to
+        resume above a line promising task one is worse than either alone.
+      */}
+      <div class="flex flex-col gap-3" data-resume-group>
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <a
+            href={startHref}
+            data-resume-link
+            class="rounded-[10px] bg-accent px-[26px] py-[16px] text-base font-bold text-ink"
+          >
+            <span data-resume-label>Start the first task</span> <span aria-hidden="true">→</span>
+          </a>
+          <a href="#levels" class="py-[14px] text-[15px] text-fg-dim underline decoration-line-strong hover:text-accent">
+            See the levels
+          </a>
+        </div>
+        {/* What is actually behind the button, so pressing it is not a leap. */}
+        <p class="m-0 text-[13px] text-fg-dim" data-resume-sub>
+          First one up: <span class="text-fg-muted">{firstTask.title}</span> · about {firstTask.minutes} minutes
+        </p>
       </div>
-      <dl class="flex gap-7 pt-[6px] text-[13px] text-fg-dim">
-        {
-          facts.map((fact) => (
-            /*
-              Definition order stays dt-then-dd for assistive tech; `order`
-              flips them visually so the number reads first. Labelling it twice
-              — once visibly, once for screen readers — made it announce as
-              "end to end 3h 2m end to end".
-            */
-            <div class="flex items-baseline gap-[6px]">
-              <dt class="order-2">{fact.label}</dt>
-              <dd class="order-1 m-0 font-mono text-[18px] font-semibold text-fg">{fact.value}</dd>
-            </div>
-          ))
-        }
-      </dl>
     </div>
     <div aria-hidden="true"></div>
   </div>

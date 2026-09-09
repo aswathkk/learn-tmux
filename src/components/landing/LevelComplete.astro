@@ -9,7 +9,7 @@
  * belong to their run of the level, not to a page describing it.
  */
 import Kbd from '../ui/Kbd.astro';
-import { formatDuration, type LandingCompletion } from '../../lib/landing';
+import type { LandingCompletion } from '../../lib/landing';
 
 interface Props {
   completion: LandingCompletion;
@@ -17,16 +17,21 @@ interface Props {
 
 const { completion } = Astro.props;
 
+/*
+  The value stays a number and the unit moves into the label. "~4 min" as the
+  value broke across two lines inside a third of a 375px panel, which is the one
+  width these tiles have to hold.
+*/
 const stats = [
   { value: String(completion.taskCount), label: 'tasks' },
-  { value: formatDuration(completion.minutes), label: 'about' },
+  { value: `~${completion.perTaskMinutes}`, label: 'min a task' },
   { value: `+${completion.keyCount}`, label: 'shortcuts banked', accent: true },
 ];
 ---
 
 <section id="level-complete" class="mx-auto max-w-[1200px] px-5 py-[16vh] sm:px-[clamp(20px,5vw,72px)]">
   <div
-    class="relative grid overflow-hidden rounded-[22px] border border-white/10 bg-ink-raised [animation-range:entry_0%_entry_60%] [animation-timeline:view()] [animation:upSoft_linear_both] md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+    class="relative grid overflow-hidden rounded-[22px] border border-line-strong bg-ink-raised [animation-range:entry_0%_entry_60%] [animation-timeline:view()] [animation:upSoft_linear_both] md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
   >
     <div class="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--color-accent),transparent)]"></div>
     <div class="pointer-events-none absolute inset-x-0 -top-[140px] h-[280px] [background:radial-gradient(closest-side_at_50%_50%,rgb(var(--accent-rgb)/.16),transparent)]"></div>
@@ -35,7 +40,7 @@ const stats = [
       <div class="flex items-center gap-[14px]">
         <div
           class="relative grid h-14 w-14 flex-none place-items-center rounded-full"
-          style="background:conic-gradient(var(--color-accent) 100%, rgba(255,255,255,.08) 0);"
+          style="background:conic-gradient(var(--color-accent) 100%, var(--color-line) 0);"
         >
           <div class="grid h-11 w-11 place-items-center rounded-full bg-ink-raised font-mono text-[18px] font-semibold text-accent">
             ✓
@@ -65,7 +70,7 @@ const stats = [
       <dl class="grid grid-cols-3 gap-[10px]">
         {
           stats.map((stat) => (
-            <div class="rounded-xl border border-line bg-ink px-4 py-[14px]">
+            <div class="rounded-xl border border-line bg-ink px-3 py-[14px] sm:px-4">
               <dd
                 class:list={[
                   'm-0 font-mono text-2xl font-semibold leading-none tracking-[-.02em]',
@@ -93,7 +98,7 @@ const stats = [
       </div>
     </div>
 
-    <div class="relative flex flex-col gap-[14px] border-l border-line bg-ink p-7 sm:p-[clamp(28px,4vw,52px)]">
+    <div class="relative flex flex-col gap-[14px] border-line bg-ink p-7 max-md:border-t sm:p-[clamp(28px,4vw,52px)] md:border-l">
       <div class="flex items-baseline justify-between">
         <span class="text-sm font-semibold">Added to your cheat sheet</span>
         <span class="font-mono text-[11px] font-medium text-fg-dim">

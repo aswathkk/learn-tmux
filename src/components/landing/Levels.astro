@@ -11,7 +11,6 @@
  * anyone without JavaScript.
  */
 import type { LandingLevel } from '../../lib/landing';
-import { formatDuration } from '../../lib/landing';
 
 interface Props {
   levels: LandingLevel[];
@@ -38,13 +37,13 @@ const { levels, totalTasks } = Astro.props;
         </h2>
       </div>
       <p class="m-0 max-w-[44ch] text-base leading-[1.55] text-fg-muted [text-wrap:pretty]">
-        Each level takes about ten minutes a sitting and ends with a challenge that combines
-        what you just did. Start anywhere, and nothing is locked.
+        Start anywhere. Nothing is locked, nothing has to be finished in one sitting, and every
+        task stands on its own. Each level ends with a challenge that combines what you just did.
       </p>
     </div>
 
     {/* Course-wide progress. Zero-width until the client knows better. */}
-    <div class="relative h-[2px] overflow-hidden rounded-[1px] bg-white/[.08]">
+    <div class="relative h-[2px] overflow-hidden rounded-[1px] bg-line">
       <div
         class="absolute inset-y-0 left-0 w-0 bg-accent transition-[width] duration-700"
         data-course-progress
@@ -59,7 +58,7 @@ const { levels, totalTasks } = Astro.props;
           <li>
             <a
               href={entry.href}
-              class="group flex h-full min-h-[340px] flex-col gap-[14px] rounded-2xl border border-white/10 bg-ink-card p-6 transition-colors hover:border-accent/40"
+              class="group flex h-full min-h-[340px] flex-col gap-[14px] rounded-2xl border border-line-strong bg-ink-card p-6 transition-colors hover:border-accent/40"
               data-level-card
               data-slugs={entry.slugs.join(' ')}
               style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${index * 5}% entry ${45 + index * 5}%;`}
@@ -83,15 +82,19 @@ const { levels, totalTasks } = Astro.props;
               </ul>
 
               <div class="mt-auto flex flex-col gap-[10px] pt-4">
-                <div class="h-[3px] overflow-hidden rounded-[2px] bg-white/[.08]">
+                <div class="h-[3px] overflow-hidden rounded-[2px] bg-line">
                   <div
                     class="h-full w-0 bg-accent transition-[width] duration-700"
                     data-level-progress
                   >
                   </div>
                 </div>
+                {/*
+                  Per task, not per level: the level total is the number that
+                  makes people close the tab.
+                */}
                 <span class="font-mono text-[11px] text-fg-faint">
-                  {formatDuration(entry.minutes)} · {entry.keyCount} keys
+                  ~{entry.perTaskMinutes} min a task · {entry.keyCount} keys
                 </span>
               </div>
             </a>

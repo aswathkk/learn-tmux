@@ -1,0 +1,55 @@
+---
+/**
+ * The start button, kept within reach.
+ *
+ * The page is several screens tall and the hero's button is off-screen for
+ * nearly all of it. This one follows the reader once the hero has gone, and
+ * gets out of the way again over the closing section — which makes the same
+ * offer with room to explain it — and over the footer, whose links it would
+ * otherwise sit on.
+ *
+ * It ships hidden AND `inert`, and the client removes both together. Hiding it
+ * with opacity alone leaves a focusable link nobody can see, and since it sits
+ * after </main> it is the last thing the tab key reaches: a keyboard user would
+ * meet it at the footer, where it is invisible by design. There is nothing here
+ * a reader cannot already do from the top or the bottom of the page, so a
+ * browser that never runs the script loses nothing.
+ */
+import type { LandingFirstTask } from '../../lib/landing';
+
+interface Props {
+  firstTask: LandingFirstTask;
+  startHref: string;
+}
+
+const { firstTask, startHref } = Astro.props;
+---
+
+<div
+  data-start-bar
+  inert
+  class="group pointer-events-none fixed inset-x-0 bottom-0 z-50 flex translate-y-3 justify-center px-4 pb-[max(16px,env(safe-area-inset-bottom))] opacity-0 transition duration-300 data-[visible]:pointer-events-auto data-[visible]:translate-y-0 data-[visible]:opacity-100 motion-reduce:transition-none sm:justify-end sm:px-6"
+>
+  {/*
+    The blur is the one on the page, and it is attached to the visible state
+    rather than to the element: a permanently mounted backdrop-filter keeps a
+    composited layer alive and blurring behind a bar that is not there.
+  */}
+  <a
+    href={startHref}
+    data-resume-link
+    class="flex w-full max-w-[440px] items-center justify-between gap-4 rounded-[14px] border border-line-strong bg-ink-raised/95 py-3 pl-[18px] pr-3 shadow-[0_10px_40px_rgb(0_0_0/.5)] group-data-[visible]:backdrop-blur sm:w-auto"
+  >
+    <span class="flex flex-col leading-tight">
+      <span class="text-sm font-semibold" data-resume-label>Start the first task</span>
+      {/* Names the task behind the button. Rewritten with the label when the
+          button turns into "Resume", so the two lines never disagree. */}
+      <span class="text-[12px] text-fg-dim" data-resume-sub>
+        {firstTask.title} · {firstTask.minutes} min
+      </span>
+    </span>
+    <span class="rounded-[10px] bg-accent px-[14px] py-[9px] text-sm font-bold text-ink" aria-hidden="true">
+      →
+    </span>
+  </a>
+</div>

@@ -16,6 +16,8 @@ import Lesson from '../components/landing/Lesson.astro';
 import LevelComplete from '../components/landing/LevelComplete.astro';
 import CheatSheet from '../components/landing/CheatSheet.astro';
 import DemoTerminal from '../components/landing/DemoTerminal.astro';
+import StartCta from '../components/landing/StartCta.astro';
+import StartBar from '../components/landing/StartBar.astro';
 import { getLandingContent } from '../lib/landing';
 import { isoDuration } from '../lib/lessons';
 import { courseJsonLd, itemListJsonLd } from '../lib/seo';
@@ -24,7 +26,7 @@ const content = await getLandingContent();
 const { stats, levels } = content;
 
 const title = 'learntmux — Learn tmux by doing it, not reading about it';
-const description = `${stats.levels} levels and ${stats.lessons} tasks, all of them in a real tmux session in your browser. Learn sessions, panes, windows and your own .tmux.conf by doing them, with nothing to install.`;
+const description = `Open a real tmux session in your browser and start with a ${content.firstTask.minutes}-minute task. Sessions, panes, windows and your own .tmux.conf, learned by doing them — nothing to install and no account.`;
 
 const jsonLd = [
   courseJsonLd({
@@ -49,7 +51,7 @@ const jsonLd = [
           <DemoTerminal />
         </div>
       </div>
-      <Hero stats={stats} startHref={content.startHref} levelCount={levels.length} />
+      <Hero startHref={content.startHref} firstTask={content.firstTask} />
       <Levels levels={levels} totalTasks={stats.lessons} />
       <Lesson />
     </div>
@@ -59,7 +61,10 @@ const jsonLd = [
       total={content.cheatSheet.total}
       remaining={content.cheatSheet.remaining}
     />
+    <StartCta firstTask={content.firstTask} startHref={content.startHref} />
   </main>
+
+  <StartBar firstTask={content.firstTask} startHref={content.startHref} />
 
   <script>
     import { mountLandingProgress } from '../scripts/landing';

@@ -13,26 +13,31 @@ const year = new Date().getFullYear();
 
   <nav class="flex flex-col gap-2" aria-label="Learn">
     <span class="font-semibold text-fg">Learn</span>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/basics">Basics</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/intermediate">Intermediate</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/advanced">Advanced</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/configure">Configure</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/basics">Basics</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/intermediate">Intermediate</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/advanced">Advanced</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/configure">Configure</a>
   </nav>
 
   <nav class="flex flex-col gap-2" aria-label="More">
     <span class="font-semibold text-fg">More</span>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/playground">Playground</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/cheatsheet">Cheat sheet</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/guides">Guides</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/gallery">Config gallery</a>
-    <a class="-my-1 inline-flex py-1 transition-colors hover:text-accent" href="/rss.xml">RSS</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/playground">Playground</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/cheatsheet">Cheat sheet</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/guides">Guides</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/gallery">Config gallery</a>
+    <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/rss.xml">RSS</a>
   </nav>
 
+  {/*
+    The space before the link is written out. Astro trims the whitespace between
+    the text and the element when they are on separate lines, and the sentence
+    rendered as "Built on the officialtmux Getting Started guide".
+  */}
   <p class="max-w-[30ch]">
-    Built on the official
+    Built on the official{' '}
     <a
       href="https://github.com/tmux/tmux/wiki/Getting-Started"
-      class="underline decoration-white/20 hover:text-accent-soft"
+      class="underline decoration-line-strong hover:text-accent-soft"
       rel="noopener">tmux Getting Started guide</a
     >. tmux is not affiliated with this site.
   </p>

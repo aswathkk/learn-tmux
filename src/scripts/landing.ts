@@ -1,15 +1,57 @@
 /**
- * Progress on the landing page.
+ * Progress on the landing page, and the start button that follows the reader.
  *
- * The page is built for someone who has done nothing: no bars filled, the
- * button says "Start Level 1". This fills in what the browser knows afterwards,
- * so a returning reader lands on the task they stopped at instead of being sent
- * back to the beginning.
+ * The page is built for someone who has done nothing: no bars filled, every
+ * start button says "Start the first task". This fills in what the browser
+ * knows afterwards, so a returning reader lands on the task they stopped at
+ * instead of being sent back to the beginning.
  *
  * Nothing here is required for the page to be correct — if storage is
- * unavailable or the script never runs, the starting state is the truth.
+ * unavailable or the script never runs, the starting state is the truth and the
+ * floating bar simply never appears.
  */
 import { readProgress } from '../lib/progress';
+
+/**
+ * Show the floating start button once the hero has scrolled away, and hide it
+ * again over the closing section — which offers the same thing with room to say
+ * what it is — and over the footer, whose links it would otherwise sit on.
+ */
+function mountStartBar(): void {
+  const bar = document.querySelector<HTMLElement>('[data-start-bar]');
+  if (!bar || typeof IntersectionObserver === 'undefined') return;
+
+  const covers = ['#hero', '#start-cta', 'footer']
+    .map((selector) => document.querySelector(selector))
+    .filter((element): element is Element => element !== null);
+  if (!covers.length) return;
+
+  const onScreen = new Set<Element>();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) onScreen.add(entry.target);
+        else onScreen.delete(entry.target);
+      }
+      // `inert` moves with the attribute, not after it. Without it the bar is
+      // still in the tab order while invisible, and because it lives after
+      // </main> it is the last thing a keyboard reaches — at the footer, which
+      // is exactly when it is hidden.
+      if (onScreen.size) {
+        bar.removeAttribute('data-visible');
+        bar.setAttribute('inert', '');
+      } else {
+        bar.setAttribute('data-visible', '');
+        bar.removeAttribute('inert');
+      }
+    },
+    // A sliver of either section counts as on screen: the bar should be gone
+    // before it can overlap the button it duplicates.
+    { rootMargin: '0px 0px -20% 0px' },
+  );
+
+  for (const cover of covers) observer.observe(cover);
+}
 
 /** Fill a bar and, where present, its `aria-valuenow`. */
 function fill(bar: HTMLElement | null, done: number, total: number): void {
@@ -19,6 +61,8 @@ function fill(bar: HTMLElement | null, done: number, total: number): void {
 }
 
 export function mountLandingProgress(): void {
+  mountStartBar();
+
   const completed = new Set(readProgress().completed);
   if (completed.size === 0) return;
 
@@ -55,14 +99,25 @@ export function mountLandingProgress(): void {
     }
   });
 
-  const link = document.querySelector<HTMLAnchorElement>('[data-resume-link]');
-  const label = document.querySelector<HTMLElement>('[data-resume-label]');
-  if (link && label && resumeHref) {
-    link.href = resumeHref;
-    label.textContent = resumeLevel ? `Resume · ${resumeLevel}` : 'Resume';
-  } else if (link && label) {
-    // Everything is done.
-    link.href = '/cheatsheet/';
-    label.textContent = 'See your cheat sheet';
-  }
+  // Every start button on the page, not just the one in the nav.
+  document.querySelectorAll<HTMLAnchorElement>('[data-resume-link]').forEach((link) => {
+    const label = link.querySelector<HTMLElement>('[data-resume-label]');
+    if (!label) return;
+    // A caption under some of these buttons names the first task. It has to
+    // move with the label, or the button offers to resume above a line
+    // promising task one. It is sometimes inside the button and sometimes a
+    // sibling, so the group is what gets searched.
+    const scope = link.closest<HTMLElement>('[data-resume-group]') ?? link;
+    const sub = scope.querySelector<HTMLElement>('[data-resume-sub]');
+    if (resumeHref) {
+      link.href = resumeHref;
+      label.textContent = resumeLevel ? `Resume · ${resumeLevel}` : 'Resume';
+      if (sub) sub.textContent = 'Picks up where you stopped';
+    } else {
+      // Everything is done.
+      link.href = '/cheatsheet/';
+      label.textContent = 'See your cheat sheet';
+      if (sub) sub.textContent = `All ${completed.size} tasks done`;
+    }
+  });
 }
