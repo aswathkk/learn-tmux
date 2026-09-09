@@ -121,7 +121,7 @@ export default defineConfig({
       //
       // /og/*.png is the other exclusion: those routes are images a crawler
       // reaches through a page's og:image, not pages anyone can land on.
-      filter: (page) => !/\/complete$/.test(page) && !/\/og\/[^/]+\.png$/.test(page),
+      filter: (page) => !/\/complete$/.test(page) && !/\/og\/.+\.png$/.test(page),
       serialize: (item) => {
         const path = new URL(item.url).pathname;
         const segments = path.split('/').filter(Boolean);

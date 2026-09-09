@@ -15,6 +15,7 @@ import Byline from '../../components/ui/Byline.astro';
 import { guideCategory, guideCategoryPath } from '../../lib/taxonomy';
 import { getGuides, guidePath, readNext, type GuideEntry } from '../../lib/guides';
 import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
+import { ogImagePath } from '../../lib/og-cards';
 import { getLessons, lessonPath } from '../../lib/lessons';
 import { readingTime } from '../../lib/reading-time';
 
@@ -71,7 +72,8 @@ const jsonLd = [
     path,
     published: data.published,
     updated: data.updated,
-    image: social?.src,
+    // The cover if there is one, otherwise the card drawn for this guide.
+    image: social?.src ?? ogImagePath(path),
     site: Astro.site,
   }),
 ];

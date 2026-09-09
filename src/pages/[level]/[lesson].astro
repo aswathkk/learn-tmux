@@ -26,7 +26,7 @@ import {
 import { lessonSections } from '../../lib/lesson-sections';
 import { renderInline } from '../../lib/inline-markdown';
 import { breadcrumbJsonLd, lessonJsonLd } from '../../lib/seo';
-import { lessonOgAlt, lessonOgPath } from '../../lib/og';
+import { ogImagePath } from '../../lib/og-cards';
 import type { LessonSpec } from '../../lib/harness/types';
 
 export async function getStaticPaths() {
@@ -67,8 +67,9 @@ const spec: LessonSpec = {
 
 const title = `${data.title} — tmux ${level.name} | learntmux`;
 
-/** Drawn at build time from this lesson's own frontmatter. See src/lib/og.ts. */
-const social = lessonOgPath(lesson);
+/** Drawn at build time from this lesson's own frontmatter. See src/lib/og-cards.ts.
+    The head picks it up on its own; the markup below needs it for the JSON-LD. */
+const social = ogImagePath(path);
 
 const crumbs = [
   { name: 'learntmux', href: '/' },
@@ -92,13 +93,7 @@ const jsonLd = [
 ];
 ---
 
-<Learn
-  title={title}
-  description={data.seoDescription}
-  image={social}
-  imageAlt={lessonOgAlt(lesson, context)}
-  jsonLd={jsonLd}
->
+<Learn title={title} description={data.seoDescription} jsonLd={jsonLd}>
   <LessonHeader
     slot="header"
     context={context}

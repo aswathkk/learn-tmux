@@ -8,13 +8,18 @@
  * `canonical`.
  */
 import { canonicalPath, DEFAULT_SOCIAL_IMAGE, SITE_NAME, TWITTER_CARD } from '../../lib/seo';
+import { ogImagePath, ogTargetFor } from '../../lib/og-cards';
 
 interface Props {
   title: string;
   description: string;
   /** Overrides the derived canonical. Use for paginated or filtered views. */
   canonical?: string;
-  /** Social card image, site-relative. */
+  /**
+   * Social card image, site-relative. Optional: a page that draws one (see
+   * src/lib/og-cards.ts) is found by its own URL, so only a page with an image
+   * of its own — a guide's cover, a gallery screenshot — passes this.
+   */
   image?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
@@ -30,8 +35,8 @@ const {
   title,
   description,
   canonical,
-  image = DEFAULT_SOCIAL_IMAGE,
-  imageAlt = 'learntmux — learn tmux in a live terminal',
+  image,
+  imageAlt,
   type = 'website',
   publishedTime,
   modifiedTime,
@@ -39,8 +44,23 @@ const {
   jsonLd = [],
 } = Astro.props;
 
-const canonicalUrl = new URL(canonicalPath(canonical ?? Astro.url.pathname), Astro.site);
-const imageUrl = new URL(image, Astro.site);
+const path = canonicalPath(canonical ?? Astro.url.pathname);
+const canonicalUrl = new URL(path, Astro.site);
+
+/**
+ * The page's own card, if the site draws one for it.
+ *
+ * Looked up here rather than passed in by every page, because "this page has a
+ * card" is already recorded in one place and asking each page to repeat it is
+ * how a page ends up unfurling as the generic site image. An explicit `image`
+ * still wins: a guide's cover is a better card than anything drawn from its
+ * title.
+ */
+const drawn = image ? undefined : await ogTargetFor(path);
+const card = image ?? (drawn ? ogImagePath(drawn.page) : DEFAULT_SOCIAL_IMAGE);
+const cardAlt = imageAlt ?? drawn?.alt ?? 'learntmux — learn tmux in a live terminal';
+
+const imageUrl = new URL(card, Astro.site);
 ---
 
 <title>{title}</title>
@@ -61,7 +81,7 @@ const imageUrl = new URL(image, Astro.site);
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonicalUrl} />
 <meta property="og:image" content={imageUrl} />
-<meta property="og:image:alt" content={imageAlt} />
+<meta property="og:image:alt" content={cardAlt} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:locale" content="en" />
@@ -73,7 +93,7 @@ const imageUrl = new URL(image, Astro.site);
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={imageUrl} />
-<meta name="twitter:image:alt" content={imageAlt} />
+<meta name="twitter:image:alt" content={cardAlt} />
 
 {
   jsonLd.map((schema) => (

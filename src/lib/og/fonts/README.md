@@ -8,7 +8,7 @@ serves; and it picks one instance per file, so a variable font would draw the
 wordmark and the title at the same weight. One file per weight is the only shape
 that renders correctly.
 
-`docs/banner-src/` keeps its own copies for the same reason: neither the banner
+`scripts/banner/` keeps its own copies for the same reason: neither the banner
 nor the cards should need a site build to redraw.
 
 Both are Open Font License:

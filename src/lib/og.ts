@@ -1,14 +1,13 @@
 /**
  * Social cards, drawn at build time.
  *
- * Every lesson gets its own 1200×630 PNG at /og/<slug>.png, rendered from the
- * same frontmatter the page renders from. That is the point: a card cannot
- * describe a lesson that no longer exists, and a new lesson cannot ship with
- * the generic site card by accident.
+ * This file draws one; src/lib/og-cards.ts says which pages get one and what
+ * each says. The split is deliberate — the composition is a brand decision and
+ * the catalogue is a content one, and they change for different reasons.
  *
  * The drawing is satori (flexbox → SVG, with the glyphs embedded as paths) and
  * then sharp (SVG → PNG). No browser, so the build stays hermetic — unlike
- * docs/banner-src/render.sh, which is a one-off run by hand on a machine with
+ * scripts/banner/render.sh, which is a one-off run by hand on a machine with
  * Chrome. The two agree on the composition: the mark and wordmark from the
  * brand guide §02, the palette from §03, both faces from §04, and the green
  * status line from §05.
@@ -21,8 +20,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import satori from 'satori';
 import sharp from 'sharp';
-import type { Level } from './levels';
-import type { LessonContext, LessonEntry } from './lessons';
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -39,6 +36,11 @@ const LINE = 'rgba(255,255,255,0.10)';
 
 const SANS = 'Instrument Sans';
 const MONO = 'JetBrains Mono';
+
+/** The card's own margin, and the type size of a chip. Both are read by
+ *  `fitChips` below, so a change here cannot leave the measuring stale. */
+const PADDING = 64;
+const CHIP_SIZE = 22;
 
 /**
  * Resolved against the working directory rather than `import.meta.url`: this
@@ -94,20 +96,46 @@ function wordmark(): Node {
   ]);
 }
 
-/** A keycap, or the challenge badge. Same shape, different ink. */
-function chip(label: string, tone: 'key' | 'challenge'): Node {
+/** A keycap, or the one accented chip a card is allowed. Same shape, different ink. */
+function chip(label: string, tone: 'key' | 'accent'): Node {
   return text(
     {
       fontFamily: MONO,
-      fontSize: 22,
-      color: tone === 'challenge' ? PHOSPHOR : MUTED,
+      fontSize: CHIP_SIZE,
+      color: tone === 'accent' ? PHOSPHOR : MUTED,
       background: SURFACE,
-      border: `1px solid ${tone === 'challenge' ? 'rgba(61,220,132,0.35)' : LINE}`,
+      border: `1px solid ${tone === 'accent' ? 'rgba(61,220,132,0.35)' : LINE}`,
       borderRadius: 8,
       padding: '11px 16px',
     },
     label,
   );
+}
+
+/**
+ * How many chips fit on one row.
+ *
+ * Arithmetic rather than a guess, and it lives here because it is a fact about
+ * how `chip` draws: JetBrains Mono is monospaced at 0.6 em, so a label's width
+ * is its length. A character limit would be the wrong instrument — a chip is
+ * not always a keystroke, and a limit chosen for `C-b z` would drop every
+ * option in level 4, which is what the whole level is made of.
+ */
+const CHIP_GAP = 12;
+const CHIP_FURNITURE = 2 * 16 + 2;
+const ROW_WIDTH = OG_WIDTH - 2 * PADDING;
+
+export function fitChips(labels: string[], limit = 3): string[] {
+  const chosen: string[] = [];
+  let used = 0;
+  for (const label of labels) {
+    if (chosen.length === limit) break;
+    const width = label.length * 0.6 * CHIP_SIZE + CHIP_FURNITURE + (used ? CHIP_GAP : 0);
+    if (used + width > ROW_WIDTH) continue;
+    chosen.push(label);
+    used += width;
+  }
+  return chosen;
 }
 
 /** The green status line, the one place the palette fills a surface. §05. */
@@ -132,16 +160,21 @@ function statusLine(session: string, current: string): Node {
 }
 
 export interface OgCard {
-  /** The line above the title: where in the course this is. */
+  /** The line opposite the wordmark: what kind of page this is. */
   eyebrow: string;
   title: string;
-  /** Keycaps under the title. Empty for a challenge. */
-  chips: string[];
-  challenge: boolean;
-  /** The two halves of the status line, e.g. `[learn]` and `4:zoom-a-pane*`. */
+  /**
+   * Keycaps under the title, or whatever else the page is made of — the
+   * categories a hub lists, the versions a config was written against. Omit
+   * them and the row disappears rather than leaving a gap.
+   */
+  chips?: string[];
+  /** The one chip drawn in phosphor. A page gets at most one thing shouted. */
+  accent?: string;
+  /** The two halves of the status line, e.g. `[learn]` and `15:zoom-a-pane*`. */
   session: string;
   current: string;
-  /** Bottom right: position and cost. */
+  /** Bottom right: whatever counts. */
   meta: string;
 }
 
@@ -166,7 +199,7 @@ function card(input: OgCard): Node {
       flexDirection: 'column',
       justifyContent: 'space-between',
       background: VOID,
-      padding: '56px 64px',
+      padding: `56px ${PADDING}px`,
       fontFamily: SANS,
     },
     [
@@ -196,10 +229,14 @@ function card(input: OgCard): Node {
           },
           input.title,
         ),
-        box({ display: 'flex', gap: 12 }, [
-          ...(input.challenge ? [chip('challenge · no new keys', 'challenge')] : []),
-          ...input.chips.map((label) => chip(label, 'key')),
-        ]),
+        ...(input.accent || input.chips?.length
+          ? [
+              box({ display: 'flex', gap: 12 }, [
+                ...(input.accent ? [chip(input.accent, 'accent')] : []),
+                ...(input.chips ?? []).map((label) => chip(label, 'key')),
+              ]),
+            ]
+          : []),
       ]),
 
       box({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, [
@@ -222,56 +259,4 @@ export async function renderCard(input: OgCard): Promise<Buffer> {
   return sharp(Buffer.from(svg))
     .png({ compressionLevel: 9, palette: true, colours: 128 })
     .toBuffer();
-}
-
-/**
- * Keycaps worth printing: as many as the row holds, up to three.
- *
- * Measured rather than capped by character count, because a key is not always
- * a keystroke — level 1 teaches `tmux new -s name` and level 4 teaches
- * `:set -g status-position top`, and a length limit chosen for `C-b z` would
- * silently leave the whole of level 4 with an empty row. JetBrains Mono is
- * monospaced at 0.6 em, so the width of a chip is exact arithmetic.
- */
-const CHIP_GAP = 12;
-/** 16px of padding either side, plus the hairline. */
-const CHIP_FURNITURE = 34;
-const ROW_WIDTH = OG_WIDTH - 2 * 64;
-
-function keycaps(lesson: LessonEntry): string[] {
-  const chosen: string[] = [];
-  let used = 0;
-  for (const { key } of lesson.data.keys) {
-    if (chosen.length === 3) break;
-    const width = key.length * 0.6 * 22 + CHIP_FURNITURE + (chosen.length ? CHIP_GAP : 0);
-    if (used + width > ROW_WIDTH) continue;
-    chosen.push(key);
-    used += width;
-  }
-  return chosen;
-}
-
-/** The card for one lesson, from its frontmatter and its place in the course. */
-export function lessonCard(lesson: LessonEntry, context: LessonContext): OgCard {
-  const { data } = lesson;
-  const level: Level = context.level;
-  return {
-    eyebrow: `Level ${level.n} · ${level.name}`,
-    title: data.title,
-    chips: data.challenge ? [] : keycaps(lesson),
-    challenge: data.challenge,
-    session: '[learn]',
-    current: `${context.coursePosition}:${data.slug}*`,
-    meta: `Task ${context.coursePosition} of ${context.totalInCourse} · ${data.estimatedMinutes} min`,
-  };
-}
-
-/** /og/detach-and-reattach.png — lesson slugs are unique across the course. */
-export function lessonOgPath(lesson: LessonEntry): string {
-  return `/og/${lesson.data.slug}.png`;
-}
-
-/** What a reader who cannot see the card is told it says. */
-export function lessonOgAlt(lesson: LessonEntry, context: LessonContext): string {
-  return `learntmux social card: ${lesson.data.title}, task ${context.coursePosition} of ${context.totalInCourse} in Level ${context.level.n} ${context.level.name}.`;
 }
