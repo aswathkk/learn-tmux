@@ -10,11 +10,17 @@
  * 2. Extracting files. The guest's `open` command hands a file to the browser
  *    over this same line, wrapped in OSC markers:
  *
- *      guest -> page   ESC ] 777 ; open ; <path> BEL   <contents>   ESC ] 777 ; eof BEL
+ *      guest -> page   ESC ] 777 ; open ; <path> ST   <base64>   ESC ] 777 ; eof ; <bytes> ST
  *
  *    Those bytes must never reach xterm, so the stream is parsed before it is
  *    written out. A marker can be split across two frames, which is why
  *    unmatched trailing bytes are held back rather than flushed.
+ *
+ *    The contents are base64 and the markers end in ST (ESC \) rather than BEL
+ *    because inside tmux the whole exchange travels through tmux's DCS
+ *    passthrough, which drops C0 control bytes — newlines, tabs and BEL alike.
+ *    See guest/rootfs/usr/local/bin/open. BEL is still accepted as a
+ *    terminator, since it is what every other OSC on this line uses.
  */
 
 /** How often a hidden page drains the serial buffer, in milliseconds. */
@@ -23,6 +29,8 @@ const HIDDEN_FLUSH_MS = 100;
 /** ESC ] 7 7 7 ; — the private OSC the guest's `open` command uses. */
 const OSC_PREFIX = [0x1b, 0x5d, 0x37, 0x37, 0x37, 0x3b];
 const BEL = 0x07;
+const ESC = 0x1b;
+const BACKSLASH = 0x5c;
 
 export interface SerialSinks {
   /** Called with decoded bytes destined for the terminal. */
@@ -35,6 +43,12 @@ interface MarkerMatch {
   index: number;
   /** True when the frame ended mid-sequence, so we cannot tell yet. */
   partial: boolean;
+}
+
+/** Where an OSC ends. `start` is the terminator itself, `next` the byte after it. */
+interface Terminator {
+  start: number;
+  next: number;
 }
 
 export class SerialStream {
@@ -87,6 +101,45 @@ export class SerialStream {
     return null;
   }
 
+  #findTerminator(data: number[], from: number): Terminator | null {
+    for (let i = from; i < data.length; i++) {
+      if (data[i] === BEL) return { start: i, next: i + 1 };
+      if (data[i] !== ESC) continue;
+      // A trailing ESC is not yet a decision: the next frame may complete an ST.
+      if (i + 1 >= data.length) return null;
+      if (data[i + 1] === BACKSLASH) return { start: i, next: i + 2 };
+    }
+    return null;
+  }
+
+  /**
+   * The captured payload is base64, and the tty may have broken it over lines.
+   *
+   * Everything here is refusing a payload rather than repairing one. Nothing
+   * else should be writing to this line while `open` holds it, but if
+   * something does, base64 is unframed enough to absorb the intrusion and
+   * still decode — into garbage that looks enough like a file for the next
+   * save to write it back. So line breaks are dropped, anything else is fatal,
+   * and `expected` (counted from the file itself, guest-side) has the last
+   * word: a run of stray characters that happens to be valid base64 changes
+   * the length even when it survives every other check.
+   */
+  #decodeContents(bytes: number[], expected: number): string | null {
+    const b64 = this.#decoder.decode(new Uint8Array(bytes)).replace(/\s/g, '');
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64) || b64.length % 4 !== 0) return null;
+    try {
+      const binary = atob(b64);
+      if (!Number.isInteger(expected) || binary.length !== expected) return null;
+      const out = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+      return this.#decoder.decode(out);
+    } catch {
+      // Handing the editor a file it could not read would let a save truncate
+      // the real one, so nothing is opened.
+      return null;
+    }
+  }
+
   flush(): void {
     this.#flushQueued = false;
     if (!this.#buffered.length && !this.#pending.length) return;
@@ -109,26 +162,28 @@ export class SerialStream {
 
       for (let k = i; k < marker.index; k++) sink.push(data[k]);
 
-      const end = marker.partial ? -1 : data.indexOf(BEL, marker.index);
-      if (end === -1) {
+      const end = marker.partial
+        ? null
+        : this.#findTerminator(data, marker.index + OSC_PREFIX.length);
+      if (!end) {
         // Hold the incomplete marker back until the next frame completes it.
         this.#pending = data.slice(marker.index);
         break;
       }
 
       const command = this.#decoder.decode(
-        new Uint8Array(data.slice(marker.index + OSC_PREFIX.length, end)),
+        new Uint8Array(data.slice(marker.index + OSC_PREFIX.length, end.start)),
       );
-      i = end + 1;
+      i = end.next;
 
       if (!this.#capture && command.startsWith('open;')) {
         this.#capture = { path: command.slice('open;'.length), bytes: [] };
-      } else if (this.#capture && command === 'eof') {
+      } else if (this.#capture && command.startsWith('eof;')) {
         const { path, bytes } = this.#capture;
         this.#capture = null;
-        // The tty turns every \n into \r\n on the way out.
-        const contents = this.#decoder.decode(new Uint8Array(bytes)).replace(/\r\n/g, '\n');
-        this.#sinks.openFile(path, contents);
+        const contents = this.#decodeContents(bytes, Number(command.slice('eof;'.length)));
+        if (contents !== null) this.#sinks.openFile(path, contents);
+        else console.error(`open: could not decode ${path}`);
       }
     }
 

@@ -4,11 +4,27 @@
 # The page cannot read the guest's disk directly (9p caching would hand it a
 # stale copy), so the whole exchange runs over the serial line:
 #
-#   guest -> page   ESC ] 777 ; open ; <path> BEL   <file contents>   ESC ] 777 ; eof BEL
+#   guest -> page   ESC ] 777 ; open ; <path> ST   <base64 contents>   ESC ] 777 ; eof ; <bytes> ST
 #   page  -> guest  <edited lines> __V86_OPEN_SAVE__      (or __V86_OPEN_CANCEL__)
 #
 # The page hides everything between the two markers, so nothing leaks onto the
 # screen. This blocks until the editor is closed, the way an editor would.
+#
+# Inside tmux the pane's stdout is a pty owned by the tmux server, not the
+# serial line, and the server drops an OSC it does not recognise rather than
+# forwarding it to the client. So under tmux the same bytes go out wrapped in
+# tmux's DCS passthrough, which is the one sequence it does forward verbatim.
+#
+# Two consequences shape the format above, and they apply to both paths so
+# there is only ever one thing to parse:
+#
+#   * The contents are base64. tmux discards C0 control bytes inside a DCS
+#     string, so a file's newlines and tabs would not survive the crossing.
+#   * The markers end in ST (ESC \) rather than BEL, for the same reason: BEL
+#     is a C0 control byte.
+#
+# base64 also removes the tty's own meddling: the contents used to arrive with
+# every \n turned into \r\n, which the page had to undo.
 
 if [ $# -ne 1 ]; then
     echo "usage: open FILE" >&2
@@ -31,12 +47,40 @@ if [ ! -e "$file" ] && ! : > "$file" 2>/dev/null; then
     exit 1
 fi
 
+# Read the file before touching the terminal, so a failure here can still take
+# the plain exit above rather than leaving the tty with echo off. An unreadable
+# file must not reach the editor as an empty buffer: the save would write that
+# emptiness back over a file that was never read.
+if ! payload=$( (base64 < "$file") 2>/dev/null ); then
+    echo "open: cannot read $file" >&2
+    exit 1
+fi
+payload=$(printf '%s' "$payload" | tr -d '\n')
+
+# The size travels with the payload so the page can tell a complete crossing
+# from a corrupted one. base64 is unframed: a few stray characters written
+# into the same window by something else still decode, into garbage that looks
+# enough like a file for a save to write it back. The count has to come from
+# the file rather than from the payload, or an intrusion would simply be
+# measured along with everything else.
+size=$(wc -c < "$file" | tr -d ' ')
+
 saved_stty=$(stty -g 2>/dev/null)
 stty -echo 2>/dev/null
 
-printf '\033]777;open;%s\007' "$file"
-cat "$file"
-printf '\033]777;eof\007'
+if [ -n "$TMUX" ]; then
+    # Passthrough is off by default. Set it on this pane rather than on the
+    # server: the course teaches from tmux's stock defaults, and every lesson
+    # check reads server options with `show -g`, which this must not appear in.
+    # It has to be set on every run, not once at setup: the `kill-server` that
+    # level 4 asks for takes the pane and its options with it, and the next
+    # `tmux new` starts from the default again.
+    tmux set -p allow-passthrough on 2>/dev/null
+    printf '\033Ptmux;\033\033]777;open;%s\033\033\\%s\033\033]777;eof;%s\033\033\\\033\\' \
+        "$file" "$payload" "$size"
+else
+    printf '\033]777;open;%s\033\\%s\033]777;eof;%s\033\\' "$file" "$payload" "$size"
+fi
 
 tmp=$(mktemp /tmp/open.XXXXXX) || exit 1
 verdict=cancel
