@@ -1283,9 +1283,14 @@
    paragraph like "tmux new runs the new-session command". 0.94em lands the two
    x-heights on the same line.
 
-   No background chip: the design separates code from prose by family and
-   colour alone, and chips at this density would speckle the paragraph. */
-.lesson-prose code {
+   Not scoped to .lesson-prose. Only the markdown pipeline's output lands
+   there; the objective under Goal, every hint, the cheat-sheet rows on the
+   completion panel and the landing page's first-task line are all rendered by
+   src/lib/inline-markdown.ts into containers of their own, so a prose-scoped
+   rule left a command in the one sentence stating what the lesson asks you to
+   do looking like nothing in particular. Nothing on the site emits a <code>
+   that should be exempt — there is not one literal <code> in any component. */
+code {
   font-family: var(--font-mono);
   font-size: 0.94em;
   letter-spacing: -0.01em;
@@ -1319,7 +1324,7 @@
 
 /* Except in a code block, where the grid is the point and wrapping and spacing
    are the block's own business. */
-.lesson-prose pre code {
+pre code {
   white-space: pre;
   letter-spacing: normal;
   word-spacing: normal;
@@ -1382,7 +1387,7 @@
   line-height: 1.5;
 }
 
-.lesson-prose pre code {
+pre code {
   background: none;
   padding: 0;
   margin: 0;
