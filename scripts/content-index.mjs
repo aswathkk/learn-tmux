@@ -37,6 +37,11 @@ function field(block, name) {
   return match ? match[1].trim() : undefined;
 }
 
+/** True for `draft: true`. A draft has no page, so it gets no sitemap entry. */
+function isDraft(block) {
+  return field(block, 'draft') === 'true';
+}
+
 /** A frontmatter date, or undefined when absent or unparseable. */
 function date(block, name) {
   const raw = field(block, name);
@@ -87,6 +92,7 @@ export function buildContentIndex(root = 'src/content') {
   for (const file of listDir(guidesRoot)) {
     if (!file.endsWith('.md')) continue;
     const block = read(join(guidesRoot, file));
+    if (isDraft(block)) continue;
     const when = date(block, 'updated') ?? date(block, 'published');
     if (when) datesBySlug.set(basename(file, '.md'), when);
   }
@@ -94,7 +100,9 @@ export function buildContentIndex(root = 'src/content') {
   // Config gallery entries: one directory each, dated by `added`.
   const configsRoot = join(root, 'configs');
   for (const dir of listDir(configsRoot)) {
-    const when = date(read(join(configsRoot, dir, 'index.md')), 'added');
+    const block = read(join(configsRoot, dir, 'index.md'));
+    if (isDraft(block)) continue;
+    const when = date(block, 'added');
     if (when) datesBySlug.set(dir, when);
   }
 

@@ -1,0 +1,72 @@
+---
+/**
+ * The cards on the gallery index and on every gallery category page.
+ *
+ * Categories are what the config *is* and each one is a page; tags are the
+ * free-text traits underneath — "catppuccin", "vim-keys" — and lead nowhere.
+ * Both are shown, because a reader scanning cards uses them differently.
+ *
+ * The credit is on the card, not just on the entry page: a gallery is other
+ * people's work, and whose work it is belongs next to the picture of it.
+ */
+import { Image } from 'astro:assets';
+import DraftBadge from '../ui/DraftBadge.astro';
+import Byline from '../ui/Byline.astro';
+import { configCategory, configCategoryPath } from '../../lib/taxonomy';
+import { configPath, coverAlt, type ConfigEntry } from '../../lib/configs';
+
+interface Props {
+  configs: ConfigEntry[];
+}
+
+const { configs } = Astro.props;
+---
+<ul class="grid gap-6" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">
+  {
+    configs.map((config) => (
+      <li class="group relative flex">
+        <div class="flex h-full w-full flex-col overflow-hidden rounded-xl border border-line bg-ink-card transition-colors group-hover:border-accent/30">
+          <Image
+            src={config.data.cover}
+            alt={coverAlt(config)}
+            widths={[360, 720]}
+            sizes="(min-width: 1024px) 360px, 100vw"
+            class="aspect-[16/10] w-full object-cover"
+            loading="lazy"
+          />
+          <div class="flex flex-1 flex-col gap-2 p-5">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px]">
+              {config.data.categories.map((id) => (
+                <a
+                  href={configCategoryPath(id)}
+                  class="relative z-10 text-accent transition-colors hover:underline"
+                >
+                  {configCategory(id).name}
+                </a>
+              ))}
+              {config.data.draft && <DraftBadge />}
+            </div>
+            {/* Only the title is the link; the card is the hit area. */}
+            <h2 class="m-0 text-[16px] font-semibold">
+              <a
+                href={configPath(config)}
+                class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+              >
+                {config.data.title}
+              </a>
+            </h2>
+            <p class="m-0 text-[13.5px] leading-[1.5] text-fg-muted">{config.data.description}</p>
+            <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-3">
+              <Byline author={config.data.author} nofollow class="relative z-10 text-[12px]" />
+              {config.data.tags.map((tag) => (
+                <span class="rounded-full bg-white/[.06] px-2 py-[3px] font-mono text-[10.5px] text-fg-dim">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </li>
+    ))
+  }
+</ul>

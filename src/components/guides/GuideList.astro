@@ -1,0 +1,149 @@
+---
+/**
+ * The rows on the guides index and on every category page.
+ *
+ * One component so a guide looks the same wherever it is listed, and so the
+ * two pages cannot drift apart the way the category labels once did.
+ *
+ * The whole row is clickable, but only the title is the link. Wrapping the
+ * date, categories, reading time, title, description and call to action in one
+ * <a> gave it an accessible name 237 characters long — three unreadable
+ * paragraphs in a screen reader's link list. The stretched pseudo-element keeps
+ * the hit area and leaves the name as the title alone; the category links and
+ * the byline sit above it on their own layer, so they stay clickable.
+ *
+ * A cover is optional, and a row without one keeps its old shape rather than
+ * holding a gap open for a picture that is never coming.
+ */
+import { Image } from 'astro:assets';
+import DraftBadge from '../ui/DraftBadge.astro';
+import Byline from '../ui/Byline.astro';
+import { guideCategory, guideCategoryPath } from '../../lib/taxonomy';
+import { guidePath, type GuideEntry } from '../../lib/guides';
+import { readingTime } from '../../lib/reading-time';
+
+interface Props {
+  guides: GuideEntry[];
+  /** Render the first row at the size that reads as the front of a blog. */
+  lead?: boolean;
+}
+
+const { guides, lead = false } = Astro.props;
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<div class="flex flex-col">
+  {
+    guides.map((guide, index) => {
+      const first = lead && index === 0;
+      const reading = readingTime(guide.body ?? '');
+      const { cover, coverAlt, author } = guide.data;
+      /* The title is right there in text. An unwritten alt would only repeat
+         it, so the picture is decorative until the author says otherwise. */
+      const alt = coverAlt ?? '';
+      return (
+        <article
+          class:list={[
+            'group relative border-t border-line py-8',
+            first ? 'flex flex-col gap-3' : 'flex gap-5',
+          ]}
+        >
+          {first && cover && (
+            <Image
+              src={cover}
+              alt={alt}
+              widths={[720, 1440]}
+              sizes="(min-width: 800px) 720px, 100vw"
+              class="aspect-[16/9] w-full rounded-xl border border-line object-cover"
+              loading="eager"
+            />
+          )}
+
+          <div class="flex flex-1 flex-col gap-[10px]">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-fg-dim">
+              <time datetime={guide.data.published.toISOString()}>
+                {formatDate(guide.data.published)}
+              </time>
+              {guide.data.categories.map((id) => (
+                <>
+                  <span aria-hidden="true" class="text-fg-faint">
+                    ·
+                  </span>
+                  <a
+                    href={guideCategoryPath(id)}
+                    class="relative z-10 text-accent transition-colors hover:underline"
+                  >
+                    {guideCategory(id).name}
+                  </a>
+                </>
+              ))}
+              <span aria-hidden="true" class="text-fg-faint">
+                ·
+              </span>
+              <span>{reading.label}</span>
+              {author && <Byline author={author} class="relative z-10" />}
+              {guide.data.draft && <DraftBadge />}
+            </div>
+
+            {first ? (
+              <h2
+                class="m-0 font-bold [text-wrap:balance]"
+                style="font-size:clamp(26px,3.2vw,34px); letter-spacing:-.025em; line-height:1.15;"
+              >
+                <a
+                  href={guidePath(guide)}
+                  class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+                >
+                  {guide.data.title}
+                </a>
+              </h2>
+            ) : (
+              <h2 class="m-0 text-[21px] font-semibold tracking-[-.02em]">
+                <a
+                  href={guidePath(guide)}
+                  class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
+                >
+                  {guide.data.title}
+                </a>
+              </h2>
+            )}
+
+            <p
+              class:list={[
+                'm-0 max-w-[62ch] leading-[1.6] text-fg-muted [text-wrap:pretty]',
+                first ? 'text-[16px]' : 'text-[14.5px]',
+              ]}
+            >
+              {guide.data.description}
+            </p>
+
+            {first && (
+              /* The link above already says where this goes. */
+              <span
+                aria-hidden="true"
+                class="mt-1 inline-flex items-center gap-2 text-[14px] font-semibold text-accent"
+              >
+                Read it
+                <span class="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            )}
+          </div>
+
+          {!first && cover && (
+            /* Held back until there is room beside the text; on a phone the
+               row is the title and the summary, and nothing else earns it. */
+            <Image
+              src={cover}
+              alt={alt}
+              widths={[240, 480]}
+              sizes="120px"
+              class="hidden h-[84px] w-[120px] shrink-0 rounded-lg border border-line object-cover sm:block"
+              loading="lazy"
+            />
+          )}
+        </article>
+      );
+    })
+  }
+</div>

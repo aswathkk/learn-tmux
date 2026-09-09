@@ -1,8 +1,9 @@
 ---
 title: "Four tmux workflows that stick"
 description: "Session per project, a named window layout, a scratch session, and a script that rebuilds all of it. The commands, and why each is shaped that way."
-category: workflow
+categories: workflow
 published: 2026-09-01
+draft: true
 relatedLessons: ["list-and-switch-sessions", "rename-session-and-window", "window-layouts", "tmux-command-prompt"]
 relatedGuides: ["tmux-conf-worth-copying", "mosh-and-tmux"]
 ---

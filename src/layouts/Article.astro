@@ -12,8 +12,13 @@ interface Props {
   description: string;
   crumbs: BreadcrumbEntry[];
   jsonLd?: object[];
+  /** The social card. Defaults to the site's own when a page has no cover. */
+  image?: string;
+  imageAlt?: string;
   publishedTime?: Date;
   modifiedTime?: Date;
+  /** Set for a draft, which only ever renders under `astro dev`. */
+  noindex?: boolean;
   section?: 'guides' | 'gallery';
 }
 
@@ -21,7 +26,7 @@ const { crumbs, section = 'guides', ...seo } = Astro.props;
 ---
 <Base {...seo} type="article">
   <SiteHeader section={section} />
-  <main id="main" class="mx-auto max-w-[760px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+  <main id="main" class="mx-auto max-w-page px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
     <Breadcrumbs entries={crumbs} class="mb-8" />
     <slot />
   </main>

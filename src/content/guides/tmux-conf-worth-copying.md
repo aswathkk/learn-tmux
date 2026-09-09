@@ -1,8 +1,15 @@
 ---
 title: "A tmux.conf worth copying, line by line"
 description: "A short tmux config that fixes the defaults most people trip over, with the reason for every line, so you can keep the half you agree with."
-category: config
-published: 2026-09-08
+categories: [config, setup]
+cover: ./covers/tmux-conf-worth-copying.png
+coverAlt: "Three lines of tmux.conf set large on a dark ground: set -g prefix C-a, set -g base-index 1, set -sg escape-time 10"
+author:
+  name: Aswath K
+  url: https://github.com/aswathkk
+  avatar: https://avatars.githubusercontent.com/u/10436935?v=4
+published: 2026-09-03
+draft: true
 relatedLessons: ["tmux-conf-file", "change-the-prefix-key", "status-line", "key-bindings"]
 relatedGuides: ["tmux-workflows", "mosh-and-tmux"]
 ---

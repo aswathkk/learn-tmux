@@ -4,25 +4,27 @@
  *
  * Each entry is its own page rather than a card in a grid, because "tmux
  * catppuccin config" and "minimal tmux status line" are separate searches and a
- * single gallery page can only rank for one of them.
+ * single gallery page can only rank for one of them. The categories follow the
+ * same rule: each is a page, and a config that is both minimal and vim-keyed is
+ * filed under both rather than being made to choose.
  */
-import { getCollection, type CollectionEntry } from 'astro:content';
-import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/ui/SiteHeader.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import CategoryChips from '../../components/ui/CategoryChips.astro';
+import ConfigGrid from '../../components/gallery/ConfigGrid.astro';
+import { getConfigs, configCategoryTally, configPath } from '../../lib/configs';
+import { configCategoryPath } from '../../lib/taxonomy';
 import { breadcrumbJsonLd, itemListJsonLd } from '../../lib/seo';
 
-const configs = (await getCollection('configs', ({ data }) => !data.draft)).sort(
-  (a: CollectionEntry<'configs'>, b: CollectionEntry<'configs'>) =>
-    b.data.added.getTime() - a.data.added.getTime(),
-);
+const configs = await getConfigs();
+const tally = configCategoryTally(configs);
 
 const crumbs = [{ name: 'learntmux', href: '/' }, { name: 'Config gallery' }];
 const jsonLd = [
   breadcrumbJsonLd(crumbs, Astro.site),
   itemListJsonLd(
-    configs.map((config) => ({ name: config.data.title, href: `/gallery/${config.id.split('/')[0]}` })),
+    configs.map((config) => ({ name: config.data.title, href: configPath(config) })),
     Astro.site,
   ),
 ];
@@ -34,7 +36,7 @@ const jsonLd = [
 >
   <SiteHeader section="gallery" />
 
-  <main id="main" class="mx-auto max-w-[1100px] px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+  <main id="main" class="mx-auto max-w-page px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
     <Breadcrumbs entries={crumbs} class="mb-8" />
 
     <header class="flex flex-col gap-4">
@@ -52,44 +54,28 @@ const jsonLd = [
       </p>
     </header>
 
+    <CategoryChips
+      class="mt-8"
+      allHref="/gallery"
+      allLabel="All"
+      total={configs.length}
+      active="/gallery"
+      items={tally.map(({ category, count }) => ({
+        href: configCategoryPath(category.id),
+        name: category.name,
+        count,
+      }))}
+    />
+
     {
       configs.length === 0 ? (
         <p class="mt-12 rounded-xl border border-dashed border-line-strong p-8 text-center text-fg-dim">
           The first configs are being written up. Check back shortly.
         </p>
       ) : (
-        <ul class="mt-12 grid gap-6" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">
-          {configs.map((config) => (
-            <li>
-              <a
-                href={`/gallery/${config.id.split('/')[0]}`}
-                class="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-ink-card transition-colors hover:border-accent/30"
-              >
-                <Image
-                  src={config.data.screenshot}
-                  alt={`Screenshot of the ${config.data.title} tmux configuration`}
-                  widths={[360, 720]}
-                  sizes="(min-width: 1024px) 360px, 100vw"
-                  class="aspect-[16/10] w-full object-cover"
-                  loading="lazy"
-                />
-                <div class="flex flex-1 flex-col gap-2 p-5">
-                  <h2 class="text-[16px] font-semibold text-fg group-hover:text-accent">
-                    {config.data.title}
-                  </h2>
-                  <p class="text-[13.5px] leading-[1.5] text-fg-muted">{config.data.description}</p>
-                  <div class="mt-auto flex flex-wrap gap-2 pt-2">
-                    {config.data.tags.map((tag) => (
-                      <span class="rounded-full bg-white/[.06] px-2 py-[3px] font-mono text-[10.5px] text-fg-dim">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div class="mt-12">
+          <ConfigGrid configs={configs} />
+        </div>
       )
     }
   </main>

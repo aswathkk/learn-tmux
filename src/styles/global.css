@@ -71,6 +71,14 @@
   --color-line-faint: rgb(255 255 255 / 0.06);  /* a division you should not notice */
   --color-line: rgb(255 255 255 / 0.08);        /* the default rule */
   --color-line-strong: rgb(255 255 255 / 0.13); /* an edge that holds a shape */
+
+  /* One column for every page that is read rather than operated: the guides
+     index and its category pages, the gallery and its category pages, and any
+     article inside either. 760px is about 75 characters at the body size, and
+     the gallery's cards fall to two across rather than three — a hub that is
+     wider than the piece it links to makes the site lurch on every click.
+     `max-w-page`. */
+  --container-page: 760px;
 }
 
 :root {

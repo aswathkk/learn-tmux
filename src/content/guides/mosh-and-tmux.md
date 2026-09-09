@@ -1,8 +1,9 @@
 ---
 title: "mosh plus tmux: sessions that survive the network"
 description: "Pair mosh with tmux so a closed laptop, a train tunnel or a new IP address does not cost you the session. Setup, and where each tool stops."
-category: remote
+categories: [remote, setup]
 published: 2026-09-01
+draft: true
 relatedLessons: ["detach-and-reattach", "list-and-switch-sessions"]
 relatedGuides: ["tmux-workflows", "tmux-conf-worth-copying"]
 ---

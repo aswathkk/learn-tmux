@@ -7,24 +7,28 @@
  * which is what turns a reader into a learner, and on into the next guide,
  * which is what keeps one who is not ready for a course yet.
  */
-import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { render, type CollectionEntry } from 'astro:content';
+import { getImage, Image } from 'astro:assets';
 import Article from '../../layouts/Article.astro';
-import { guideCategoryNames } from '../../content.config';
+import DraftBadge from '../../components/ui/DraftBadge.astro';
+import Byline from '../../components/ui/Byline.astro';
+import { guideCategory, guideCategoryPath } from '../../lib/taxonomy';
+import { getGuides, guidePath, readNext, type GuideEntry } from '../../lib/guides';
 import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 import { getLessons, lessonPath } from '../../lib/lessons';
 import { readingTime } from '../../lib/reading-time';
 
 export async function getStaticPaths() {
-  const guides = await getCollection('guides', ({ data }) => !data.draft);
-  return guides.map((guide: CollectionEntry<'guides'>) => ({
+  const guides = await getGuides();
+  return guides.map((guide: GuideEntry) => ({
     params: { slug: guide.id },
     props: { guide, guides },
   }));
 }
 
 interface Props {
-  guide: CollectionEntry<'guides'>;
-  guides: CollectionEntry<'guides'>[];
+  guide: GuideEntry;
+  guides: GuideEntry[];
 }
 
 const { guide, guides } = Astro.props;
@@ -37,22 +41,25 @@ const related = data.relatedLessons
   .map((slug: string) => lessons.find((lesson) => lesson.data.slug === slug))
   .filter((lesson): lesson is (typeof lessons)[number] => Boolean(lesson));
 
-/** Named guides first, in the author's order, then anything else recent. */
-const named = data.relatedGuides
-  .map((id: string) => guides.find((other) => other.id === id && other.id !== guide.id))
-  .filter((other): other is CollectionEntry<'guides'> => Boolean(other));
+const next = readNext(guide, guides);
 
-const readNext = [
-  ...named,
-  ...guides
-    .filter((other) => other.id !== guide.id && !named.includes(other))
-    .sort((a, b) => b.data.published.getTime() - a.data.published.getTime()),
-].slice(0, 2);
+/** The first category is the primary one: the trail can only hold one. */
+const primary = guideCategory(data.categories[0]);
 
-const path = `/guides/${guide.id}`;
+/**
+ * The cover doubles as the social card, rasterised at a card's width. A guide
+ * without one falls back to the site's own image rather than shipping a page
+ * that unfurls as a bare link.
+ */
+const social = data.cover
+  ? await getImage({ src: data.cover, width: 1200, format: 'png' })
+  : undefined;
+
+const path = guidePath(guide);
 const crumbs = [
   { name: 'learntmux', href: '/' },
   { name: 'Guides', href: '/guides' },
+  { name: primary.name, href: guideCategoryPath(data.categories[0]) },
   { name: data.title },
 ];
 
@@ -64,6 +71,7 @@ const jsonLd = [
     path,
     published: data.published,
     updated: data.updated,
+    image: social?.src,
     site: Astro.site,
   }),
 ];
@@ -76,16 +84,28 @@ const formatDate = (date: Date) =>
   description={data.description}
   crumbs={crumbs}
   jsonLd={jsonLd}
+  image={social?.src}
+  imageAlt={data.coverAlt}
   publishedTime={data.published}
   modifiedTime={data.updated}
+  noindex={data.draft}
 >
   <article class="flex flex-col gap-6">
     <header class="flex flex-col gap-3">
-      {/* The same map the index reads from, so one guide cannot be filed under
-          two different names on two different pages. */}
-      <span class="font-mono text-[11px] font-medium uppercase tracking-[.12em] text-accent">
-        {guideCategoryNames[data.category]}
-      </span>
+      {/* Every category the guide is filed under, each linking to its page, and
+          all read from the same catalogue the index uses — so one guide cannot
+          be filed under two different names on two different pages. */}
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {data.categories.map((id) => (
+          <a
+            href={guideCategoryPath(id)}
+            class="font-mono text-[11px] font-medium uppercase tracking-[.12em] text-accent transition-colors hover:underline"
+          >
+            {guideCategory(id).name}
+          </a>
+        ))}
+        {data.draft && <DraftBadge />}
+      </div>
       <h1
         class="m-0 font-bold [text-wrap:balance]"
         style="font-size:clamp(30px,3.6vw,46px); letter-spacing:-.03em; line-height:1.08;"
@@ -105,8 +125,24 @@ const formatDate = (date: Date) =>
         )}
         <span aria-hidden="true" class="text-fg-faint">·</span>
         <span>{reading.label}</span>
+        {data.author && <Byline author={data.author} size="md" class="ml-1" />}
       </p>
     </header>
+
+    {
+      data.cover && (
+        /* The title is directly above it, so an unwritten alt would only say
+           the same thing twice. */
+        <Image
+          src={data.cover}
+          alt={data.coverAlt ?? ''}
+          widths={[760, 1520]}
+          sizes="(min-width: 900px) 760px, 100vw"
+          class="aspect-[16/9] w-full rounded-xl border border-line object-cover"
+          loading="eager"
+        />
+      )
+    }
 
     <div class="lesson-prose text-[16px]">
       <Content />
@@ -134,20 +170,20 @@ const formatDate = (date: Date) =>
     }
 
     {
-      readNext.length > 0 && (
+      next.length > 0 && (
         <nav class="mt-2 flex flex-col gap-4 border-t border-line pt-8" aria-label="Read next">
           <h2 class="m-0 font-mono text-[11px] font-medium uppercase tracking-[.12em] text-fg-dim">
             Read next
           </h2>
           <ul class="flex flex-col">
-            {readNext.map((other) => (
+            {next.map((other: CollectionEntry<'guides'>) => (
               <li class="group relative flex flex-col gap-1 border-b border-line py-4 last:border-b-0 last:pb-0">
                 <span class="font-mono text-[11px] text-accent">
-                  {guideCategoryNames[other.data.category]}
+                  {guideCategory(other.data.categories[0]).name}
                 </span>
                 <h3 class="m-0 text-[17px] font-semibold tracking-[-.015em]">
                   <a
-                    href={`/guides/${other.id}`}
+                    href={guidePath(other)}
                     class="text-fg transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-accent"
                   >
                     {other.data.title}

@@ -2,32 +2,47 @@
 /**
  * One config: the screenshot, the write-up, and the file itself.
  */
-import { getCollection, render, type CollectionEntry } from 'astro:content';
-import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import { getImage, Image } from 'astro:assets';
 import Article from '../../layouts/Article.astro';
+import DraftBadge from '../../components/ui/DraftBadge.astro';
+import Byline from '../../components/ui/Byline.astro';
+import { configCategory, configCategoryPath } from '../../lib/taxonomy';
+import { getConfigs, configPath, configSlug, coverAlt, type ConfigEntry } from '../../lib/configs';
 import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
-  const configs = await getCollection('configs', ({ data }) => !data.draft);
-  return configs.map((config: CollectionEntry<'configs'>) => ({
+  const configs = await getConfigs();
+  return configs.map((config: ConfigEntry) => ({
     // ids look like "minimal-green/index"; the directory name is the slug.
-    params: { slug: config.id.split('/')[0] },
+    params: { slug: configSlug(config) },
     props: { config },
   }));
 }
 
 interface Props {
-  config: CollectionEntry<'configs'>;
+  config: ConfigEntry;
 }
 
 const { config } = Astro.props;
 const { Content } = await render(config);
 const data = config.data;
-const slug = config.id.split('/')[0];
+
+/** The first category is the primary one: the trail can only hold one. */
+const primary = configCategory(data.categories[0]);
+const alt = coverAlt(config);
+
+/**
+ * The screenshot is the social card. Rasterised at a card's width, because a
+ * feed reader will not process the original and half of them will not take an
+ * SVG at all.
+ */
+const social = await getImage({ src: data.cover, width: 1200, format: 'png' });
 
 const crumbs = [
   { name: 'learntmux', href: '/' },
   { name: 'Config gallery', href: '/gallery' },
+  { name: primary.name, href: configCategoryPath(data.categories[0]) },
   { name: data.title },
 ];
 
@@ -36,8 +51,9 @@ const jsonLd = [
   articleJsonLd({
     title: data.title,
     description: data.description,
-    path: `/gallery/${slug}`,
+    path: configPath(config),
     published: data.added,
+    image: social.src,
     site: Astro.site,
   }),
 ];
@@ -48,10 +64,24 @@ const jsonLd = [
   crumbs={crumbs}
   jsonLd={jsonLd}
   section="gallery"
+  image={social.src}
+  imageAlt={alt}
   publishedTime={data.added}
+  noindex={data.draft}
 >
   <article class="flex flex-col gap-6">
     <header class="flex flex-col gap-3">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {data.categories.map((id) => (
+          <a
+            href={configCategoryPath(id)}
+            class="font-mono text-[11px] font-medium uppercase tracking-[.12em] text-accent transition-colors hover:underline"
+          >
+            {configCategory(id).name}
+          </a>
+        ))}
+        {data.draft && <DraftBadge />}
+      </div>
       <h1
         class="m-0 font-bold [text-wrap:balance]"
         style="font-size:clamp(28px,3.4vw,44px); letter-spacing:-.03em; line-height:1.08;"
@@ -59,15 +89,33 @@ const jsonLd = [
         {data.title}
       </h1>
       <p class="text-[17px] leading-[1.55] text-fg-muted">{data.description}</p>
-      <p class="font-mono text-[12px] text-fg-faint">
-        by {data.authorUrl ? <a href={data.authorUrl} rel="noopener nofollow" class="text-fg-dim underline hover:text-accent">{data.author}</a> : data.author}
-        {data.tmuxVersion && <> · tmux {data.tmuxVersion}</>}
-      </p>
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[12px] text-fg-faint">
+        <span>by</span>
+        <Byline author={data.author} size="md" nofollow />
+        {data.tmuxVersion && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>tmux {data.tmuxVersion}</span>
+          </>
+        )}
+        {data.repo && (
+          <>
+            <span aria-hidden="true">·</span>
+            <a
+              href={data.repo}
+              rel="noopener nofollow"
+              class="text-fg-dim underline transition-colors hover:text-accent"
+            >
+              the file
+            </a>
+          </>
+        )}
+      </div>
     </header>
 
     <Image
-      src={data.screenshot}
-      alt={`Screenshot of the ${data.title} tmux configuration`}
+      src={data.cover}
+      alt={alt}
       widths={[720, 1200]}
       sizes="(min-width: 900px) 760px, 100vw"
       class="rounded-xl border border-white/10"
@@ -77,6 +125,18 @@ const jsonLd = [
     <div class="lesson-prose text-[16px]">
       <Content />
     </div>
+
+    {
+      data.tags.length > 0 && (
+        <ul class="flex flex-wrap gap-2">
+          {data.tags.map((tag) => (
+            <li class="rounded-full bg-white/[.06] px-2 py-[3px] font-mono text-[10.5px] text-fg-dim">
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )
+    }
 
     <aside class="flex flex-col gap-3 rounded-xl border border-accent/20 bg-accent/[.05] p-5">
       <h2 class="text-[15px] font-semibold text-fg">Understand it before you paste it</h2>

@@ -1,0 +1,21 @@
+---
+/**
+ * The marker on an entry that will not ship.
+ *
+ * Only ever rendered under `SHOW_DRAFTS=1 astro dev`: everywhere else a draft
+ * is filtered out before it reaches a page. See src/lib/publishing.ts.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+<span
+  class:list={[
+    'inline-flex items-center rounded-full border border-hint/40 bg-hint/10 px-2 py-[2px] font-mono text-[10.5px] font-medium uppercase tracking-[.1em] text-hint',
+    className,
+  ]}
+>
+  Draft
+</span>

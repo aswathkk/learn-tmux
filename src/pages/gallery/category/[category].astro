@@ -1,0 +1,106 @@
+---
+/**
+ * One category of configs: minimal, themes, status lines, plugins, bindings.
+ *
+ * These are the searches the gallery is for — "minimal tmux config", "tmux
+ * status line" — so each gets a page with its own copy rather than a filtered
+ * view of the index. Generated only for categories that hold a published
+ * config, from the same tally the chips are built from.
+ */
+import Base from '../../../layouts/Base.astro';
+import SiteHeader from '../../../components/ui/SiteHeader.astro';
+import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
+import CategoryChips from '../../../components/ui/CategoryChips.astro';
+import ConfigGrid from '../../../components/gallery/ConfigGrid.astro';
+import {
+  getConfigs,
+  configCategoryTally,
+  configsInCategory,
+  configPath,
+  type ConfigEntry,
+} from '../../../lib/configs';
+import { configCategoryPath, type ConfigCategoryMeta } from '../../../lib/taxonomy';
+import { breadcrumbJsonLd, itemListJsonLd } from '../../../lib/seo';
+
+export async function getStaticPaths() {
+  const all = await getConfigs();
+  const tally = configCategoryTally(all);
+  const chips = tally.map(({ category, count }) => ({
+    href: configCategoryPath(category.id),
+    name: category.name,
+    count,
+  }));
+
+  return tally.map(({ category }) => ({
+    params: { category: category.id },
+    props: { category, configs: configsInCategory(all, category.id), total: all.length, chips },
+  }));
+}
+
+interface Props {
+  category: ConfigCategoryMeta;
+  configs: ConfigEntry[];
+  /** Every published config, for the "All" chip. */
+  total: number;
+  chips: Array<{ href: string; name: string; count: number }>;
+}
+
+const { category, configs, total, chips } = Astro.props;
+
+const crumbs = [
+  { name: 'learntmux', href: '/' },
+  { name: 'Config gallery', href: '/gallery' },
+  { name: category.name },
+];
+
+const jsonLd = [
+  breadcrumbJsonLd(crumbs, Astro.site),
+  itemListJsonLd(
+    configs.map((config) => ({ name: config.data.title, href: configPath(config) })),
+    Astro.site,
+  ),
+];
+---
+<Base title={`${category.title} | learntmux`} description={category.blurb} jsonLd={jsonLd}>
+  <SiteHeader section="gallery" />
+
+  <main id="main" class="mx-auto max-w-page px-5 py-12 sm:px-[clamp(20px,5vw,72px)]">
+    <Breadcrumbs entries={crumbs} class="mb-8" />
+
+    <header class="flex flex-col gap-4">
+      <span class="font-mono text-xs font-medium uppercase tracking-[.12em] text-accent">
+        {category.name}
+      </span>
+      <h1
+        class="m-0 max-w-[20ch] font-bold [text-wrap:balance]"
+        style="font-size:clamp(30px,3.8vw,46px); letter-spacing:-.03em; line-height:1.05;"
+      >
+        {category.heading}
+      </h1>
+      <p class="max-w-[60ch] text-base leading-[1.6] text-fg-muted [text-wrap:pretty]">
+        {category.blurb}
+      </p>
+    </header>
+
+    <CategoryChips
+      class="mt-8"
+      allHref="/gallery"
+      allLabel="All"
+      total={total}
+      active={configCategoryPath(category.id)}
+      items={chips}
+    />
+
+    <div class="mt-12">
+      <ConfigGrid configs={configs} />
+    </div>
+
+    <p class="mt-12 border-t border-line pt-8 text-[13.5px] text-fg-dim">
+      <a href="/gallery" class="text-accent transition-colors hover:underline">The whole gallery</a>,
+      or{' '}
+      <a href="/configure" class="text-accent transition-colors hover:underline">
+        learn what every line does
+      </a>.
+    </p>
+  </main>
+</Base>
