@@ -47,8 +47,8 @@ const data = lesson.data;
 const context = await getLessonContext(lesson);
 const { level, totalInCourse, previous, next } = context;
 
+/** Every lesson, for the header's course navigator. */
 const all = (await getCollection('lessons')).sort(byCourseOrder);
-const siblings = all.filter((entry: LessonEntry) => entry.data.level === data.level);
 
 const sections = lessonSections(lesson);
 const path = lessonPath(lesson);
@@ -97,7 +97,7 @@ const jsonLd = [
   <LessonHeader
     slot="header"
     context={context}
-    siblings={siblings}
+    lessons={all}
     totalInCourse={totalInCourse}
   />
 

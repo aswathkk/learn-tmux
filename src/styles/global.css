@@ -995,8 +995,70 @@
   }
 }
 
-.task-picker > summary::-webkit-details-marker {
+/* ------------------------------------------------------------------ course nav
+
+   The level rail is a radio group and the task lists are its siblings, so which
+   list is on show is a plain sibling combinator away — no JavaScript, and the
+   panel works before the learn script has loaded or if it never does.
+
+   The four rules are written out because there are four levels and there have
+   always been four; see src/lib/levels.ts, where the level number is typed
+   1 | 2 | 3 | 4. A fifth level adds a rule here. */
+
+.course-nav > summary::-webkit-details-marker {
   display: none;
+}
+
+.course-nav[open] > summary .course-nav-chevron {
+  transform: rotate(180deg);
+}
+
+/* Off-screen, not display:none: a hidden radio leaves the tab order and takes
+   the arrow-key group with it. */
+.course-nav-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.course-nav-list {
+  display: none;
+}
+
+#course-nav-level-1:checked ~ .course-nav-body [data-nav-list='1'],
+#course-nav-level-2:checked ~ .course-nav-body [data-nav-list='2'],
+#course-nav-level-3:checked ~ .course-nav-body [data-nav-list='3'],
+#course-nav-level-4:checked ~ .course-nav-body [data-nav-list='4'] {
+  display: block;
+}
+
+#course-nav-level-1:checked ~ .course-nav-body [data-nav-tab='1'],
+#course-nav-level-2:checked ~ .course-nav-body [data-nav-tab='2'],
+#course-nav-level-3:checked ~ .course-nav-body [data-nav-tab='3'],
+#course-nav-level-4:checked ~ .course-nav-body [data-nav-tab='4'] {
+  background: var(--color-line);
+  color: var(--color-fg);
+}
+
+/* The checked tab's level number carries the accent — the same mark the task
+   list uses for a finished task, saying "this is the one you are in". */
+#course-nav-level-1:checked ~ .course-nav-body [data-nav-tab='1'] [data-nav-tab-n],
+#course-nav-level-2:checked ~ .course-nav-body [data-nav-tab='2'] [data-nav-tab-n],
+#course-nav-level-3:checked ~ .course-nav-body [data-nav-tab='3'] [data-nav-tab-n],
+#course-nav-level-4:checked ~ .course-nav-body [data-nav-tab='4'] [data-nav-tab-n] {
+  color: var(--color-accent);
+}
+
+/* The radio is off-screen, so the ring it would draw has to be drawn on its
+   label instead. */
+#course-nav-level-1:focus-visible ~ .course-nav-body [data-nav-tab='1'],
+#course-nav-level-2:focus-visible ~ .course-nav-body [data-nav-tab='2'],
+#course-nav-level-3:focus-visible ~ .course-nav-body [data-nav-tab='3'],
+#course-nav-level-4:focus-visible ~ .course-nav-body [data-nav-tab='4'] {
+  outline: 2px solid var(--color-ring);
+  outline-offset: -2px;
 }
 
 /* ------------------------------------------------------------------ playground

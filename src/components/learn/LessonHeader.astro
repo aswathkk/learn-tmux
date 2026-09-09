@@ -7,18 +7,17 @@
  * here is a button; the whole bar reads as one line of text.
  */
 import Wordmark from '../ui/Wordmark.astro';
-import TaskPicker from './TaskPicker.astro';
+import CourseNav from './CourseNav.astro';
 import type { LessonContext, LessonEntry } from '../../lib/lessons';
-import { levelPath } from '../../lib/lessons';
 
 interface Props {
   context: LessonContext;
-  /** Every lesson in the current level, for the picker. */
-  siblings: LessonEntry[];
+  /** Every lesson in the course, for the navigator. */
+  lessons: LessonEntry[];
   totalInCourse: number;
 }
 
-const { context, siblings, totalInCourse } = Astro.props;
+const { context, lessons, totalInCourse } = Astro.props;
 const { level, position, totalInLevel, lesson } = context;
 ---
 
@@ -27,7 +26,7 @@ const { level, position, totalInLevel, lesson } = context;
   than its column used to stretch everything below it — but .learn-shell pins
   that track with `grid-template-columns: minmax(0, 1fr)` and each child below
   carries `min-w-0`, so the guard had nothing left to do except clip the task
-  picker: 439px of a 448px dropdown, at every width. The only navigation
+  navigator: 439px of a 448px dropdown, at every width. The only navigation
   between tasks in a level rendered as an 8px sliver.
 */}
 <header
@@ -41,17 +40,17 @@ const { level, position, totalInLevel, lesson } = context;
 
   <span aria-hidden="true" class="hidden h-[22px] w-px flex-none bg-line-strong sm:block"></span>
 
-  <div class="flex min-w-0 items-center gap-[7px] text-[13px] text-fg-muted">
-    <a
-      href={levelPath(level)}
-      class="hidden whitespace-nowrap py-[14px] -my-[14px] hover:text-accent sm:inline"
-    >
-      Level {level.n} · {level.name}
-    </a>
-    <span aria-hidden="true" class="hidden text-fg-faint sm:inline">·</span>
-    <TaskPicker
+  {/*
+    Level and task are one control, not a link plus a dropdown. Both halves ask
+    the same question — where am I in this course — so both open the same panel,
+    which switches either. The level hub the level half used to link to is a link
+    inside that panel.
+  */}
+  <div class="flex min-w-0 items-center text-[13px] text-fg-muted">
+    <CourseNav
       current={lesson}
-      siblings={siblings}
+      currentLevel={level}
+      lessons={lessons}
       position={position}
       totalInLevel={totalInLevel}
     />

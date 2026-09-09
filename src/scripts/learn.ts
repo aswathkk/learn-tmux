@@ -13,7 +13,7 @@
  * were static imports, so every lesson page pulled 634 KB — 176 KB over the
  * wire — before the gate was touched, on a page whose entire premise is that it
  * is readable before any JavaScript runs. They are behind `import()` now: what
- * loads eagerly is this file, and this file is the hints, the picker, the
+ * loads eagerly is this file, and this file is the hints, the navigator, the
  * progress count and the completion swap.
  *
  * The gate is no longer a wall, though. Once the page has loaded, gone idle and
@@ -351,7 +351,7 @@ export function mountLearnScreen(): void {
     }
   }
 
-  /** Tick the tasks already finished, in the picker and anywhere else they appear. */
+  /** Tick the tasks already finished, in the navigator and anywhere else they appear. */
   function markCompletedLinks(): void {
     const completed = new Set(readProgress().completed);
     document.querySelectorAll<HTMLElement>('[data-picker-item]').forEach((link) => {
@@ -363,25 +363,52 @@ export function mountLearnScreen(): void {
         mark.setAttribute('aria-label', 'done');
       }
     });
+
+    // "3/11" against each level in the rail. Counted off the links already in
+    // the panel, so the rail needs no lesson data of its own.
+    document.querySelectorAll<HTMLElement>('[data-nav-level-count]').forEach((node) => {
+      const list = document.querySelector(`[data-nav-list="${node.dataset.navLevelCount}"]`);
+      if (!list) return;
+      const links = Array.from(list.querySelectorAll<HTMLElement>('[data-picker-item]'));
+      const done = links.filter((link) => completed.has(link.dataset.pickerItem ?? '')).length;
+      node.textContent = `${done}/${links.length}`;
+      node.style.color = done === links.length ? 'var(--color-accent)' : '';
+    });
   }
 
   panel.gate('idle');
   updateProgressCount();
   markCompletedLinks();
 
-  // The picker is a <details>; close it when a click or focus leaves, or on Escape.
-  const picker = document.querySelector<HTMLDetailsElement>('[data-task-picker]');
-  if (picker) {
+  // The navigator is a <details>; close it when a click or focus leaves, or on
+  // Escape. The level rail switches itself, in CSS — the only thing left for the
+  // script is putting the rail back on the level you are actually in once the
+  // panel is shut, so reopening it never lands somewhere else.
+  const nav = document.querySelector<HTMLDetailsElement>('[data-course-nav]');
+  if (nav) {
+    const close = (): void => {
+      nav.open = false;
+      nav.querySelector<HTMLInputElement>('[data-nav-default]')?.click();
+    };
+
+    // The list is 392px tall and a level runs to twelve tasks, so on the later
+    // ones the task you are on opens below the fold. Only possible once the
+    // panel is open: until then its list is display:none and has no scroll box.
+    nav.addEventListener('toggle', () => {
+      if (!nav.open) return;
+      nav.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+    });
+
     document.addEventListener('click', (event) => {
-      if (picker.open && !picker.contains(event.target as Node)) picker.open = false;
+      if (nav.open && !nav.contains(event.target as Node)) close();
     });
     document.addEventListener('focusin', (event) => {
-      if (picker.open && !picker.contains(event.target as Node)) picker.open = false;
+      if (nav.open && !nav.contains(event.target as Node)) close();
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && picker.open) {
-        picker.open = false;
-        picker.querySelector<HTMLElement>('summary')?.focus();
+      if (event.key === 'Escape' && nav.open) {
+        close();
+        nav.querySelector<HTMLElement>('summary')?.focus();
       }
     });
   }
