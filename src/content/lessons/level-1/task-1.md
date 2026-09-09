@@ -41,7 +41,7 @@ hints:
 
 ## Concept
 
-`tmux new -s name` starts tmux and drops you into a session called `name`. The green bar at the bottom is the status line: `[learn]` on the left is the session, `0:shell*` next to it is its one window.
+`tmux new -s name` starts tmux and drops you into a session called `name`. The green bar at the bottom is the status line: `[name]` on the left is the session, `0:sh*` next to it is its one window.
 
 tmux runs as a server in the background, and your terminal talks to it through a client. The server holds sessions; a session holds windows; a window holds panes; a pane runs a program, usually a shell. The server starts on your first tmux command and exits when nothing is left running in it.
 
