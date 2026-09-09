@@ -18,6 +18,14 @@
   --color-hint: #e0b04a;         /* signal — hint used */
   --color-ref: #5b8def;          /* signal — reference / docs */
 
+  /* Inline code in prose. The same hue as --color-hint by choice rather than by
+     accident: the code palette below already paints the value you would edit in
+     amber, and a command inside a sentence is the same kind of thing. It stays
+     its own token so the hint signal can move later without dragging every
+     command in the course with it. 9.8:1 on Void. */
+  --color-code: #e0b04a;
+  --color-code-chip: rgb(255 255 255 / 0.06);
+
   --color-ink: #0a0b0e;          /* Void — page ground, terminal body, keycap face */
   --color-ink-raised: #171b21;   /* Raised — active task, modals */
   --color-ink-card: #0f1114;     /* Surface — panels, cards */
@@ -1070,26 +1078,18 @@
     color 160ms ease;
 }
 
-.step-row[data-state='current'] .step-mark {
-  border: 2px solid var(--color-accent);
-  color: var(--color-accent);
-}
+/* The steps are a numbered procedure to read along, so a step ordinal is never
+   painted as state: no tick, and no ring picked out in Phosphor, which means
+   progress or a live signal and not "you are on line 3". A done step simply
+   recedes; what has actually passed is the checks panel's business, and the
+   client still sets aria-current="step" for the reader who cannot see the
+   column at all.
 
-/* A finished step keeps its number. The steps are a numbered procedure the
-   learner reads along, and swapping the number for a tick takes away the thing
-   they use to find their place — the checks panel is where completion is
-   reported. Done just recedes. */
+   Every step is data-state="todo" at first paint, so the dim that used to sit
+   on a todo step body put the whole procedure at the contrast floor before any
+   check ran — and left it there permanently with JavaScript off. */
 .step-row[data-state='done'] {
   opacity: 0.5;
-}
-
-.step-row[data-state='done'] .step-mark {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.step-row[data-state='todo'] .step-body {
-  color: var(--color-fg-dim);
 }
 
 /* A step is a short instruction and often a command block, so it sits tighter
@@ -1227,9 +1227,26 @@
   font-family: var(--font-mono);
   font-size: 0.94em;
   letter-spacing: -0.01em;
-  color: var(--color-fg);
+  color: var(--color-code);
+  /* The chip. Family and colour alone left a command reading as slightly-bolder
+     prose; the surface is what makes it an object inside the sentence rather
+     than a change of voice. Inline padding does not grow the line box, so a
+     chip sits about 19px inside the 21.7px line a step body gives it.
+     It earns its keep hardest in the one table in the course, where a cell
+     holding three commands has to read as three things and not one comma-run. */
+  background: var(--color-code-chip);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin: 0 1px;
   /* A command should not be split across a line break. */
   white-space: nowrap;
+  /* Except when it cannot fit at all. Three spans in the course are wider than
+     the 456px column they sit in — the longest, a hint in level 4 task 6, is
+     108 characters, about 865px — and .learn-column--task clips its overflow,
+     so the end of those lines was simply unreachable. `anywhere` only ever
+     fires on a span that would otherwise overflow; everything that fits still
+     holds its line. */
+  overflow-wrap: anywhere;
   /* A monospace space is a full character cell: 0.59em here, against 0.2em
      for the space in the surrounding sans. Left alone, `tmux new` reads as
      `tmux  new` — every command with a space in it looks like a typo. This
@@ -1306,8 +1323,69 @@
 .lesson-prose pre code {
   background: none;
   padding: 0;
+  margin: 0;
+  border-radius: 0;
+  overflow-wrap: normal;
+  /* The block has its own foreground — Shiki writes --astro-code-foreground
+     onto the <pre> — and the inline rule's colour was winning over it by
+     specificity, so any run the grammar did not tokenise came out in the inline
+     code colour instead of the block's. */
+  color: inherit;
   font-size: inherit;
   font-weight: 500;
+}
+
+/* ------------------------------------------------------------------- tables
+
+   One lesson has a table — level 4's capstone, eight config requirements
+   against the lines that satisfy them — and nothing here styled it, so it
+   rendered on the UA defaults: auto layout squeezed "Requirement" to about
+   110px, its labels wrapped to three lines each, the <th> sat centred over
+   left-aligned cells, and no two rows lined up.
+
+   Two columns do not fit a 456px reading column, so the table stops being a
+   grid and becomes a list: the label, then the lines under it, a hairline
+   between entries. Once the rows are stacked the headers carry no information
+   ("Requirement", "Line" — the order says it), but they still carry the
+   association for a screen reader, so they are clipped rather than removed. */
+.lesson-prose table {
+  width: 100%;
+}
+
+.lesson-prose :is(table, tbody, tr, td) {
+  display: block;
+}
+
+.lesson-prose thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lesson-prose tr {
+  padding: 12px 0;
+  border-top: 1px solid var(--color-line-faint);
+}
+
+.lesson-prose tr:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lesson-prose td {
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* The payload cell. Looser leading than the label above it, because a row of
+   chips needs more room between lines than a run of sans does. */
+.lesson-prose td + td {
+  margin-top: 7px;
+  line-height: 1.9;
+  color: var(--color-fg-dim);
 }
 
 /* Lists stay in normal flow for the same reason: a flex container would make a
@@ -1347,6 +1425,20 @@
 
 .lesson-prose a:hover {
   color: var(--color-accent-soft);
+}
+
+/* The task column's section labels — Goal above the objective, Do this above
+   the steps. Same type as the challenge badge and the checks panel's own
+   heading, so the column reads as the same set of parts every time: what you
+   are aiming at, why it works, what to type. Quiet enough that the title and
+   the steps still carry the page. */
+.lesson-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-fg-faint);
 }
 
 /* A folded aside in the task column: present, but not competing with the steps.

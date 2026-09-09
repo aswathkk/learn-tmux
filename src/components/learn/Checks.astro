@@ -10,6 +10,16 @@
  * are a plain empty ring. Every row ships in the HTML — the client only sets
  * `data-state`, so the list is readable before any script runs.
  *
+ * One heading for all 42 lessons. Challenges used to swap in "What needs to be
+ * true at the end", on the theory that a challenge states an end state rather
+ * than steps — but that distinction lives in the body, the empty `keys` list
+ * and the badge, never in the check descriptions, which are phrased alike
+ * throughout. And checks latch (see harness/checks.ts), so the list is a ladder
+ * through time rather than a set of conditions that hold together: level 1's
+ * challenge carries both "No client is attached … right after detaching" and
+ * "A client is attached … again after reattaching". Under "at the end" the
+ * first row is false. "Done when" is true of both.
+ *
  * All three of those states are paint: a border colour, a background, a
  * line-through. None of it reaches a screen reader, and the live region only
  * ever said "2 of 4" — never which two. So each row also carries its state in
@@ -19,11 +29,9 @@ import type { Check } from '../../lib/harness/types';
 
 interface Props {
   checks: Check[];
-  /** Challenges state an end state rather than steps, so the heading changes. */
-  challenge?: boolean;
 }
 
-const { checks, challenge = false } = Astro.props;
+const { checks } = Astro.props;
 ---
 
 <section
@@ -31,9 +39,7 @@ const { checks, challenge = false } = Astro.props;
   aria-labelledby="done-when-heading"
 >
   <div class="flex flex-none items-center gap-[9px]">
-    <h2 id="done-when-heading" class="text-[13px] font-semibold text-fg">
-      {challenge ? 'What needs to be true at the end' : 'Done when'}
-    </h2>
+    <h2 id="done-when-heading" class="text-[13px] font-semibold text-fg">Done when</h2>
     <span
       class="ml-auto flex items-center gap-[7px] text-[12.5px] text-fg-faint"
       data-checks-status

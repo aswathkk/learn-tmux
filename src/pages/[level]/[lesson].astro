@@ -114,7 +114,10 @@ const jsonLd = [
       and lists every task in it, and the design keeps this column to the task
       alone. The BreadcrumbList markup is still emitted for search.
     */}
-    <div class="learn-intro flex flex-col gap-[10px]" data-working>
+    <div
+      class="learn-intro flex flex-col gap-3 border-b border-line-faint pb-5"
+      data-working
+    >
       {
         data.challenge && (
           <span class="w-fit rounded-full bg-hint/15 px-[10px] py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-hint">
@@ -127,10 +130,19 @@ const jsonLd = [
       >
         {data.title}
       </h1>
-      <p
-        class="m-0 text-[14.5px] leading-[1.55] text-fg-dim [text-wrap:pretty]"
-        set:html={renderInline(data.objective)}
-      />
+      {/*
+        The objective was the dimmest text on the screen — --color-fg-dim, under
+        a concept paragraph a step brighter that only explains it. It is the one
+        thing the lesson asks you to achieve, so it is labelled and it reads at
+        prose weight.
+      */}
+      <div class="flex flex-col gap-[6px]">
+        <span class="lesson-eyebrow">Goal</span>
+        <p
+          class="m-0 text-[14.5px] leading-[1.55] text-fg-muted [text-wrap:pretty]"
+          set:html={renderInline(data.objective)}
+        />
+      </div>
     </div>
 
     <div class="learn-task-body flex flex-col gap-5" data-working>
@@ -149,7 +161,7 @@ const jsonLd = [
       {
         sections.conceptRest && (
           <details class="lesson-aside">
-            <summary>Why this works</summary>
+            <summary>More detail</summary>
             <div class="lesson-prose mt-3" set:html={sections.conceptRest} />
           </details>
         )
@@ -173,7 +185,7 @@ const jsonLd = [
 
   <Fragment slot="terminal">
     <LearnTerminal />
-    <Checks checks={data.checks} challenge={data.challenge} />
+    <Checks checks={data.checks} />
   </Fragment>
 </Learn>
 

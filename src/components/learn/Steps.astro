@@ -26,6 +26,7 @@ const { steps, preamble } = parseSteps(html);
 {
   steps.length > 0 && (
     <div class="flex flex-col gap-[14px]" data-steps>
+      <span class="lesson-eyebrow">Do this</span>
       {preamble && <div class="lesson-prose" set:html={preamble} />}
 
       {steps.map((step, index) => (
