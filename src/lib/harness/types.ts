@@ -54,8 +54,22 @@ export const lessonSchema = z.object({
   slug: z
     .string()
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'slug must be lowercase words joined by hyphens'),
-  /** Doubles as the meta description, so it is capped at a length Google will show. */
+  /** The blurb on the level index and under a guide's "learn this first" links. */
   summary: z.string().max(155),
+  /**
+   * The meta description, and only that.
+   *
+   * `summary` used to do this job as well, and it is the wrong shape for it: it
+   * is written for someone already on the level page, who has the title above
+   * it and the rest of the course around it, so it can be eight words long and
+   * name no keys. A search result has none of that context. This sentence
+   * names the keys and commands the lesson teaches — the words someone types
+   * into the search box — and fills the width Google prints.
+   *
+   * The floor is as load-bearing as the ceiling: a 60-character description
+   * gives up two thirds of the only copy the site controls on the results page.
+   */
+  seoDescription: z.string().min(110).max(155),
   level: z.number().int().min(1).max(4),
   /**
    * Position within the level. NOT contiguous: level 3 jumps from 7 to 10

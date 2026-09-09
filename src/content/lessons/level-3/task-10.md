@@ -2,6 +2,7 @@
 title: "Challenge: recover the secret from the logs"
 slug: "challenge-recover-the-secret"
 summary: "Find the crashed worker, copy its token from deep scrollback, save it as a named buffer and a file, then paste it into your shell."
+seoDescription: 'A tmux challenge: find the crashed worker, copy a token out of deep scrollback, save it as a named buffer and a file, then paste it back.'
 level: 3
 task: 10
 difficulty: advanced

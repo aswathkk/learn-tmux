@@ -108,6 +108,8 @@ export interface LessonJsonLdInput {
   difficulty: string;
   minutes: number;
   position: number;
+  /** Site-relative social card. The lesson's own, generated from its frontmatter. */
+  image?: string;
   site?: URL;
 }
 
@@ -123,6 +125,7 @@ export function lessonJsonLd(input: LessonJsonLdInput): object {
     name: input.title,
     description: input.description,
     url: absolute(input.path, input.site),
+    image: absolute(input.image ?? DEFAULT_SOCIAL_IMAGE, input.site),
     inLanguage: 'en',
     isAccessibleForFree: true,
     learningResourceType: 'Interactive exercise',

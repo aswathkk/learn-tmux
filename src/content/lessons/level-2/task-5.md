@@ -2,6 +2,7 @@
 title: "Resize panes"
 slug: "resize-panes"
 summary: "Grow and shrink panes in small and large steps with the Ctrl and Meta arrow keys, or from the prompt."
+seoDescription: 'Resize tmux panes with C-b and the Ctrl arrows for one cell, the Meta arrows for five, or resize-pane with an exact number of cells.'
 level: 2
 task: 5
 difficulty: intermediate

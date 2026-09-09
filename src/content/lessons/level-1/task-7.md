@@ -2,6 +2,7 @@
 title: "Split the window into panes"
 slug: "split-window-into-panes"
 summary: "Cut one pane into two side by side, then split the right one top and bottom."
+seoDescription: 'Split a tmux window into panes with C-b % for two side by side and C-b " for one above the other, then split the new pane again.'
 level: 1
 task: 7
 difficulty: beginner

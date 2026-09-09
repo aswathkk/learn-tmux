@@ -2,6 +2,7 @@
 title: "Find any key with the help list"
 slug: "find-any-key-help-list"
 summary: "Open the built-in key list in view mode, scroll it, look up a single key, then use a key you found there."
+seoDescription: 'Press C-b ? for the tmux key binding list, scroll it in view mode, look up a single key with C-b /, then use what you found. No memorising.'
 level: 1
 task: 3
 difficulty: beginner

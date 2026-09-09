@@ -2,6 +2,7 @@
 title: "Show, set and unset options"
 slug: "show-set-and-unset-options"
 summary: "Read option values of each type, set a server option and a session option, watch renumbering happen, and unset one back to its default."
+seoDescription: 'Read tmux options with show-options, set a server option and a session option with set -g, and put one back to its default with set -gu.'
 level: 4
 task: 1
 difficulty: expert

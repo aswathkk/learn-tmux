@@ -2,6 +2,7 @@
 title: "Apply window layouts"
 slug: "window-layouts"
 summary: "Cycle through the preset layouts with Space, pick layouts by name from the prompt, and confirm the Meta keys with the help prompt."
+seoDescription: 'Cycle the preset tmux window layouts with C-b Space, or pick even-horizontal, main-vertical and the rest by name with select-layout.'
 level: 2
 task: 6
 difficulty: intermediate

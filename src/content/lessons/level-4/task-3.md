@@ -2,6 +2,7 @@
 title: "Add and remove key bindings"
 slug: "key-bindings"
 summary: "Bind a key to jump to window 10, bind two keys to split panes, bind a key that skips the prefix, then remove a binding."
+seoDescription: 'Add tmux key bindings with bind-key, including one that needs no prefix with bind -n, list what you have, and take one away with unbind.'
 level: 4
 task: 3
 difficulty: expert

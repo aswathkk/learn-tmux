@@ -2,6 +2,7 @@
 title: "Split with flags"
 slug: "split-with-flags"
 summary: "Use split-window flags from the command prompt to make a full-width bottom pane, a full-height left pane, and one that does not steal focus."
+seoDescription: 'Use split-window flags in tmux: -f for a pane that spans the window, -b to put it first, -d to split without moving the active pane.'
 level: 1
 task: 8
 difficulty: beginner

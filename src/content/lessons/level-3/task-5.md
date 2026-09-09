@@ -2,6 +2,7 @@
 title: "Find a window by its content or name"
 slug: "find-a-window"
 summary: "Search all panes for a piece of text and jump straight to the window that shows it, then find a window by name from tree mode."
+seoDescription: 'Find a tmux window by what is on its screen with C-b f, or by name from tree mode with C-s, and jump to it however many windows you have.'
 level: 3
 task: 5
 difficulty: advanced

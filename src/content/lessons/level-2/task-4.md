@@ -2,6 +2,7 @@
 title: "Zoom a pane"
 slug: "zoom-a-pane"
 summary: "Make one pane fill the window temporarily and see the Z flag in the status line."
+seoDescription: 'Make one tmux pane fill the whole window with C-b z, spot the Z flag in the status line, and press it again to put the layout back.'
 level: 2
 task: 4
 difficulty: intermediate

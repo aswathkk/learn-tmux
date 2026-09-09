@@ -2,6 +2,7 @@
 title: "Challenge: morning on the build box"
 slug: "challenge-morning-on-the-build-box"
 summary: "From a bare shell, build session work: an editor window, a build window with a full-width log pane, and a monitor window, then detach and come back."
+seoDescription: 'A tmux challenge: from a bare shell, build a work session with editor, build and monitor windows and a full-width log pane, then detach.'
 level: 1
 task: 11
 difficulty: beginner

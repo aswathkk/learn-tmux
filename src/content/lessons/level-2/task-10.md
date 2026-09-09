@@ -2,6 +2,7 @@
 title: "Tag and kill from the tree"
 slug: "tag-and-kill-from-tree"
 summary: "Tag several windows and sessions in tree mode and kill them together."
+seoDescription: 'Tag several tmux windows and sessions in tree mode with t, then kill all of them at once with X, or run one command against every tag.'
 level: 2
 task: 10
 difficulty: intermediate

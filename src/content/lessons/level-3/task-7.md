@@ -2,6 +2,7 @@
 title: "Break out, join and send keys"
 slug: "break-join-and-send-keys"
 summary: "Move a pane into its own window, pull a window back in as a pane, and type into a pane from the command prompt."
+seoDescription: 'Break a tmux pane into its own window with C-b !, pull a window back in as a pane with join-pane, and type into any pane with send-keys.'
 level: 3
 task: 7
 difficulty: advanced

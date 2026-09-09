@@ -2,6 +2,7 @@
 title: "Start your first session"
 slug: "start-your-first-session"
 summary: "Run tmux from the shell to start the server, create a named session and see the status line."
+seoDescription: 'Start your first tmux session: run tmux new -s learn to start the server, name the session and its window, and read the green status line.'
 level: 1
 task: 1
 difficulty: beginner

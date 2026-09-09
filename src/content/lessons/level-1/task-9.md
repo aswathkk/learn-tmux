@@ -2,6 +2,7 @@
 title: "Move between panes"
 slug: "move-between-panes"
 summary: "Change the active pane with the arrow keys, cycle with o, and jump by number with q."
+seoDescription: 'Move between tmux panes with C-b and the arrow keys, cycle through them with C-b o, and jump straight to one by number with C-b q.'
 level: 1
 task: 9
 difficulty: beginner

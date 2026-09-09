@@ -2,6 +2,7 @@
 title: "Configure the pane border"
 slug: "pane-border"
 summary: "Colour the pane borders, highlight the active one, and give every pane a bold title bar."
+seoDescription: 'Colour tmux pane borders with pane-border-style, pick out the active pane, and give every pane a title bar with pane-border-status.'
 level: 4
 task: 8
 difficulty: expert

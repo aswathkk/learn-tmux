@@ -2,6 +2,7 @@
 title: "Kill the server"
 slug: "kill-the-tmux-server"
 summary: "Shut down every session at once with kill-server, and see why exiting the last shell does the same."
+seoDescription: 'Shut down every tmux session at once with kill-server, and see why exiting the last shell in the last window does exactly the same thing.'
 level: 1
 task: 10
 difficulty: beginner

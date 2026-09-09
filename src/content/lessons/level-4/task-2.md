@@ -2,6 +2,7 @@
 title: "Write the configuration file"
 slug: "tmux-conf-file"
 summary: "Create ~/.tmux.conf, load it into the running server, then restart the server to see it load by itself."
+seoDescription: 'Write your first ~/.tmux.conf, load it into the running server with source-file, then restart tmux and watch the file load by itself.'
 level: 4
 task: 2
 difficulty: expert

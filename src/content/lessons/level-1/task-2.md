@@ -2,6 +2,7 @@
 title: "The prefix key and new windows"
 slug: "prefix-key-and-new-windows"
 summary: "Press the prefix key for the first time to open new windows and watch the window list grow in the status line."
+seoDescription: 'Meet the tmux prefix key. Press C-b c to open new windows, watch the window list grow in the status line, and send C-b through with C-b C-b.'
 level: 1
 task: 2
 difficulty: beginner

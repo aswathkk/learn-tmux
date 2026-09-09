@@ -2,6 +2,7 @@
 title: "Run commands from the command prompt"
 slug: "tmux-command-prompt"
 summary: "Use the tmux command prompt to run new-window with flags instead of a key binding."
+seoDescription: 'Open the tmux command prompt with C-b : and run new-window with its own flags — a name, no switch, a program — instead of reaching for a key.'
 level: 1
 task: 4
 difficulty: beginner

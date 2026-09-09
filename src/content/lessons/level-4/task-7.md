@@ -2,6 +2,7 @@
 title: "Embedded shell commands"
 slug: "embedded-shell-commands"
 summary: "Show the output of a shell command in the status line and control how often it refreshes."
+seoDescription: 'Put the output of a shell command in the tmux status line with #(command), and decide how often it runs again with status-interval.'
 level: 4
 task: 7
 difficulty: expert

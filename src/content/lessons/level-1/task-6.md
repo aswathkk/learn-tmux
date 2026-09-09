@@ -2,6 +2,7 @@
 title: "Read the session list and juggle sessions"
 slug: "list-and-switch-sessions"
 summary: "List sessions from the shell, pick the right one by its window count, run a program in a new session, and reattach safely with new -A."
+seoDescription: 'List tmux sessions with tmux ls, pick one out by its window count, start a program in a new session, and reattach safely with tmux new -A -s.'
 level: 1
 task: 6
 difficulty: beginner

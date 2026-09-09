@@ -2,6 +2,7 @@
 title: "Copy text in copy mode"
 slug: "copy-mode"
 summary: "Enter copy mode, move the cursor with emacs-style keys, select a line and copy it into a paste buffer."
+seoDescription: 'Enter tmux copy mode with C-b [, move with the emacs keys, start a selection with C-Space and copy the line into a paste buffer with M-w.'
 level: 3
 task: 1
 difficulty: advanced

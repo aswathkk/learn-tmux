@@ -2,6 +2,7 @@
 title: "Kick out a stale client"
 slug: "detach-another-client"
 summary: "See two other clients attached to a session, detach one from client mode, then take the session over with attach -d."
+seoDescription: 'See every client attached to a tmux session, kick a stale one off from client mode with C-b D, and take the session over with attach -d.'
 level: 2
 task: 11
 difficulty: intermediate

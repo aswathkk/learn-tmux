@@ -2,6 +2,7 @@
 title: "Mark and swap panes"
 slug: "mark-and-swap-panes"
 summary: "Swap neighbouring panes with braces, then mark a pane and swap it with the active one from the prompt."
+seoDescription: 'Swap neighbouring tmux panes with C-b { and C-b }, then mark a pane with C-b m and swap it with the active one from another window.'
 level: 2
 task: 7
 difficulty: intermediate

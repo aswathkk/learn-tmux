@@ -2,6 +2,7 @@
 title: "Change the current window"
 slug: "switch-windows"
 summary: "Jump to windows by index, step through them with next and previous, and bounce to the last window."
+seoDescription: 'Change the current tmux window: jump by index with C-b 0 to C-b 9, step through them with C-b n and C-b p, and bounce back with C-b l.'
 level: 2
 task: 1
 difficulty: intermediate

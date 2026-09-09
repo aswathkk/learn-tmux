@@ -2,6 +2,7 @@
 title: "Challenge: tidy a messy session"
 slug: "challenge-tidy-a-messy-session"
 summary: "Rename, rearrange, kill and detach until a cluttered session becomes a clean two-window project layout."
+seoDescription: 'A tmux challenge: rename, move, zoom, kill and detach until a cluttered session is a clean two-window project layout. Graded as you type.'
 level: 2
 task: 12
 difficulty: intermediate

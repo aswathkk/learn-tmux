@@ -2,6 +2,7 @@
 title: "Challenge: write your own tmux.conf"
 slug: "challenge-write-your-tmux-conf"
 summary: "Author a complete configuration file from scratch and prove it loads on a freshly started server."
+seoDescription: 'A tmux challenge: write a complete tmux.conf from scratch — prefix, bindings, status line, vi keys — and prove it loads on a fresh server.'
 level: 4
 task: 11
 difficulty: expert

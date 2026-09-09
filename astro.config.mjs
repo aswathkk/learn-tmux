@@ -118,7 +118,10 @@ export default defineConfig({
       // be advertised here either. The playground used to be in that bucket and
       // is not any more: it is the page someone searching for "tmux online"
       // wants, and it now carries the copy to earn the visit.
-      filter: (page) => !/\/complete$/.test(page),
+      //
+      // /og/*.png is the other exclusion: those routes are images a crawler
+      // reaches through a page's og:image, not pages anyone can land on.
+      filter: (page) => !/\/complete$/.test(page) && !/\/og\/[^/]+\.png$/.test(page),
       serialize: (item) => {
         const path = new URL(item.url).pathname;
         const segments = path.split('/').filter(Boolean);

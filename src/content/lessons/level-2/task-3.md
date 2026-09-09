@@ -2,6 +2,7 @@
 title: "Kill a pane, a window and a session"
 slug: "kill-pane-window-session"
 summary: "Close things at each level of the model with x, & and kill-session."
+seoDescription: 'Close things at every level of tmux: C-b x kills a pane, C-b & kills a window, and kill-session takes the whole session with it.'
 level: 2
 task: 3
 difficulty: intermediate

@@ -2,6 +2,7 @@
 title: "Choose and delete buffers in buffer mode"
 slug: "buffer-mode"
 summary: "Open the buffer list, paste an older buffer instead of the newest one, and delete a stale buffer."
+seoDescription: 'Open the tmux buffer list with C-b =, paste an older buffer instead of the newest one, and delete a stale buffer with d. Copy history, kept.'
 level: 3
 task: 3
 difficulty: advanced

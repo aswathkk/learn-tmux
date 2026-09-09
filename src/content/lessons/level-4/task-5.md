@@ -2,6 +2,7 @@
 title: "Customize the status line"
 slug: "status-line"
 summary: "Move the status line to the top, colour it, and simplify the right side to the time."
+seoDescription: 'Customize the tmux status line: move it to the top with status-position, colour it with status-style, and cut status-right to the clock.'
 level: 4
 task: 5
 difficulty: expert

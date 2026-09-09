@@ -2,6 +2,7 @@
 title: "Formats and embedded styles"
 slug: "formats-and-styles"
 summary: "Rebuild status-left with a format variable, an embedded style and a conditional that lights up when the prefix is pressed."
+seoDescription: 'Rebuild the tmux status-left from format variables like #{session_name}, an embedded #[fg=...] style, and a conditional watching the prefix.'
 level: 4
 task: 6
 difficulty: expert

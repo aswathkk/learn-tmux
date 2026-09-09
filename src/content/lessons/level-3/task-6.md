@@ -2,6 +2,7 @@
 title: "Use the mouse"
 slug: "use-the-mouse"
 summary: "Turn on mouse support and use clicks to change the active pane and the current window, and a drag to copy."
+seoDescription: 'Turn on tmux mouse support with set -g mouse on, then click to change pane, click the status line to change window, and drag to copy text.'
 level: 3
 task: 6
 difficulty: advanced

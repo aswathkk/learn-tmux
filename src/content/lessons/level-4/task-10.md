@@ -2,6 +2,7 @@
 title: "Mouse copying behaviour"
 slug: "mouse-copying"
 summary: "Change what happens when a mouse drag ends so the selection stays visible after it is copied."
+seoDescription: 'Rebind MouseDragEnd1Pane in tmux to copy-selection-no-clear so a mouse drag copies the text without the selection vanishing under you.'
 level: 4
 task: 10
 difficulty: expert

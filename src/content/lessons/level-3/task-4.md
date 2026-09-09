@@ -2,6 +2,7 @@
 title: "Name, save and load buffers"
 slug: "name-save-and-load-buffers"
 summary: "Rename an automatic buffer, save it to a file and load a file into a named buffer from the command prompt."
+seoDescription: 'Name a tmux paste buffer with set-buffer, write it out to a file with save-buffer, and read a file back into a buffer with load-buffer.'
 level: 3
 task: 4
 difficulty: advanced

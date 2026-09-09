@@ -2,6 +2,7 @@
 title: "Browse in tree mode"
 slug: "tree-mode"
 summary: "Open the tree of sessions, windows and panes, switch to another session, then pick a specific window from the expanded tree."
+seoDescription: 'Browse every tmux session, window and pane in tree mode: C-b s and C-b w open it, arrows expand and collapse, Enter switches to your pick.'
 level: 2
 task: 9
 difficulty: intermediate

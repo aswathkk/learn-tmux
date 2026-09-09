@@ -2,6 +2,7 @@
 title: "Use vi keys in copy mode"
 slug: "vi-keys-in-copy-mode"
 summary: "Switch copy mode and the prompt to vi keys, rebind v to start a selection, and copy a line the vi way."
+seoDescription: 'Switch tmux copy mode to vi keys with mode-keys vi, bind v in the copy-mode-vi table to start a selection, and copy the line with Enter.'
 level: 4
 task: 9
 difficulty: expert

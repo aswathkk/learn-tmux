@@ -2,6 +2,7 @@
 title: "Scroll, search the scrollback and paste"
 slug: "search-scrollback-and-paste"
 summary: "Scroll back through long output, search for a request id, copy it and paste it into another pane."
+seoDescription: 'Scroll a long tmux scrollback, search it with C-r, copy the line you were looking for, and paste it into another pane with C-b ].'
 level: 3
 task: 2
 difficulty: advanced

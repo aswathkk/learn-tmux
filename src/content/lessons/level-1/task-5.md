@@ -2,6 +2,7 @@
 title: "Detach and come back"
 slug: "detach-and-reattach"
 summary: "Start a log tail, detach from the session, and reattach to find it still running."
+seoDescription: 'Detach from a tmux session with C-b d, leave a log tail running, and come back to it with tmux attach -t. Your work survives the terminal.'
 level: 1
 task: 5
 difficulty: beginner

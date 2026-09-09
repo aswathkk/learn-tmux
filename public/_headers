@@ -15,3 +15,11 @@
 # visit, for any of it.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The lesson social cards (src/lib/og.ts). Unlike /_astro/*, the URL is the
+# lesson's slug rather than a content hash, so the bytes behind it do change —
+# whenever the lesson's title or the keys it teaches change. A day of caching,
+# then a revalidation: nothing here is on the critical path of a page load, and
+# the crawlers that fetch these come back on their own schedule anyway.
+/og/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

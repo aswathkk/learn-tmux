@@ -2,6 +2,7 @@
 title: "Change the prefix key"
 slug: "change-the-prefix-key"
 summary: "Move the prefix to C-a in the configuration file, unbind C-b, and make C-a C-a send the key through."
+seoDescription: 'Move the tmux prefix key to C-a in your config, unbind C-b, and bind C-a C-a to send-prefix so the key still reaches the program below.'
 level: 4
 task: 4
 difficulty: expert

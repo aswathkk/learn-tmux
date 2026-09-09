@@ -2,6 +2,7 @@
 title: "Rename the session and a window"
 slug: "rename-session-and-window"
 summary: "Give the default session 0 and its window meaningful names using the rename prompts."
+seoDescription: 'Rename a tmux session with C-b $ and a window with C-b , so the status line says what you are working on instead of 0:sh and 0:bash.'
 level: 2
 task: 2
 difficulty: intermediate

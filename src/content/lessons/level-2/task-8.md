@@ -2,6 +2,7 @@
 title: "Move and renumber windows"
 slug: "move-and-renumber-windows"
 summary: "Move a window to a new index, swap two windows using the marked pane, and close the gaps."
+seoDescription: 'Move a tmux window to a free index with C-b ., swap two windows with swap-window, then close the gaps in the list with move-window -r.'
 level: 2
 task: 8
 difficulty: intermediate
