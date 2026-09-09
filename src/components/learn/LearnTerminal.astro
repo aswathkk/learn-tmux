@@ -97,6 +97,36 @@ const {
   </div>
 
   {/*
+    The keystroke that went nowhere.
+
+    Focus indication only reaches a learner who looks at the terminal. This is
+    for the one who does not: they click a step, press the prefix, and the page
+    eats it. The client watches for a key that was plainly meant for the shell
+    while focus is somewhere else and says where it went — in the shape the box
+    already uses to speak for itself, one pill at the top, so the message lands
+    where they were looking rather than under the box.
+
+    The key is written in by the client: it names the key that was actually
+    pressed, because "a key went to the page" is not a thing anyone can act on.
+  */}
+  <div
+    class="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center opacity-0 transition-opacity duration-300 data-[shown]:opacity-100"
+    data-terminal-nudge
+    aria-live="polite"
+    hidden
+  >
+    <span
+      class="flex items-center gap-2 rounded-full border border-line-strong bg-ink-card px-3 py-[6px] font-mono text-[11.5px] text-fg-dim"
+    >
+      <kbd
+        class="rounded-[5px] border border-line-strong bg-ink-key px-[7px] py-[3px] text-[11px] font-semibold text-fg"
+        data-nudge-key>C-b</kbd
+      >
+      <span>went to the page — click the terminal to type</span>
+    </span>
+  </div>
+
+  {/*
     The start gate. The emulator is 15 MB and runs an x86 CPU on the main
     thread, so it is never booted *during* page load — but on a client that can
     afford it the machine starts itself once the page is loaded, idle and on
@@ -156,6 +186,19 @@ const {
         )
       }
     </span><span data-terminal-size></span>
+  </span>
+
+  {/*
+    Whether the terminal is the thing your keys reach.
+
+    Its own slot, not the machine's: the span below is where booting and setup
+    failed are written, and two dots with two labels in one 11.5px line is a
+    line nobody reads. Hidden until the client arms it — before the machine is
+    running there is a gate over the box and nothing to type into.
+  */}
+  <span class="flex flex-none items-center gap-[7px]" data-terminal-focus data-state="off" hidden>
+    <span class="learn-focus-dot" aria-hidden="true"></span>
+    <span data-terminal-focus-text>click to type</span>
   </span>
 
   {/*

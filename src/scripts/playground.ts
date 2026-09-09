@@ -89,6 +89,9 @@ export function mountPlayground(): void {
     });
 
     machine = next;
+    // The box is wider than the character grid, so a click on its padding has
+    // to reach the terminal too — see TerminalPanel#armFocus.
+    panel.onRequestFocus(() => next.view.focus());
 
     // A handle for debugging a live session from the console, the same one the
     // lesson screen installs.

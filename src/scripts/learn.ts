@@ -179,6 +179,11 @@ export function mountLearnScreen(): void {
       },
     });
 
+    // The box is wider than the character grid, so a click on its padding has
+    // to reach the terminal too — see TerminalPanel#armFocus.
+    const live = machine;
+    panel.onRequestFocus(() => live.view.focus());
+
     runner = new LessonRunner(machine, {
       phase: (phase: RunnerPhase, detail: string) => {
         if (phase === 'error') {

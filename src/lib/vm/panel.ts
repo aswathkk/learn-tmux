@@ -78,6 +78,10 @@ export class TerminalPanel {
   #sizeLabel = document.querySelector<HTMLElement>('[data-terminal-size]');
   #sessionLabel = document.querySelector<HTMLElement>('[data-terminal-session]');
   #fullscreenHint = document.querySelector<HTMLElement>('[data-fullscreen-hint]');
+  #focusChip = document.querySelector<HTMLElement>('[data-terminal-focus]');
+  #focusText = document.querySelector<HTMLElement>('[data-terminal-focus-text]');
+  #nudge = document.querySelector<HTMLElement>('[data-terminal-nudge]');
+  #nudgeKey = document.querySelector<HTMLElement>('[data-nudge-key]');
   #fullscreenButton = document.querySelector<HTMLButtonElement>('[data-terminal-fullscreen]');
   #box = document.querySelector<HTMLElement>('[data-terminal-box]');
 
@@ -88,6 +92,11 @@ export class TerminalPanel {
   #hintTimer: ReturnType<typeof setTimeout> | null = null;
   #cancelAutoStart: (() => void) | null = null;
   #autoStartArmed = false;
+  #focusArmed = false;
+  #nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+  #nudgeAt = 0;
+  #nudged = false;
+  #requestFocus: (() => void) | null = null;
 
   constructor(copy: PanelCopy = {}) {
     this.mount = document.querySelector<HTMLElement>('[data-terminal-mount]');
@@ -182,6 +191,165 @@ export class TerminalPanel {
   /** The machine is up: the terminal underneath is the whole panel now. */
   hideGate(): void {
     if (this.#gate) this.#gate.hidden = true;
+    this.#armFocus();
+  }
+
+  /**
+   * How to put the keyboard back in the terminal, for the parts of the box that
+   * are not the terminal.
+   *
+   * xterm focuses itself when you click its own node, but the box is 12px
+   * wider than that on every side, and the pill this panel raises says "click
+   * the terminal" — which has to be true of the whole rectangle it is pointing
+   * at, not just the character grid inside it.
+   */
+  onRequestFocus(focus: () => void): void {
+    this.#requestFocus = focus;
+  }
+
+  /**
+   * Say whether the keys are landing in the terminal.
+   *
+   * Armed here rather than at construction: until the machine is running the
+   * gate covers the box, the button is what to click, and a box announcing
+   * that it does not have focus is answering a question nobody asked. The
+   * paint is all in global.css; this only ever moves two attributes.
+   */
+  #armFocus(): void {
+    const box = this.#box;
+    const mount = this.mount;
+    if (this.#focusArmed || !box || !mount) return;
+    this.#focusArmed = true;
+
+    if (this.#focusChip) this.#focusChip.hidden = false;
+
+    const set = (on: boolean): void => {
+      box.dataset.focus = on ? 'on' : 'off';
+      if (this.#focusChip) this.#focusChip.dataset.state = on ? 'on' : 'off';
+      if (this.#focusText) this.#focusText.textContent = on ? 'keys go here' : 'click to type';
+      // They clicked in. Whatever the pill was still saying is answered.
+      if (on) this.#hideNudge();
+    };
+
+    set(mount.contains(document.activeElement));
+
+    mount.addEventListener('focusin', () => set(true));
+    mount.addEventListener('focusout', (event) => {
+      // xterm moves focus between its own nodes as it renders. Focus has only
+      // left the terminal when it lands outside the mount.
+      const next = (event as FocusEvent).relatedTarget;
+      if (next instanceof Node && mount.contains(next)) return;
+      set(false);
+    });
+
+    // The padding around the grid is part of the box the pill points at.
+    box.addEventListener('pointerdown', (event) => {
+      if (this.#gate && !this.#gate.hidden) return;
+      const target = event.target;
+      if (target instanceof Node && mount.contains(target)) return;
+      // Buttons and the editor overlay live in here too; they keep their click.
+      if (target instanceof Element && target.closest('button, input, textarea, a')) return;
+      this.#requestFocus?.();
+    });
+
+    document.addEventListener('keydown', this.#onStrayKey, true);
+  }
+
+  #disarmFocus(): void {
+    if (!this.#focusArmed) return;
+    this.#focusArmed = false;
+    document.removeEventListener('keydown', this.#onStrayKey, true);
+    this.#hideNudge();
+    if (this.#box) delete this.#box.dataset.focus;
+    if (this.#focusChip) this.#focusChip.hidden = true;
+  }
+
+  /**
+   * A key that was meant for the shell and reached the page instead.
+   *
+   * The bar is deliberately narrow: the prefix, or a single printable
+   * character typed at nothing in particular. Anything with a modifier the
+   * browser owns, and anything typed into a control that takes typing, arrived
+   * where it was aimed and is none of this panel's business.
+   */
+  #onStrayKey = (event: KeyboardEvent): void => {
+    if (!this.#focusArmed || this.#box?.dataset.focus === 'on') return;
+    if (event.defaultPrevented || event.metaKey || event.altKey) return;
+
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest('input, textarea, select, button, a, summary, [contenteditable]')
+    ) {
+      return;
+    }
+
+    const key = event.key;
+    const prefix = event.ctrlKey && key.toLowerCase() === 'b';
+    // Space scrolls the page, and someone reading the steps is entitled to it.
+    const bare = !event.ctrlKey && key.length === 1 && key !== ' ';
+    if (!prefix && !bare) return;
+
+    this.#showNudge(prefix ? 'C-b' : key);
+  };
+
+  /**
+   * Where that key went.
+   *
+   * The same pill and the same fade as the full-screen hint — the box has one
+   * way of speaking for itself and this is it. The box only flashes for the
+   * first one: after that the learner knows what the pill means, and a
+   * rectangle pulsing at every stray keystroke is its own kind of noise.
+   */
+  #showNudge(key: string): void {
+    const pill = this.#nudge;
+    const box = this.#box;
+    if (!pill || !box) return;
+
+    const now = Date.now();
+    if (now - this.#nudgeAt < 4000) return;
+    this.#nudgeAt = now;
+
+    if (this.#nudgeKey) this.#nudgeKey.textContent = key;
+    if (this.#nudgeTimer) clearTimeout(this.#nudgeTimer);
+
+    if (!this.#nudged) {
+      this.#nudged = true;
+      box.dataset.nudge = '';
+      // Two 420ms pulses, and a little after them: the attribute also carries
+      // the held amber edge that replaces them under reduced motion.
+      setTimeout(() => delete box.dataset.nudge, 900);
+    }
+
+    pill.hidden = false;
+    // The browser needs a start value to transition from, so style and layout
+    // are flushed between `hidden` and the attribute that fades it in. Reading
+    // a layout property does that on this line; the same thing waited on
+    // `requestAnimationFrame` until a tab that had stopped rendering — a
+    // backgrounded one — left the pill un-faded at opacity 0 and then hid it
+    // again, which is the whole message lost in the one case where the machine
+    // has been sitting unattended.
+    void pill.offsetHeight;
+    pill.dataset.shown = '';
+    this.#nudgeTimer = setTimeout(() => {
+      delete pill.dataset.shown;
+      // Matches the 300ms fade in the markup; hiding sooner cuts it off.
+      this.#nudgeTimer = setTimeout(() => {
+        pill.hidden = true;
+      }, 300);
+    }, 2600);
+  }
+
+  #hideNudge(): void {
+    const pill = this.#nudge;
+    if (this.#nudgeTimer) clearTimeout(this.#nudgeTimer);
+    this.#nudgeTimer = null;
+    if (this.#box) delete this.#box.dataset.nudge;
+    if (!pill) return;
+    delete pill.dataset.shown;
+    this.#nudgeTimer = setTimeout(() => {
+      pill.hidden = true;
+    }, 300);
   }
 
   /**
@@ -246,6 +414,9 @@ export class TerminalPanel {
    * something or has stopped.
    */
   status(status: MachineStatus, detail: string): void {
+    // Nothing is listening for keys any more, and the gate is back over the
+    // box: "click to type" beside "machine stopped" is two dots and a lie.
+    if (status === 'failed') this.#disarmFocus();
     if (this.#statusPill) this.#statusPill.dataset.state = status;
     if (this.#statusDot) {
       this.#statusDot.style.background = DOT_COLOUR[status];

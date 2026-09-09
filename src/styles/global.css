@@ -92,6 +92,7 @@
 :root {
   /* channels, so accent alphas stay tied to the accent token */
   --accent-rgb: 61 220 132;
+  --hint-rgb: 224 176 74;
   --rail: 52%;
   --rail-gap: clamp(28px, 4vw, 60px);
   --pin-top: 26vh;
@@ -873,6 +874,84 @@
   flex: 0 1 auto;
   height: clamp(300px, 52vh, 480px);
   min-height: 180px;
+}
+
+/* ------------------------------------------------------- terminal focus
+
+   A live terminal that has focus and one that does not look exactly alike, so
+   a learner who clicked a step and then pressed the prefix watched nothing
+   happen and concluded the machine was broken. It was not: the keys were going
+   to the page.
+
+   The edge is what says it. Phosphor on the border means the same here as
+   everywhere else on the site — live, this is where the signal is — and it is
+   the one part of the box big enough to catch out of the corner of an eye that
+   is reading the steps. The line under the box says it in words for anyone not
+   reading colour, and xterm's own cursor hollows out on its own when it loses
+   focus, which is the third telling and the quietest.
+
+   None of it is painted before the machine is running: until then the gate
+   covers the box and the button is the thing to click. See #armFocus in
+   src/lib/vm/panel.ts. */
+[data-terminal-box] {
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+[data-terminal-box][data-focus='on'] {
+  border-color: rgb(var(--accent-rgb) / 0.55);
+  /* A halo rather than a thicker border: the box must not change size when it
+     takes focus, or the fit addon re-measures and the guest gets a SIGWINCH
+     every time the learner clicks into it. */
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.1);
+}
+
+.learn-focus-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-ring);
+  background: transparent;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+[data-terminal-focus][data-state='on'] .learn-focus-dot {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+/* The keystroke that went nowhere.
+   Amber, not Phosphor: Phosphor means live, and a terminal that has just
+   swallowed a prefix is the opposite of live. Two pulses and done — the pill
+   above the box carries the message, and this only has to make the eye land
+   on the right rectangle. */
+[data-terminal-box][data-nudge] {
+  animation: terminal-nudge 420ms ease-in-out 2;
+}
+
+@keyframes terminal-nudge {
+  0%,
+  100% {
+    border-color: var(--color-line-strong);
+    box-shadow: 0 0 0 3px rgb(var(--hint-rgb) / 0);
+  }
+  50% {
+    border-color: rgb(var(--hint-rgb) / 0.62);
+    box-shadow: 0 0 0 3px rgb(var(--hint-rgb) / 0.13);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The message still has to arrive; it just holds still while it does. */
+  [data-terminal-box][data-nudge] {
+    animation: none;
+    border-color: rgb(var(--hint-rgb) / 0.62);
+    box-shadow: 0 0 0 3px rgb(var(--hint-rgb) / 0.13);
+  }
 }
 
 /* The checks panel takes what the terminal leaves, which on a short window is
