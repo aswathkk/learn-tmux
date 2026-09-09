@@ -7,13 +7,14 @@ import Wordmark from './Wordmark.astro';
 
 interface Props {
   /** Highlights the section the reader is in. */
-  section?: 'learn' | 'guides' | 'cheatsheet' | 'gallery';
+  section?: 'learn' | 'guides' | 'cheatsheet' | 'gallery' | 'playground';
 }
 
 const { section } = Astro.props;
 
 const links = [
   { href: '/#levels', label: 'Levels', key: 'learn' },
+  { href: '/playground', label: 'Playground', key: 'playground' },
   { href: '/guides', label: 'Guides', key: 'guides' },
   { href: '/cheatsheet', label: 'Cheat sheet', key: 'cheatsheet' },
   { href: '/gallery', label: 'Gallery', key: 'gallery' },
@@ -21,15 +22,16 @@ const links = [
 ---
 <header class="border-b border-line">
   {/*
-    The wordmark and the four links do not fit on one line on a phone: at 375px
-    they measure 495px together, and the row used to run off the side of the
-    viewport, taking the whole document with it — Cheat sheet cut in half,
-    Gallery unreachable, every page scrolling sideways.
+    The wordmark and the links do not fit on one line on a phone: at 375px the
+    four original ones measured 495px together, and the row used to run off the
+    side of the viewport, taking the whole document with it — Cheat sheet cut in
+    half, Gallery unreachable, every page scrolling sideways.
 
-    So below `sm` the nav claims a row of its own, where the four links fit in
-    280px with room to spare, and wraps rather than clips if the viewport is
-    narrower still. The negative margin cancels the first link's own padding so
-    its text starts on the same vertical as the wordmark above it.
+    So below `sm` the nav claims a row of its own and wraps rather than clips.
+    Five links no longer fit on one line there either, which is why the wrap
+    matters more than it did: they take two tidy rows instead of one clipped
+    one. The negative margin cancels the first link's own padding so its text
+    starts on the same vertical as the wordmark above it.
   */}
   <div
     class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-1 px-5 py-4 sm:flex-nowrap sm:px-[clamp(20px,5vw,72px)]"

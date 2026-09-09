@@ -979,6 +979,61 @@
   display: none;
 }
 
+/* ------------------------------------------------------------------ playground
+
+   The same shell as a lesson with the checklist taken out. There is nothing
+   under the terminal to give height back to, so the box stops being a clamped
+   panel and takes the column. Only from lg: below it the screen is one scrolling
+   list, where a stretched terminal has nothing to stretch against. */
+
+@media (min-width: 1024px) {
+  .playground-body .learn-terminal-box {
+    height: auto;
+    flex: 1 1 auto;
+  }
+}
+
+/* A lesson's column stops 8px short because the hint line is pinned under it,
+   holding the floor. The playground has no hint line, so its last paragraph sat
+   on the bottom edge of the window with nothing beneath it. It takes the room
+   the hint would have had. */
+.playground-body .learn-task-scroll {
+  padding-bottom: 44px;
+}
+
+@media (max-width: 1023px) {
+  .playground-body .learn-main {
+    padding-bottom: 36px;
+  }
+}
+
+/* Full screen: the box is the whole screen, so it drops the frame it wears as a
+   panel in the column. The height rule above is a flex-item size and means
+   nothing in the top layer, but it is written out here anyway — a box that
+   fails to fill the screen it was given is worse than no full screen at all. */
+.learn-terminal-box:fullscreen {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+/* One disclosure per level in the key reference. Same marker as a folded aside:
+   WebKit draws its own triangle unless it is told not to. */
+.key-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.key-group > summary::before {
+  content: '+ ';
+  font-family: var(--font-mono);
+  color: var(--color-fg-faint);
+}
+
+.key-group[open] > summary::before {
+  content: '- ';
+}
+
 /* ---------------------------------------------------------- numbered steps
 
    Three states, driven by data-state: done is a filled tick and the whole row

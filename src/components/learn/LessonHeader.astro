@@ -89,6 +89,19 @@ const { level, position, totalInLevel, lesson } = context;
       <span data-progress-count>0</span> / {totalInCourse}
     </span>
 
+    {/*
+      A scratch terminal, for the learner who wants to try the key they just
+      learned on something that is not the task. Held back to md: below that the
+      bar is already carrying the picker and the cheat sheet, and this is the
+      least urgent of the three.
+    */}
+    <a
+      href="/playground"
+      class="hidden whitespace-nowrap py-[14px] -my-[14px] text-[12.5px] text-fg-muted hover:text-accent md:inline"
+    >
+      Playground
+    </a>
+
     <a
       href="/cheatsheet"
       class="whitespace-nowrap py-[14px] -my-[14px] text-[12.5px] text-fg-muted hover:text-accent sm:pl-[6px]"

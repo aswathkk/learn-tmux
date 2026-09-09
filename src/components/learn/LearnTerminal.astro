@@ -22,11 +22,33 @@
 import EditorOverlay from './EditorOverlay.astro';
 
 interface Props {
-  /** Shown in the status line, e.g. "learn". */
-  session?: string;
+  /**
+   * Shown in the status line, e.g. "learn". Pass null where the page cannot
+   * promise a session exists: the playground boots to a plain shell, and a
+   * status line reading "session play" before anyone has run tmux is a lie
+   * told by the one part of the screen that is meant to be the machine's.
+   */
+  session?: string | null;
+  /**
+   * Offer the full-screen toggle. Off by default: a lesson is the task and the
+   * terminal together, and hiding the steps behind the thing they describe is
+   * not a state a lesson wants to be in. The playground has no steps to hide.
+   */
+  fullscreen?: boolean;
+  /**
+   * The line under the gate's heading. A lesson describes the machine it is
+   * about to run a task on; a page whose whole subject is the terminal says it
+   * differently. The client reads whatever ships here, so this is the only
+   * place either page states it.
+   */
+  gateBody?: string;
 }
 
-const { session = 'learn' } = Astro.props;
+const {
+  session = 'learn',
+  fullscreen = false,
+  gateBody = 'Alpine Linux and tmux 3.4 on an x86 emulator. Nothing to install, and no server behind it.',
+} = Astro.props;
 ---
 
 {/* Height and flex behaviour live in global.css: on a short window the box has
@@ -34,6 +56,7 @@ const { session = 'learn' } = Astro.props;
 <section
   class="learn-terminal-box relative overflow-hidden rounded-[9px] border border-line-strong bg-ink-term"
   aria-label="Terminal"
+  data-terminal-box
 >
   {/*
     The padding is on this wrapper, never on the mount. xterm's fit addon reads
@@ -43,6 +66,34 @@ const { session = 'learn' } = Astro.props;
   */}
   <div class="absolute inset-0 p-3">
     <div class="h-full w-full" data-terminal-mount></div>
+  </div>
+
+  {/*
+    Tab belongs to the shell, so it cannot also be the way out of the terminal.
+    Shift-Tab is (see src/lib/vm/terminal.ts), and a key that is not the usual
+    one has to be said rather than found by trying keys until one works. Read on
+    the way in, by the people who need it.
+  */}
+  <p class="sr-only">
+    This is a live terminal. Typing goes to the machine, including Tab. Press Shift and Tab
+    together to move focus back out to the page.
+  </p>
+
+  {/*
+    Full screen puts the box in the top layer and leaves the status line, and
+    its own toggle, behind on the page. Escape is the way back, so the box says
+    so itself on the way in.
+  */}
+  <div
+    class="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center opacity-0 transition-opacity duration-300 data-[shown]:opacity-100"
+    data-fullscreen-hint
+    hidden
+  >
+    <span
+      class="rounded-full border border-line-strong bg-ink-card px-3 py-[6px] font-mono text-[11.5px] text-fg-dim"
+    >
+      Esc leaves full screen
+    </span>
   </div>
 
   {/*
@@ -62,7 +113,7 @@ const { session = 'learn' } = Astro.props;
         A real terminal, in this tab
       </p>
       <p class="max-w-[38ch] text-[12.5px] leading-[1.5] text-fg-dim" data-gate-body>
-        Alpine Linux and tmux 3.4 on an x86 emulator. Nothing to install, and no server behind it.
+        {gateBody}
       </p>
     </div>
     <button
@@ -86,8 +137,22 @@ const { session = 'learn' } = Astro.props;
 <div
   class="learn-terminal-status flex items-center gap-3 font-mono text-[11.5px] font-medium text-fg-faint"
 >
+  {/*
+    Two spans, not one: the client rewrites the name when a screen starts a
+    session of its own, and the size is written beside it from somewhere else.
+  */}
   <span class="min-w-0 truncate">
-    session <span class="text-fg-dim">{session}</span><span data-terminal-size></span>
+    <span data-terminal-session>
+      {
+        session ? (
+          <Fragment>
+            session <span class="text-fg-dim">{session}</span>
+          </Fragment>
+        ) : (
+          <span class="text-fg-dim">free play</span>
+        )
+      }
+    </span><span data-terminal-size></span>
   </span>
 
   {/*
@@ -104,12 +169,34 @@ const { session = 'learn' } = Astro.props;
     <span class="truncate" data-terminal-status-text></span>
   </span>
 
-  <button
-    type="button"
-    data-lesson-reset
-    class="ml-auto flex-none px-2 py-3 -my-3 -mr-2 text-fg-dim transition-colors hover:text-alert disabled:cursor-not-allowed disabled:text-fg-faint disabled:opacity-60"
-    disabled
-  >
-    Reset
-  </button>
+  <div class="ml-auto flex flex-none items-center gap-1">
+    {/*
+      Hidden until the client has checked the browser will allow it: a control
+      that does nothing is worse than no control. iOS Safari is the case that
+      matters — it has no element full screen at all.
+    */}
+    {
+      fullscreen && (
+        <button
+          type="button"
+          data-terminal-fullscreen
+          aria-pressed="false"
+          class="inline-flex items-center px-2 py-3 -my-3 text-fg-dim transition-colors hover:text-fg disabled:cursor-not-allowed disabled:text-fg-faint disabled:opacity-60 [@media(pointer:coarse)]:min-h-11"
+          disabled
+          hidden
+        >
+          Full screen
+        </button>
+      )
+    }
+
+    <button
+      type="button"
+      data-lesson-reset
+      class="inline-flex items-center px-2 py-3 -my-3 -mr-2 text-fg-dim transition-colors hover:text-alert disabled:cursor-not-allowed disabled:text-fg-faint disabled:opacity-60 [@media(pointer:coarse)]:min-h-11"
+      disabled
+    >
+      Reset
+    </button>
+  </div>
 </div>

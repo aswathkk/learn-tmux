@@ -31,6 +31,13 @@ export interface MachineEvents {
   status(status: MachineStatus, detail: string): void;
   progress(fraction: number): void;
   openFile(path: string, contents: string): void;
+  /**
+   * The fitted grid settled on a new size. The guest is told by `applySize`
+   * either way; this is for the page's own status line, which used to be
+   * written once at boot and then quietly lie for the rest of the session —
+   * most visibly on the way into full screen, where the grid doubles.
+   */
+  resize(cols: number, rows: number): void;
 }
 
 export interface MachineOptions {
@@ -107,7 +114,10 @@ export class TmuxMachine {
         const input = stripTerminalReports(data);
         if (input) this.send(input);
       },
-      onResize: () => this.applySize(),
+      onResize: (cols, rows) => {
+        this.applySize();
+        this.#events.resize?.(cols, rows);
+      },
     });
   }
 

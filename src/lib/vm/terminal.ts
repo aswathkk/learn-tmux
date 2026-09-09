@@ -84,6 +84,26 @@ export class TerminalView {
     this.terminal.open(this.#container);
     this.terminal.onData(options.onData);
 
+    /**
+     * The way out, for a keyboard.
+     *
+     * A terminal has to keep Tab: it is how you complete a path, and handing it
+     * to the browser would take the single most-pressed key in a shell away
+     * from the shell. But xterm claims Shift-Tab with it, and Escape goes to
+     * the guest too, so focus that lands here has nowhere to go — a keyboard
+     * user reaching the terminal could not reach Reset, the cheat sheet, or the
+     * rest of the page (WCAG 2.1.2).
+     *
+     * Shift-Tab is the one that gives way. Nothing on this guest asks for it:
+     * the shell completes with Tab, tmux drives its menus with arrows, and the
+     * lessons never bind it. Returning false leaves the event alone, so the
+     * browser moves focus the way it would anywhere else on the page.
+     */
+    this.terminal.attachCustomKeyEventHandler((event) => {
+      if (event.type !== 'keydown') return true;
+      return !(event.key === 'Tab' && event.shiftKey);
+    });
+
     // The flex layout has no measurable height until the first frame, and the
     // monospace metrics are not known until the font loads. Either one leaves
     // xterm at its 80x24 default, so retry until a real fit succeeds.

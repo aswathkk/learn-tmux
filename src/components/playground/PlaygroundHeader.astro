@@ -1,0 +1,47 @@
+---
+/**
+ * The playground's header: the learn screen's 52px bar without the course in it.
+ *
+ * A lesson header carries a task picker and a progress bar because a lesson is
+ * a position in something. The playground is not — so the same bar says where
+ * you are, and offers the two ways back: the course and the cheat sheet.
+ */
+import Wordmark from '../ui/Wordmark.astro';
+---
+
+<header
+  class="flex h-[52px] min-w-0 items-center gap-3 border-b border-line bg-ink px-4 sm:gap-[18px] sm:px-5"
+  style="grid-column:1/-1"
+>
+  <a href="/" aria-label="learntmux home" class="flex-none py-[14px] -my-[14px]">
+    <Wordmark size="15px" />
+  </a>
+
+  <span aria-hidden="true" class="hidden h-[22px] w-px flex-none bg-line-strong sm:block"></span>
+
+  <div class="flex min-w-0 items-center gap-[7px] text-[13px] text-fg-muted">
+    <span class="truncate font-medium text-fg">Playground</span>
+    <span aria-hidden="true" class="hidden text-fg-faint sm:inline">·</span>
+    <span class="hidden truncate text-fg-dim sm:inline">nothing here is graded</span>
+  </div>
+
+  <div class="ml-auto flex flex-none items-center gap-4">
+    {/*
+      Three links plus the wordmark do not fit on a phone: at 375px the bar ran
+      out of room and clipped the one word saying which screen you are on. The
+      wordmark already goes home, so this is the link that gives way.
+    */}
+    <a
+      href="/#levels"
+      class="hidden whitespace-nowrap py-[14px] -my-[14px] text-[12.5px] text-fg-muted hover:text-accent sm:inline"
+    >
+      The course
+    </a>
+    <a
+      href="/cheatsheet"
+      class="whitespace-nowrap py-[14px] -my-[14px] text-[12.5px] text-fg-muted hover:text-accent"
+    >
+      Cheat sheet
+    </a>
+  </div>
+</header>

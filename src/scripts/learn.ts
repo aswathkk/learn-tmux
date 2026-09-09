@@ -22,8 +22,8 @@
  */
 import '@xterm/xterm/css/xterm.css';
 
-import type { TmuxMachine, MachineStatus } from '../lib/vm/machine';
-import type { EditorOverlay } from '../lib/vm/editor';
+import { TerminalPanel } from '../lib/vm/panel';
+import type { TmuxMachine } from '../lib/vm/machine';
 import type { LessonRunner, RunnerPhase } from '../lib/harness/runner';
 import type { ChecklistState } from '../lib/harness/checks';
 import type { Check } from '../lib/harness/types';
@@ -53,22 +53,13 @@ function prefersReducedMotion(): boolean {
 
 export function mountLearnScreen(): void {
   const specNode = document.querySelector<HTMLScriptElement>('[data-lesson-spec]');
-  const mount = document.querySelector<HTMLElement>('[data-terminal-mount]');
-  if (!specNode || !mount) return;
+  // The gate, the status line and the editor overlay are the same on every
+  // screen with a machine on it; they live in src/lib/vm/panel.ts.
+  const panel = new TerminalPanel();
+  if (!specNode || !panel.mount) return;
 
   const spec = JSON.parse(specNode.textContent ?? '{}') as PageSpec;
 
-  const gate = document.querySelector<HTMLElement>('[data-terminal-gate]');
-  const gateTitle = document.querySelector<HTMLElement>('[data-gate-title]');
-  const gateBody = document.querySelector<HTMLElement>('[data-gate-body]');
-  const gateNote = document.querySelector<HTMLElement>('[data-gate-note]');
-  const startButton = document.querySelector<HTMLButtonElement>('[data-terminal-start]');
-  const progressBar = document.querySelector<HTMLElement>('[data-terminal-progress]');
-  const statusPill = document.querySelector<HTMLElement>('[data-terminal-status]');
-  const statusText = document.querySelector<HTMLElement>('[data-terminal-status-text]');
-  const statusDot = document.querySelector<HTMLElement>('[data-terminal-dot]');
-  const sizeLabel = document.querySelector<HTMLElement>('[data-terminal-size]');
-  const resetButton = document.querySelector<HTMLButtonElement>('[data-lesson-reset]');
   const checklist = document.querySelector<HTMLElement>('[data-checklist]');
   const checksStatus = document.querySelector<HTMLElement>('[data-checks-status-text]');
   const checksDot = document.querySelector<HTMLElement>('[data-checks-dot]');
@@ -80,91 +71,6 @@ export function mountLearnScreen(): void {
 
   let startedAt = 0;
   let hintsRevealed = 0;
-
-  // -------------------------------------------------------------------- gate
-
-  const GATE_COPY = {
-    title: 'A real terminal, in this tab',
-    body: 'Alpine Linux and tmux 3.4 on an x86 emulator. Nothing to install, and no server behind it.',
-    note: 'about 15 MB, once',
-    action: 'Start the terminal',
-  };
-
-  /**
-   * The gate is the machine's whole face until the machine has one.
-   *
-   * It used to be hidden the instant Start was clicked, which left the learner
-   * watching an empty black rectangle for the length of a 15 MB download — and
-   * left them watching it forever if the download failed, with no control on
-   * screen to try again.
-   */
-  function setGate(state: 'idle' | 'busy' | 'failed', detail = ''): void {
-    if (!gate) return;
-    gate.hidden = false;
-
-    if (state === 'busy') {
-      if (gateTitle) gateTitle.textContent = 'Starting the machine';
-      if (gateBody) gateBody.textContent = detail || 'Fetching the emulator.';
-      if (gateNote) gateNote.textContent = 'first time only — it is cached after this';
-      if (startButton) {
-        startButton.disabled = true;
-        startButton.textContent = 'Starting…';
-      }
-      return;
-    }
-
-    if (state === 'failed') {
-      // The gate is the only one of the four places this state shows that has
-      // room to say anything useful, so it is the only one that says more than
-      // what happened. The status line and the checklist get a label.
-      if (gateTitle) gateTitle.textContent = 'The machine did not start';
-      if (gateBody) {
-        gateBody.textContent =
-          detail ||
-          'Check your connection and try again. The lesson, the steps and the hints are all on this page either way.';
-      }
-      if (gateNote) gateNote.textContent = 'nothing you did';
-      if (startButton) {
-        startButton.disabled = false;
-        startButton.textContent = 'Try again';
-      }
-      return;
-    }
-
-    if (gateTitle) gateTitle.textContent = GATE_COPY.title;
-    if (gateBody) gateBody.textContent = GATE_COPY.body;
-    if (gateNote) gateNote.textContent = GATE_COPY.note;
-    if (startButton) {
-      startButton.disabled = false;
-      startButton.textContent = GATE_COPY.action;
-    }
-  }
-
-  // ------------------------------------------------------------------ status
-
-  const dotColour: Record<MachineStatus, string> = {
-    idle: 'var(--color-ring)',
-    loading: 'var(--color-hint)',
-    booting: 'var(--color-hint)',
-    ready: 'var(--color-accent)',
-    failed: 'var(--color-alert)',
-  };
-
-  /**
-   * The status line under the terminal. At rest it says the session and the
-   * grid size and nothing else; it only speaks while the machine is doing
-   * something or has stopped.
-   */
-  function setStatus(status: MachineStatus, detail: string): void {
-    if (statusPill) statusPill.dataset.state = status;
-    if (statusDot) {
-      statusDot.style.background = dotColour[status];
-      statusDot.hidden = status === 'idle' || status === 'ready';
-    }
-    // On `ready` the machine reports its own size, which the line already
-    // carries a few characters to the left.
-    if (statusText) statusText.textContent = status === 'ready' ? '' : detail;
-  }
 
   // --------------------------------------------------------------- checklist
 
@@ -229,7 +135,6 @@ export function mountLearnScreen(): void {
 
   let machine: TmuxMachine | null = null;
   let runner: LessonRunner | null = null;
-  let editor: EditorOverlay | null = null;
   let loading: Promise<LessonRunner> | null = null;
 
   /**
@@ -244,37 +149,38 @@ export function mountLearnScreen(): void {
     ]);
 
     machine = new TmuxMachine({
-      container: mount!,
+      container: panel.mount!,
       events: {
         status: (status, detail) => {
-          setStatus(status, detail);
-          if (status === 'loading' || status === 'booting') setGate('busy', detail);
+          panel.status(status, detail);
+          if (status === 'loading' || status === 'booting') panel.gate('busy', detail);
           if (status === 'ready') {
-            if (gate) gate.hidden = true;
-            if (sizeLabel && machine) {
+            panel.hideGate();
+            if (machine) {
               const { cols, rows } = machine.view.size;
-              // Written with its own separator so the line reads correctly
-              // before a size is known.
-              sizeLabel.textContent = ` · ${cols}×${rows}`;
+              panel.showSize(cols, rows);
             }
-            if (resetButton) resetButton.disabled = false;
+            panel.setResetEnabled(true);
           }
         },
-        progress: (fraction) => {
-          if (progressBar) progressBar.style.width = `${Math.round(fraction * 100)}%`;
+        progress: (fraction) => panel.progress(fraction),
+        // The status line's size is written at boot; without this it would go
+        // on claiming that grid after the window changed shape.
+        resize: (cols, rows) => panel.showSize(cols, rows),
+        openFile: (path, contents) => {
+          if (machine) void panel.openEditor(machine, path, contents);
         },
-        openFile: (path, contents) => void showEditor(path, contents),
       },
     });
 
     runner = new LessonRunner(machine, {
       phase: (phase: RunnerPhase, detail: string) => {
         if (phase === 'error') {
-          setStatus('failed', 'machine stopped');
+          panel.status('failed', 'machine stopped');
           setChecksStatus('not running', 'var(--color-alert)');
           // The gate writes its own copy: `detail` is a one-line summary sized
           // for a status line, and the gate has a paragraph to fill.
-          setGate('failed');
+          panel.gate('failed');
           started = false;
         } else if (phase === 'watching') {
           setChecksStatus('watching your terminal', 'var(--color-accent)');
@@ -305,31 +211,6 @@ export function mountLearnScreen(): void {
     };
 
     return runner;
-  }
-
-  /** The editor is Level 4's, so it arrives when a lesson first opens a file. */
-  async function showEditor(path: string, contents: string): Promise<void> {
-    const editorRoot = document.querySelector<HTMLElement>('[data-editor]');
-    if (!editorRoot || !machine) return;
-
-    if (!editor) {
-      const { EditorOverlay } = await import('../lib/vm/editor');
-      editor = new EditorOverlay({
-        elements: {
-          root: editorRoot,
-          host: editorRoot.querySelector<HTMLElement>('[data-editor-host]')!,
-          pathLabel: editorRoot.querySelector<HTMLElement>('[data-editor-path]')!,
-          dirtyFlag: editorRoot.querySelector<HTMLElement>('[data-editor-dirty]')!,
-          saveKeyLabel: editorRoot.querySelector<HTMLElement>('[data-editor-save-key]')!,
-          saveButton: editorRoot.querySelector<HTMLElement>('[data-editor-save]')!,
-          cancelButton: editorRoot.querySelector<HTMLElement>('[data-editor-cancel]')!,
-        },
-        send: (text) => machine?.send(text),
-        onClose: () => machine?.view.focus(),
-      });
-    }
-
-    editor.show(path, contents);
   }
 
   function showCompletion(): void {
@@ -371,8 +252,8 @@ export function mountLearnScreen(): void {
     started = true;
     startedAt = Date.now();
 
-    setGate('busy', 'Fetching the emulator.');
-    setStatus('loading', 'loading the emulator');
+    panel.gate('busy', 'Fetching the emulator.');
+    panel.status('loading', 'loading the emulator');
 
     try {
       loading ??= loadRunner();
@@ -383,21 +264,21 @@ export function mountLearnScreen(): void {
       // to report through.
       console.error('could not load the terminal', error);
       loading = null;
-      setStatus('failed', 'machine stopped');
+      panel.status('failed', 'machine stopped');
       setChecksStatus('not running', 'var(--color-alert)');
-      setGate('failed');
+      panel.gate('failed');
       started = false;
     }
   }
 
-  startButton?.addEventListener('click', () => void startLesson());
+  panel.startButton?.addEventListener('click', () => void startLesson());
 
-  resetButton?.addEventListener('click', () => {
+  panel.resetButton?.addEventListener('click', () => {
     if (!runner) return;
     // The editor covers the terminal rather than the page now, so Reset is
     // reachable while the guest is still blocked in `open`. Cancelling first
     // hands the tty back before the setup script starts typing into it.
-    if (editor?.isOpen) editor.cancel();
+    panel.cancelEditor();
     if (completion) completion.hidden = true;
     working.forEach((node) => (node.hidden = false));
     startedAt = Date.now();
@@ -476,7 +357,7 @@ export function mountLearnScreen(): void {
     });
   }
 
-  setGate('idle');
+  panel.gate('idle');
   updateProgressCount();
   markCompletedLinks();
 

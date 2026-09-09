@@ -1,0 +1,270 @@
+---
+/**
+ * The playground: the course's machine with the course taken off it.
+ *
+ * Same guest, same terminal, same Reset — no task, no setup, no checks and no
+ * grading. It exists because the lessons reset the machine under you between
+ * tasks by design, and there has to be one place where nothing does: somewhere
+ * to try the key you just learned on a session you built yourself, and break it
+ * without failing anything.
+ *
+ * Left column is the key reference rather than a task, which is the same shape
+ * the learn screen already has, so it reuses that layout wholesale.
+ *
+ * This page is indexed, and it is written to be. "tmux online", "tmux in the
+ * browser" and "tmux playground" are queries whose best answer is a page that
+ * is the thing being searched for. A crawler cannot start an emulator, so the
+ * copy below the terminal is what it has to read instead: what this is, what it
+ * costs, what it keeps, and what it will not do.
+ *
+ * That copy stays out of the machine room. How the guest is built is in
+ * guest/README.md, and a visitor deciding whether to press Start does not need
+ * the distribution, the architecture or the name of the emulator.
+ *
+ * Everything here is server-rendered and readable before any script runs, the
+ * same rule the lesson pages follow.
+ */
+import Learn from '../layouts/Learn.astro';
+import LearnTerminal from '../components/learn/LearnTerminal.astro';
+import PlaygroundHeader from '../components/playground/PlaygroundHeader.astro';
+import KeyReference from '../components/playground/KeyReference.astro';
+import Kbd from '../components/ui/Kbd.astro';
+import { getCheatSheetSections, type CheatSheetRow } from '../lib/cheatsheet';
+import { getCourseStats } from '../lib/lessons';
+import { breadcrumbJsonLd } from '../lib/seo';
+
+const sections = await getCheatSheetSections();
+const stats = await getCourseStats();
+
+/**
+ * The buttons that type for you. Every one is a line the learner could type
+ * themselves — the point is to save the typing, never to do anything they
+ * cannot see happen in their own terminal.
+ *
+ * They assume you are inside tmux, because the page puts you there. `new -d`
+ * is the second session that does not complain about nesting, and `new -A` is
+ * the way back in after a detach or a kill.
+ */
+const shortcuts = [
+  { command: 'tmux ls', label: 'list sessions' },
+  { command: 'tmux new -d -s scratch', label: 'a second session' },
+  { command: 'tmux new -A -s play', label: 'back into play' },
+  { command: 'tmux kill-server', label: 'stop everything' },
+];
+
+/**
+ * Six things worth doing in a terminal nobody is grading, each one taken from
+ * the lesson that teaches it rather than written out again here. A key that
+ * left the course leaves this list with it instead of pointing at nothing.
+ */
+const TRY_KEYS = ['C-b %', 'C-b c', 'C-b z', 'C-b ,', 'C-b d', 'C-b ['];
+const rowsByKey = new Map(sections.flatMap((section) => section.rows).map((row) => [row.key, row]));
+const tryRows = TRY_KEYS.flatMap((key): CheatSheetRow[] => {
+  const row = rowsByKey.get(key);
+  return row ? [row] : [];
+});
+
+const crumbs = [{ name: 'learntmux', href: '/' }, { name: 'Playground' }];
+const jsonLd = [breadcrumbJsonLd(crumbs, Astro.site)];
+---
+
+<Learn
+  title="tmux Playground: Try tmux Online in Your Browser | learntmux"
+  description="Real tmux, running in a browser tab. Split panes, detach and reattach, and try every key the course teaches. Nothing to install, no account, nothing graded."
+  variant="playground"
+  jsonLd={jsonLd}
+>
+  <PlaygroundHeader slot="header" />
+
+  <Fragment slot="task">
+    <div class="learn-intro flex flex-col gap-[10px]">
+      <span
+        class="w-fit rounded-full bg-accent/15 px-[10px] py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[.1em] text-accent"
+      >
+        tmux playground
+      </span>
+      <h1
+        class="m-0 text-[27px] font-semibold leading-[1.18] tracking-[-.02em] text-fg [text-wrap:pretty]"
+      >
+        Try tmux online, in a real terminal.
+      </h1>
+      <p class="m-0 text-[14.5px] leading-[1.55] text-fg-dim [text-wrap:pretty]">
+        Real tmux, running in this tab. Nothing to install and no account to make: start the
+        terminal and you land at a prompt in a session called <span class="font-mono text-fg"
+          >play</span
+        >, with nothing watching what you do in it.
+      </p>
+    </div>
+
+    <div class="learn-task-body flex flex-col gap-7">
+      {/*
+        The machine boots to a shell and the page types `tmux new -A -s play`
+        into it, in full view — see src/scripts/playground.ts. These are the
+        next lines you are likely to want, saved from being typed.
+
+        None of them is disabled before the machine is up. They used to be, for
+        the twenty seconds a boot takes, which is the first thing anyone saw:
+        four greyed-out controls whose labels sat at 2:1 and which the keyboard
+        skipped entirely, next to a paragraph explaining that they would work
+        later. Pressing one now starts the terminal and runs the line once it
+        is there, so the row is a way in rather than a locked door.
+      */}
+      <section class="flex flex-col gap-3" aria-labelledby="shortcuts-heading">
+        <div class="flex items-baseline gap-3">
+          <h2 id="shortcuts-heading" class="text-[13px] font-semibold text-fg">Type it for me</h2>
+          <span class="ml-auto text-[11.5px] text-fg-faint">sent to your terminal</span>
+        </div>
+        <ul class="flex flex-wrap gap-2">
+          {
+            shortcuts.map((shortcut) => (
+              <li>
+                <button
+                  type="button"
+                  data-send={shortcut.command}
+                  class="flex min-h-[38px] flex-col items-start gap-[2px] rounded-[8px] border border-line-strong bg-ink-card px-3 py-[7px] text-left transition-colors hover:border-accent/50 [@media(pointer:coarse)]:min-h-11"
+                >
+                  <span class="font-mono text-[12px] font-semibold text-fg">
+                    {shortcut.command}
+                  </span>
+                  <span class="text-[11px] text-fg-faint">{shortcut.label}</span>
+                </button>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="m-0 text-[12px] leading-[1.5] text-fg-faint">
+          Any of these starts the terminal first if it is not running yet. Detach with{' '}
+          <span class="font-mono text-fg-dim">C-b d</span> to get back to the plain shell.
+        </p>
+      </section>
+
+      {/*
+        Six openings, each linked to the lesson that teaches the key. The links
+        are the useful half: a playground where you already know what to type
+        is a different page from one where you do not.
+      */}
+      <section class="flex flex-col gap-3" aria-labelledby="try-heading">
+        <h2 id="try-heading" class="text-[13px] font-semibold text-fg">Six openings</h2>
+        <ul class="flex flex-col gap-[6px]">
+          {
+            tryRows.map((row) => (
+              <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[9px] bg-ink-card px-3 py-[10px]">
+                <span class="text-[12.5px] leading-[1.45] text-fg-muted">
+                  {row.description}{' '}
+                  <a
+                    href={row.lessonHref}
+                    class="whitespace-nowrap text-[11.5px] text-fg-faint underline decoration-line-strong hover:text-accent"
+                  >
+                    {row.lessonTitle}
+                  </a>
+                </span>
+                <Kbd keys={row.key} size="sm" class="flex-none" />
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <KeyReference sections={sections} />
+
+      {/*
+        Below the fold, and the reason this page can be indexed at all: what the
+        machine is, what it costs and what it will not do. Written for the
+        person who searched for a tmux they could try without installing one.
+      */}
+      <section class="flex flex-col gap-3" aria-labelledby="about-heading">
+        <h2 id="about-heading" class="text-[15px] font-semibold text-fg">
+          What you are typing into
+        </h2>
+        <div class="flex flex-col gap-3 text-[13.5px] leading-[1.6] text-fg-dim">
+          <p class="m-0">
+            A real Linux machine running tmux with its stock settings, not a recording of one. It
+            is the same terminal the {stats.lessons} lessons use, with the grading taken off.
+          </p>
+          <p class="m-0">
+            The machine runs inside this tab. Nothing you type is sent anywhere, and there is no
+            account to make. The first start downloads about 15 MB and your browser keeps it, so
+            after that it opens in a couple of seconds.
+          </p>
+          <p class="m-0">
+            Starting it puts your keyboard in the terminal, and everything you press goes to the
+            machine from then on, <span class="font-mono text-fg-muted">Tab</span> included. Press{' '}
+            <span class="font-mono text-fg-muted">Shift-Tab</span> to step back out to the page.
+          </p>
+          <p class="m-0">
+            Nothing is saved. The machine lives as long as the tab does, and
+            <span class="font-mono text-fg-muted"> Reset</span> hands you a clean one whenever you
+            want, so kill the server or fill the disk if you feel like it.
+          </p>
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-4" aria-labelledby="questions-heading">
+        <h2 id="questions-heading" class="text-[15px] font-semibold text-fg">Questions</h2>
+
+        <div class="flex flex-col gap-[6px]">
+          <h3 class="m-0 text-[13px] font-semibold text-fg-muted">Is this really tmux?</h3>
+          <p class="m-0 text-[13.5px] leading-[1.6] text-fg-dim">
+            Yes: tmux 3.4, on a real Linux kernel. Every key does what it does on a machine you
+            would ssh into, because it is the same program.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <h3 class="m-0 text-[13px] font-semibold text-fg-muted">Do I need to install anything?</h3>
+          <p class="m-0 text-[13.5px] leading-[1.6] text-fg-dim">
+            No. A browser is the whole requirement, and there is nothing to sign up for.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <h3 class="m-0 text-[13px] font-semibold text-fg-muted">Does it work on a phone?</h3>
+          <p class="m-0 text-[13.5px] leading-[1.6] text-fg-dim">
+            It starts, but tmux hangs off a prefix key, <Kbd keys="C-b" size="sm" />, and a phone
+            keyboard has no Ctrl. Read here, play on a laptop.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <h3 class="m-0 text-[13px] font-semibold text-fg-muted">Is my work saved between visits?</h3>
+          <p class="m-0 text-[13.5px] leading-[1.6] text-fg-dim">
+            No. Sessions here are gone when the tab closes. Detaching with
+            <Kbd keys="C-b d" size="sm" /> and reattaching works exactly as it does on a real
+            machine, but only while the tab is open.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <h3 class="m-0 text-[13px] font-semibold text-fg-muted">
+            I would rather be taught than handed a prompt.
+          </h3>
+          <p class="m-0 text-[13.5px] leading-[1.6] text-fg-dim">
+            Then start the course: {stats.lessons} tasks across {stats.levels} levels, each one in a
+            terminal like this one, with the checks ticking themselves off as you get things right.{' '}
+            <a href="/" class="text-accent underline decoration-accent/30 hover:text-accent-soft"
+              >Start with the basics</a
+            >, or take{' '}
+            <a
+              href="/cheatsheet"
+              class="text-accent underline decoration-accent/30 hover:text-accent-soft"
+              >the cheat sheet</a
+            > with you.
+          </p>
+        </div>
+      </section>
+    </div>
+  </Fragment>
+
+  <Fragment slot="terminal">
+    <LearnTerminal
+      session={null}
+      fullscreen
+      gateBody="Real tmux, running in this tab. Nothing to install, and no server behind it."
+    />
+  </Fragment>
+</Learn>
+
+<script>
+  import { mountPlayground } from '../scripts/playground';
+  mountPlayground();
+</script>

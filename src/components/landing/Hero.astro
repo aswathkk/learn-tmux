@@ -37,6 +37,7 @@ const facts = [
     <div class="flex items-center gap-[26px] text-sm font-medium">
       <span class="hidden items-center gap-[26px] md:flex">
         <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
+        <a href="/playground" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Playground</a>
         <a href="/guides" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Guides</a>
         <a href="/cheatsheet" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Cheat sheet</a>
         <a href="/gallery" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Gallery</a>
@@ -84,6 +85,14 @@ const facts = [
           class="rounded-[10px] border border-line-strong px-[18px] py-[14px] text-[15px] font-semibold"
         >
           See the levels ↓
+        </a>
+        {/*
+          Not everyone arriving here wants to be taught. The third way in is a
+          terminal with nothing attached to it, which is also the page people
+          search for by name.
+        */}
+        <a href="/playground" class="py-[14px] text-[15px] text-fg-dim underline decoration-line-strong hover:text-accent">
+          Or just open a terminal
         </a>
       </div>
       <dl class="flex gap-7 pt-[6px] text-[13px] text-fg-dim">

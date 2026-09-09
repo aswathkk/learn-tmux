@@ -18,11 +18,21 @@ interface Props {
   canonical?: string;
   noindex?: boolean;
   jsonLd?: object[];
+  /**
+   * Which screen this is. The playground is the same two columns with no
+   * checklist under the terminal, so the terminal takes the space the list
+   * would have had; everything else about the shell is identical.
+   */
+  variant?: 'lesson' | 'playground';
 }
 
-const { ...seo } = Astro.props;
+const { variant = 'lesson', ...seo } = Astro.props;
 ---
-<Base {...seo} hideFooter bodyClass="learn-body">
+<Base
+  {...seo}
+  hideFooter
+  bodyClass={variant === 'playground' ? 'learn-body playground-body' : 'learn-body'}
+>
   <div class="learn-shell">
     <slot name="header" />
 

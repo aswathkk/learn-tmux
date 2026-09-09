@@ -115,8 +115,10 @@ export default defineConfig({
     dropGuestAssets(),
     sitemap({
       // Anything thin or duplicated is noindex in the page head, so it must not
-      // be advertised here either.
-      filter: (page) => !/\/(complete|playground)$/.test(page),
+      // be advertised here either. The playground used to be in that bucket and
+      // is not any more: it is the page someone searching for "tmux online"
+      // wants, and it now carries the copy to earn the visit.
+      filter: (page) => !/\/complete$/.test(page),
       serialize: (item) => {
         const path = new URL(item.url).pathname;
         const segments = path.split('/').filter(Boolean);
@@ -127,7 +129,15 @@ export default defineConfig({
         // lessons rather than by a hardcoded list of slugs.
         if (path === '/') item.priority = 1.0;
         else if (last && lessonSlugs.has(last)) item.priority = 0.8;
-        else if (segments.length === 1 && last && !['guides', 'cheatsheet', 'gallery'].includes(last))
+        // The playground and the cheat sheet are the two pages people arrive at
+        // without wanting the course, so they rank with the lessons rather than
+        // with the hubs.
+        else if (last === 'playground' || last === 'cheatsheet') item.priority = 0.8;
+        else if (
+          segments.length === 1 &&
+          last &&
+          !['guides', 'cheatsheet', 'gallery', 'playground'].includes(last)
+        )
           item.priority = 0.7;
         else item.priority = 0.6;
 

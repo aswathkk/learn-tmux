@@ -1,0 +1,68 @@
+---
+/**
+ * Every key the course teaches, beside the terminal you are trying them in.
+ *
+ * Derived from the lessons, exactly like /cheatsheet is: the keys come from the
+ * same `getCheatSheetSections()`, so one cannot exist there and not here.
+ *
+ * The keys only, though. This started as the cheat sheet folded up, one row per
+ * key with the same sentence of explanation beside it, which put a hundred
+ * lines of /cheatsheet on a second indexed page and made the column a wall of
+ * prose to scroll past on the way to the terminal. What a playground needs is
+ * the shape of what is available, close enough to reach: the six keys worth
+ * starting with are described above this, and the sheet itself is one click
+ * away with the rest.
+ *
+ * Level 1 is open because a playground with nothing revealed is a blank column
+ * next to a blank terminal.
+ */
+import Kbd from '../ui/Kbd.astro';
+import type { CheatSheetSection } from '../../lib/cheatsheet';
+
+interface Props {
+  sections: CheatSheetSection[];
+}
+
+const { sections } = Astro.props;
+const total = sections.reduce((count, section) => count + section.rows.length, 0);
+---
+
+<section class="flex flex-col gap-3" aria-labelledby="key-reference-heading">
+  <div class="flex items-baseline gap-3">
+    <h2 id="key-reference-heading" class="text-[13px] font-semibold text-fg">Every key, by level</h2>
+    <span class="ml-auto font-mono text-[11px] text-fg-faint">{total} in the course</span>
+  </div>
+
+  {
+    sections.map((section) => (
+      <details
+        class="key-group rounded-[10px] border border-line bg-ink-card"
+        open={section.level.n === 1}
+      >
+        <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-[13px] font-semibold text-fg-muted hover:text-fg">
+          <span>
+            Level {section.level.n} · {section.level.name}
+          </span>
+          <span class="ml-auto font-mono text-[11px] font-normal text-fg-faint">
+            {section.rows.length}
+          </span>
+        </summary>
+
+        <ul class="flex flex-wrap gap-[6px] px-4 pb-4">
+          {section.rows.map((row) => (
+            <li>
+              <Kbd keys={row.key} size="sm" />
+            </li>
+          ))}
+        </ul>
+      </details>
+    ))
+  }
+
+  <a
+    href="/cheatsheet"
+    class="self-start text-[12.5px] text-fg-dim underline decoration-line-strong hover:text-accent"
+  >
+    The cheat sheet says what each one does &rarr;
+  </a>
+</section>
