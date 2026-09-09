@@ -32,6 +32,10 @@ pnpm-debug.log*
 public/vm/
 guest/build/
 
+# rendered README banner. Regenerate with `./scripts/banner/render.sh`
+# (see scripts/banner/README.md); the served copy lives on assets.learntmux.dev.
+scripts/banner/build/
+
 # wrangler's local state: simulated R2, caches. `wrangler pages dev` fills this
 # with a copy of the guest machine.
 .wrangler/

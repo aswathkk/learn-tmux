@@ -1,4 +1,4 @@
-![learntmux — 42 tasks, one real terminal. tmux, in minutes.](https://assets.learntmux.dev/banner.png)
+![learntmux — learn tmux by doing it, not reading about it. 42 tasks, real tmux in the browser, nothing to install.](https://assets.learntmux.dev/banner.png)
 
 # learntmux
 
