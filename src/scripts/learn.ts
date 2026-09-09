@@ -241,6 +241,12 @@ export function mountLearnScreen(): void {
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
       block: 'start',
     });
+
+    // Deferred, and warmed when the machine started: by now the chunk is in
+    // the cache and this resolves in the same tick, so the burst lands with
+    // the swap rather than a beat after it. It throws from the corners of the
+    // viewport, so it does not care that the scroll above is still running.
+    void import('../lib/confetti').then(({ fire }) => fire());
   }
 
   document.querySelector('[data-keep-playing]')?.addEventListener('click', () => {
@@ -263,6 +269,9 @@ export function mountLearnScreen(): void {
     panel.status('loading', 'loading the emulator');
 
     try {
+      // Warmed here so the celebration is instant later: this gesture has
+      // already committed to 15 MB, and the confetti is under 2 KB of it.
+      void import('../lib/confetti');
       loading ??= loadRunner();
       const ready = await loading;
       await ready.start(spec);
