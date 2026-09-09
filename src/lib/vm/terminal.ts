@@ -130,9 +130,41 @@ export class TerminalView {
     const proposed = this.#fit.proposeDimensions();
     if (!proposed?.cols || !proposed.rows) return false;
 
-    this.#fit.fit();
+    const cols = proposed.cols + this.#spareColumns(proposed.cols, box.width);
+    if (cols !== this.terminal.cols || proposed.rows !== this.terminal.rows) {
+      // The addon's own fit clears the render cache before it resizes, so it
+      // stays the one that moves the grid; the second call only widens it.
+      this.#fit.fit();
+      if (this.terminal.cols !== cols) this.terminal.resize(cols, this.terminal.rows);
+    }
+
     this.#scheduleSizePush();
     return true;
+  }
+
+  /**
+   * The columns the fit addon gives up to a scrollbar that is not there.
+   *
+   * `proposeDimensions` subtracts a flat 14px for the viewport scrollbar
+   * whatever the browser actually draws (see @xterm/addon-fit). Every browser
+   * this ships to overlays that scrollbar, so the 14px was never taken back by
+   * anything: it sat as a strip of dead ground down the right of the box,
+   * wider than the 12px of padding beside it, which is what made the terminal
+   * look pushed off-centre inside its own frame.
+   *
+   * Measured rather than assumed — a platform that does lay its scrollbar out
+   * beside the content reports it here and keeps its room.
+   */
+  #spareColumns(cols: number, width: number): number {
+    const screen = this.#container.querySelector<HTMLElement>('.xterm-screen');
+    const viewport = this.#container.querySelector<HTMLElement>('.xterm-viewport');
+    if (!screen || !viewport) return 0;
+
+    const cellWidth = screen.getBoundingClientRect().width / this.terminal.cols;
+    if (!(cellWidth > 0)) return 0;
+
+    const scrollbar = viewport.offsetWidth - viewport.clientWidth;
+    return Math.max(0, Math.floor((width - scrollbar - cols * cellWidth) / cellWidth));
   }
 
   /** Mirror a settled size into the guest, once, rather than on every frame. */

@@ -1402,6 +1402,14 @@
   scrollbar-width: thin;
 }
 
+/* The grid is whole cells, so the box is almost never an exact multiple of one
+   and the last few pixels belong to no column. Left alone they all sit on the
+   right, where they read as the terminal wearing more padding on one side than
+   the other. Split them instead. */
+.xterm .xterm-screen {
+  margin-inline: auto;
+}
+
 /* ------------------------------------------------------------- editor overlay
    The `open` editor covers the terminal box exactly — it is rendered inside it,
    so its corners come from the box's own clip. The chrome is deliberately thin:
