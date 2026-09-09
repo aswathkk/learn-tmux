@@ -9,8 +9,10 @@
  * it. It is one module now, and the strings have one home.
  *
  * Nothing here knows what the machine is for. Grading, hints and completion
- * stay in the lesson's own client.
+ * stay in the lesson's own client — the panel only ever asks it to start, which
+ * it does on a gesture and, where it costs nothing, on its own.
  */
+import { mayAutoStart, scheduleAutoStart } from './autostart';
 import type { EditorOverlay } from './editor';
 import type { MachineStatus, TmuxMachine } from './machine';
 
@@ -38,6 +40,15 @@ const IDLE_COPY: GateCopy = {
   note: 'about 15 MB, once',
   action: 'Start the terminal',
 };
+
+/**
+ * Appended to the gate's note while a start is scheduled.
+ *
+ * Kept apart from the note itself rather than folded into it: #readIdleCopy
+ * takes the idle copy from the markup, so writing a derived value back into
+ * the element it is read from is how a suffix ends up on the page twice.
+ */
+const AUTO_START_NOTE = ' · starting on its own';
 
 const FAILED_BODY =
   'Check your connection and try again. The lesson, the steps and the hints are all on this page either way.';
@@ -75,6 +86,8 @@ export class TerminalPanel {
   #editor: EditorOverlay | null = null;
   #onFullscreenChange: ((on: boolean) => void) | null = null;
   #hintTimer: ReturnType<typeof setTimeout> | null = null;
+  #cancelAutoStart: (() => void) | null = null;
+  #autoStartArmed = false;
 
   constructor(copy: PanelCopy = {}) {
     this.mount = document.querySelector<HTMLElement>('[data-terminal-mount]');
@@ -148,6 +161,12 @@ export class TerminalPanel {
     }
 
     this.#writeGate(this.#idle);
+    // Said out loud, because a button about to press itself is otherwise a
+    // small mystery. Here rather than only at the moment of arming, because a
+    // screen paints its idle gate after wiring one up.
+    if (this.#autoStartArmed && this.#gateNote) {
+      this.#gateNote.textContent = `${this.#idle.note}${AUTO_START_NOTE}`;
+    }
     if (this.startButton) {
       this.startButton.disabled = false;
       this.startButton.textContent = this.#idle.action;
@@ -163,6 +182,62 @@ export class TerminalPanel {
   /** The machine is up: the terminal underneath is the whole panel now. */
   hideGate(): void {
     if (this.#gate) this.#gate.hidden = true;
+  }
+
+  /**
+   * Start the machine without being asked, at the first moment that costs
+   * nothing: page loaded, terminal on screen, tab in front, main thread idle.
+   *
+   * The button does not move and does not stop working — this is a deadline a
+   * visitor can always beat, not a replacement for the control. On a client
+   * that declines (src/lib/vm/autostart.ts decides which) the button is the
+   * only way in, exactly as before.
+   */
+  autoStart(start: () => void): void {
+    const box = this.#box;
+    const gate = this.#gate;
+    if (!box || !gate) return;
+
+    let cancelled = false;
+    // Registered before the first await, not after it. Deciding whether a
+    // client can afford the machine ends in a Cache API lookup, and a visitor
+    // can press Start inside that: a cancel landing there has to be remembered
+    // rather than arrive to find nothing registered yet. Missing it would put
+    // "starting on its own" back under a gate that already says "Starting the
+    // machine".
+    this.#cancelAutoStart = () => {
+      cancelled = true;
+    };
+
+    void (async () => {
+      const may = await mayAutoStart();
+      if (cancelled || !may || gate.hidden) return;
+
+      this.#autoStartArmed = true;
+      if (this.#gateNote) this.#gateNote.textContent = `${this.#idle.note}${AUTO_START_NOTE}`;
+
+      const stop = scheduleAutoStart(box, () => {
+        this.#cancelAutoStart = null;
+        start();
+      });
+      this.#cancelAutoStart = () => {
+        cancelled = true;
+        stop();
+      };
+    })();
+  }
+
+  /**
+   * Call off a pending auto-start.
+   *
+   * The screen's own start path calls this first: a visitor who pressed the
+   * button has already asked for the machine, and a scheduled start arriving
+   * afterwards would be a second boot request against one already on its way.
+   */
+  cancelAutoStart(): void {
+    this.#cancelAutoStart?.();
+    this.#cancelAutoStart = null;
+    this.#autoStartArmed = false;
   }
 
   /**

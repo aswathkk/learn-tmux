@@ -98,7 +98,10 @@ const {
 
   {/*
     The start gate. The emulator is 15 MB and runs an x86 CPU on the main
-    thread, so it is never booted on page load: the learner asks for it.
+    thread, so it is never booted *during* page load — but on a client that can
+    afford it the machine starts itself once the page is loaded, idle and on
+    screen (src/lib/vm/autostart.ts). The button is the learner's way to beat
+    that deadline, and the only way in on a client that declines.
 
     It stays up through the download and the boot, with its own copy swapped for
     what the machine is doing, and it comes back if the machine fails — a black

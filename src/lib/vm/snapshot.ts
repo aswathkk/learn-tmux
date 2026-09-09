@@ -15,9 +15,9 @@
  * the stored ETag ourselves and keep the cached body only if the server answers
  * 304.
  */
+import { CACHE_NAME } from './snapshot-cache';
 
-/** Bump to invalidate every stored snapshot at once. Older caches are swept on open. */
-const CACHE_NAME = 'learntmux-vm-v1';
+export { SNAPSHOT_URL } from './snapshot-cache';
 
 /** Reports download progress as a fraction in [0, 1]. */
 export type ProgressHandler = (fraction: number) => void;

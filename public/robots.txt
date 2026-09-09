@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
 
+# The guest machine: a 2 MB WebAssembly emulator, a 12 MB snapshot and a lazily
+# fetched 9p rootfs, served from R2 by functions/vm/[[path]].ts.
+#
+# Lesson pages start it on their own now, so a renderer that executes the page's
+# JavaScript would otherwise be offered 15 MB it has no use for. Nothing on any
+# page depends on it: the lesson, the steps, the checks and the hints are all in
+# the static HTML, and a crawler that skips this is looking at the same page a
+# reader is.
+Disallow: /vm/
+
 Sitemap: https://learntmux.dev/sitemap-index.xml

@@ -126,6 +126,7 @@ export function mountPlayground(): void {
   async function start(): Promise<void> {
     if (started) return;
     started = true;
+    panel.cancelAutoStart();
 
     panel.gate('busy', 'Fetching the emulator.');
     panel.status('loading', 'loading the emulator');
@@ -151,6 +152,7 @@ export function mountPlayground(): void {
   }
 
   panel.startButton?.addEventListener('click', () => void start());
+  panel.autoStart(() => void start());
 
   /**
    * Put the machine back exactly as it booted, then walk back into tmux: an

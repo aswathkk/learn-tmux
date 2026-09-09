@@ -9,7 +9,7 @@
  */
 import { ControlChannel } from './control';
 import { SerialStream } from './serial';
-import { loadSnapshot } from './snapshot';
+import { loadSnapshot, SNAPSHOT_URL } from './snapshot';
 import { stripTerminalReports } from './input-filter';
 import { controlResizeCommand, TerminalView } from './terminal';
 import type { DownloadProgressEvent, V86Constructor, V86Emulator, V86Options } from './v86';
@@ -214,7 +214,7 @@ export class TmuxMachine {
       // cache a file this size: snapshot.ts fetches it, revalidates it and
       // keeps it in the Cache API instead.
       config.initial_state = {
-        buffer: await loadSnapshot(`${VM_BASE}state.bin.zst`, (fraction) =>
+        buffer: await loadSnapshot(SNAPSHOT_URL, (fraction) =>
           this.#events.progress?.(fraction),
         ),
       };
