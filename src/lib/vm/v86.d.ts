@@ -21,7 +21,12 @@ export interface V86Options {
   vga_bios: { url: string } | { buffer: ArrayBuffer };
   bzimage?: { url: string } | { buffer: ArrayBuffer };
   cmdline?: string;
-  initial_state?: { url: string };
+  /**
+   * A URL, or the snapshot's bytes. `restore_state` sniffs the zstd magic
+   * number off the buffer, so a compressed buffer restores exactly as a `.zst`
+   * URL does — which is what lets src/lib/vm/snapshot.ts own the fetch.
+   */
+  initial_state?: { url: string } | { buffer: ArrayBuffer };
   filesystem: V86FilesystemOptions;
   /** The second serial port. The lesson harness lives here; without it there is no control channel. */
   uart1: boolean;

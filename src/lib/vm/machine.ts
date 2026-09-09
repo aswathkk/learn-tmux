@@ -9,6 +9,7 @@
  */
 import { ControlChannel } from './control';
 import { SerialStream } from './serial';
+import { loadSnapshot } from './snapshot';
 import { stripTerminalReports } from './input-filter';
 import { controlResizeCommand, TerminalView } from './terminal';
 import type { DownloadProgressEvent, V86Constructor, V86Emulator, V86Options } from './v86';
@@ -198,7 +199,15 @@ export class TmuxMachine {
       // The snapshot carries the RAM, the devices and the 9p metadata, so there
       // is no kernel to load and no fs.json to parse. Passing basefs here would
       // be ignored anyway: libv86 takes the filesystem from the state.
-      config.initial_state = { url: `${VM_BASE}state.bin.zst` };
+      //
+      // Handed over as bytes rather than a URL because the browser refuses to
+      // cache a file this size: snapshot.ts fetches it, revalidates it and
+      // keeps it in the Cache API instead.
+      config.initial_state = {
+        buffer: await loadSnapshot(`${VM_BASE}state.bin.zst`, (fraction) =>
+          this.#events.progress?.(fraction),
+        ),
+      };
     } else {
       config.bzimage = { url: `${VM_BASE}bzimage.bin` };
       config.cmdline = 'console=ttyS0 tsc=reliable mitigations=off random.trust_cpu=on';
@@ -211,10 +220,15 @@ export class TmuxMachine {
 
     emulator.add_listener('serial0-output-byte', (byte) => this.#onSerialByte(byte));
     emulator.add_listener('serial1-output-byte', (byte) => this.control.push(byte));
-    emulator.add_listener('download-progress', (event: DownloadProgressEvent) => {
-      if (!event.total || this.#booted) return;
-      this.#events.progress?.(event.loaded / event.total);
-    });
+    // Only on the cold path. Restoring, the snapshot is already in hand and is
+    // 98% of the bytes; letting v86 report the 167 KB of BIOS it fetches after
+    // that would drag a full bar back to zero.
+    if (!useSnapshot) {
+      emulator.add_listener('download-progress', (event: DownloadProgressEvent) => {
+        if (!event.total || this.#booted) return;
+        this.#events.progress?.(event.loaded / event.total);
+      });
+    }
 
     if (useSnapshot) {
       emulator.add_listener('emulator-started', () => this.#resumeFromSnapshot());
