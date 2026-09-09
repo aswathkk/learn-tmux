@@ -14,7 +14,12 @@
  * carried them, so every status the machine reported went nowhere: the gate
  * vanished on click and the learner watched an empty black rectangle for the
  * length of a 15 MB download, and a failed boot said nothing at all.
+ *
+ * The editor overlay lives in here rather than in the layout because it covers
+ * the machine exactly — it edits a file on the guest, so it opens over the
+ * guest.
  */
+import EditorOverlay from './EditorOverlay.astro';
 
 interface Props {
   /** Shown in the status line, e.g. "learn". */
@@ -74,6 +79,8 @@ const { session = 'learn' } = Astro.props;
   <div class="pointer-events-none absolute inset-x-0 top-0 z-20 h-[2px]">
     <div class="h-full w-0 bg-accent transition-[width] duration-200" data-terminal-progress></div>
   </div>
+
+  <EditorOverlay />
 </section>
 
 <div

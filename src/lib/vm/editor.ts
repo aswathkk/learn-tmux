@@ -10,10 +10,107 @@
  * package is 35.7 MB against a 2.8 MB rootfs.
  */
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view';
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  drawSelection,
+} from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { StreamLanguage } from '@codemirror/language';
+import { StreamLanguage, HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 import { shell } from '@codemirror/legacy-modes/mode/shell';
+
+/**
+ * CodeMirror ships no theme of its own, so an unstyled editor renders in its
+ * light default — a white gutter and a pale blue active line inside a terminal.
+ * Everything here reads from the brand tokens in global.css instead.
+ *
+ * The chrome is painted by the overlay markup; this is only what lives inside
+ * the scroller, so the surface stays transparent and the box below shows
+ * through.
+ */
+const theme = EditorView.theme(
+  {
+    '&': {
+      height: '100%',
+      backgroundColor: 'transparent',
+      color: 'var(--color-term)',
+      fontFamily: 'var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontSize: '13px',
+    },
+    '&.cm-focused': { outline: 'none' },
+    '.cm-scroller': {
+      overflow: 'auto',
+      fontFamily: 'inherit',
+      lineHeight: '1.55',
+      scrollbarWidth: 'thin',
+      scrollbarColor: 'var(--color-fg-faintest) transparent',
+    },
+    '.cm-content': { padding: '10px 0 40px', caretColor: 'var(--color-accent)' },
+    '.cm-line': { padding: '0 14px' },
+
+    /* A rule, not a panel: the numbers are a margin note on the file, so the
+       gutter carries no fill of its own. */
+    '.cm-gutters': {
+      backgroundColor: 'transparent',
+      color: 'var(--color-ring)',
+      border: 'none',
+      borderRight: '1px solid var(--color-line-faint)',
+      paddingRight: '2px',
+    },
+    '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 12px', minWidth: '34px' },
+    '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--color-fg-dim)' },
+    '.cm-activeLine': { backgroundColor: 'rgb(255 255 255 / 0.035)' },
+
+    '.cm-cursor, .cm-dropCursor': {
+      borderLeft: '2px solid var(--color-accent)',
+      marginLeft: '-1px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+      backgroundColor: 'var(--color-term-selection)',
+    },
+  },
+  { dark: true },
+);
+
+/**
+ * The same three levels the lesson code blocks use, for the same reason: this
+ * is a terminal, and Phosphor is reserved for progress and live state, which
+ * syntax highlighting is neither.
+ *
+ *     set -g history-limit 50000
+ *     ^^^ command          ^^^^^ value
+ *         ^^ ^^^^^^^^^^^^^ flag and option name
+ *
+ * The command is brightest, flags and option names sit at body weight, and the
+ * value carries the one hue — because the value is the part a reader opened the
+ * file to change.
+ */
+const highlight = HighlightStyle.define(
+  [
+    { tag: tags.comment, color: 'var(--color-fg-dim)', fontStyle: 'italic' },
+    { tag: [tags.keyword, tags.standard(tags.variableName)], color: 'var(--color-fg)' },
+    { tag: tags.attributeName, color: 'var(--color-fg-muted)' },
+    {
+      tag: [tags.string, tags.special(tags.string), tags.number, tags.atom],
+      color: 'var(--color-hint)',
+    },
+    { tag: [tags.operator, tags.punctuation, tags.bracket], color: 'var(--color-fg-dim)' },
+    { tag: [tags.variableName, tags.definition(tags.variableName)], color: 'var(--color-fg-muted)' },
+    { tag: tags.meta, color: 'var(--color-fg-dim)' },
+  ],
+  { themeType: 'dark' },
+);
+
+/** `Mod-s` is `⌘S` on a Mac and `Ctrl-S` everywhere else; the keycap says which. */
+const SAVE_KEY_LABEL = /mac|iphone|ipad/i.test(
+  typeof navigator === 'undefined' ? '' : navigator.userAgent,
+)
+  ? '\u2318S'
+  : 'Ctrl-S';
 
 /** The guest reads these back as ordinary input lines; they end the exchange. */
 const SAVE_SENTINEL = '__V86_OPEN_SAVE__';
@@ -23,6 +120,9 @@ export interface EditorOverlayElements {
   root: HTMLElement;
   host: HTMLElement;
   pathLabel: HTMLElement;
+  /** The unsaved-changes marker, shown once the buffer stops matching the file. */
+  dirtyFlag: HTMLElement;
+  saveKeyLabel: HTMLElement;
   saveButton: HTMLElement;
   cancelButton: HTMLElement;
 }
@@ -47,6 +147,7 @@ export class EditorOverlay {
     this.#send = options.send;
     this.#onClose = options.onClose;
 
+    this.#elements.saveKeyLabel.textContent = SAVE_KEY_LABEL;
     this.#elements.saveButton.addEventListener('click', () => this.save());
     this.#elements.cancelButton.addEventListener('click', () => this.cancel());
   }
@@ -58,7 +159,8 @@ export class EditorOverlay {
 
   show(path: string, contents: string): void {
     this.#open = true;
-    this.#elements.pathLabel.textContent = path;
+    this.#showPath(path);
+    this.#elements.dirtyFlag.hidden = true;
     this.#elements.root.hidden = false;
 
     const state = EditorState.create({
@@ -66,8 +168,11 @@ export class EditorOverlay {
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        highlightActiveLineGutter(),
+        drawSelection(),
         history(),
         StreamLanguage.define(shell),
+        syntaxHighlighting(highlight),
         EditorView.lineWrapping,
         keymap.of([
           { key: 'Mod-s', run: () => (this.save(), true), preventDefault: true },
@@ -76,13 +181,31 @@ export class EditorOverlay {
           ...defaultKeymap,
           ...historyKeymap,
         ]),
-        EditorView.theme({ '&': { height: '100%' }, '.cm-scroller': { overflow: 'auto' } }),
+        // Once is enough: this runs on every keystroke, and writing `hidden`
+        // that is already false still invalidates style on the element.
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged && this.#elements.dirtyFlag.hidden) {
+            this.#elements.dirtyFlag.hidden = false;
+          }
+        }),
+        theme,
       ],
     });
 
     this.#view?.destroy();
     this.#view = new EditorView({ state, parent: this.#elements.host });
     this.#view.focus();
+  }
+
+  /** The directory dims back so the file name is what the eye lands on. */
+  #showPath(path: string): void {
+    const cut = path.lastIndexOf('/');
+    const dir = document.createElement('span');
+    dir.className = 'text-fg-faint';
+    dir.textContent = path.slice(0, cut + 1);
+    const name = document.createElement('span');
+    name.textContent = path.slice(cut + 1);
+    this.#elements.pathLabel.replaceChildren(dir, name);
   }
 
   #close(): void {

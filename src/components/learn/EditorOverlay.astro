@@ -2,47 +2,73 @@
 /**
  * The overlay the guest's `open` command drives.
  *
+ * It is rendered inside the terminal box and covers it exactly: the file being
+ * edited belongs to the machine, so it opens over the machine rather than
+ * floating above the page as an unrelated dialog. The terminal stays faintly
+ * visible through it, which is the whole reason it is not opaque.
+ *
  * Modal on purpose: `open` blocks reading the tty until the editor closes, so
  * any keystroke that reached the terminal underneath would be eaten by it.
  * Level 4 uses this to edit ~/.tmux.conf without making anyone learn vi first.
  */
 ---
 <div
-  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm [&:not([hidden])]:flex"
+  class="learn-editor absolute inset-0 z-40 hidden flex-col [&:not([hidden])]:flex"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Edit file"
   data-editor
   hidden
 >
-  <div
-    class="flex h-[min(70vh,560px)] w-[min(760px,100%)] flex-col overflow-hidden rounded-xl border border-white/10 bg-ink-raised shadow-[0_30px_80px_rgba(0,0,0,.7)]"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Edit file"
+  <header
+    class="flex flex-none items-center gap-3 border-b border-line bg-ink-raised px-3 py-[9px]"
   >
-    <header class="flex items-center gap-3 border-b border-line px-4 py-3">
-      <span class="font-mono text-[13px] font-medium text-fg" data-editor-path></span>
-      {/* Raised surface: fg-faint is 4.34:1 here. */}
-      <span class="ml-auto font-mono text-[11px] text-fg-dim">
-        &#8984;S / Ctrl-S save &middot; Esc cancel
-      </span>
-    </header>
+    {/* Filled at open time: the directory dims back so the file name reads first. */}
+    <span
+      class="min-w-0 truncate font-mono text-[12.5px] font-medium text-fg"
+      data-editor-path
+    ></span>
 
-    <div class="min-h-0 flex-1 overflow-hidden" data-editor-host></div>
+    {/*
+      The one signal in the chrome. The guide allows the signal hues as dots,
+      and an edited-but-unsaved buffer is exactly that — a thing to notice, not
+      a thing to read.
+    */}
+    <span
+      class="flex flex-none items-center gap-[6px] font-mono text-[11px] text-fg-dim"
+      data-editor-dirty
+      hidden
+    >
+      <span class="h-[5px] w-[5px] rounded-full bg-hint"></span>unsaved
+    </span>
 
-    <footer class="flex items-center justify-end gap-3 border-t border-line px-4 py-3">
-      <button
-        type="button"
-        data-editor-cancel
-        class="rounded-lg border border-line-strong px-4 py-2 text-[13px] font-medium text-fg-muted hover:text-fg"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        data-editor-save
-        class="rounded-lg bg-accent px-4 py-2 text-[13px] font-bold text-ink hover:opacity-90"
-      >
-        Save
-      </button>
-    </footer>
-  </div>
+    {/* Keycaps are the fast path; the buttons below are the discoverable one. */}
+    <span class="learn-editor__keys ml-auto flex-none items-center gap-[7px]">
+      <kbd class="learn-editor__key" data-editor-save-key>Ctrl-S</kbd>
+      <span class="text-fg-faint">save</span>
+      <kbd class="learn-editor__key">Esc</kbd>
+      <span class="text-fg-faint">cancel</span>
+    </span>
+  </header>
+
+  <div class="min-h-0 flex-1 overflow-hidden" data-editor-host></div>
+
+  <footer
+    class="flex flex-none items-center justify-end gap-2 border-t border-line bg-ink-raised px-3 py-[9px]"
+  >
+    <button
+      type="button"
+      data-editor-cancel
+      class="rounded-md px-3 py-[7px] text-[12.5px] font-medium text-fg-dim transition-colors hover:text-fg"
+    >
+      Cancel
+    </button>
+    <button
+      type="button"
+      data-editor-save
+      class="rounded-md bg-accent px-[14px] py-[7px] text-[12.5px] font-bold text-ink transition-opacity hover:opacity-90"
+    >
+      Save
+    </button>
+  </footer>
 </div>

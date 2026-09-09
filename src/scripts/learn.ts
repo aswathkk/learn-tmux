@@ -319,6 +319,8 @@ export function mountLearnScreen(): void {
           root: editorRoot,
           host: editorRoot.querySelector<HTMLElement>('[data-editor-host]')!,
           pathLabel: editorRoot.querySelector<HTMLElement>('[data-editor-path]')!,
+          dirtyFlag: editorRoot.querySelector<HTMLElement>('[data-editor-dirty]')!,
+          saveKeyLabel: editorRoot.querySelector<HTMLElement>('[data-editor-save-key]')!,
           saveButton: editorRoot.querySelector<HTMLElement>('[data-editor-save]')!,
           cancelButton: editorRoot.querySelector<HTMLElement>('[data-editor-cancel]')!,
         },
@@ -392,6 +394,10 @@ export function mountLearnScreen(): void {
 
   resetButton?.addEventListener('click', () => {
     if (!runner) return;
+    // The editor covers the terminal rather than the page now, so Reset is
+    // reachable while the guest is still blocked in `open`. Cancelling first
+    // hands the tty back before the setup script starts typing into it.
+    if (editor?.isOpen) editor.cancel();
     if (completion) completion.hidden = true;
     working.forEach((node) => (node.hidden = false));
     startedAt = Date.now();
