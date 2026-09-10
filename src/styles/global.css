@@ -1154,6 +1154,14 @@
   animation-delay: 560ms, 1.6s;
 }
 
+/* Up, with the terminal underneath still being laid out for the lesson. The
+   shape is finished — the machine has arrived — and holds there, full and
+   still; the glow and the dots on the line are what say time is passing.
+   Everything else is the base rules: the split is done and nothing breathes. */
+[data-terminal-gate][data-state='staging'] .learn-gate-pane > i {
+  transform: scaleY(1);
+}
+
 /* Arrived. One beat of the finished mark at full strength before the gate goes,
    so the terminal underneath is something that appeared rather than something
    that replaced a loading screen. */

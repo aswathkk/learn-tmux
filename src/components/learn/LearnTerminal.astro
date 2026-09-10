@@ -141,6 +141,11 @@ const {
     with however much of the machine has arrived. One line says what is
     happening.
 
+    On a lesson it stays past the boot. The prompt the machine wakes at is
+    about to be reset, set up and have `tmux attach` typed into it, none of
+    which is the lesson yet; the screen leaves once the task is staged and tmux
+    has drawn underneath it (src/scripts/learn.ts).
+
     The button underneath only exists for the paths where something has to be
     asked: a client that declines the download (data saver, a phone, a slow
     link) and a machine that did not start. Hidden otherwise, and the panel is

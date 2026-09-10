@@ -22,6 +22,12 @@ export type GateState =
   | 'idle'
   /** Downloading or booting. */
   | 'busy'
+  /**
+   * Up, but not yet the learner's: the screen underneath is being laid out.
+   * The mark is finished — the machine has arrived — and holds while that
+   * happens. A lesson passes through here; the playground never does.
+   */
+  | 'staging'
   /** Up. Held for one beat at full strength, then gone. */
   | 'ready'
   /** A client that declines the download, one press from having it. */
@@ -172,6 +178,13 @@ export class TerminalPanel {
    * the screen only ever has to say what is happening. The button comes back
    * for the two states that are a question — a client that declines the
    * download, and a machine that stopped.
+   *
+   * Nor does the screen leave the moment the machine reaches a prompt. That
+   * prompt is not always the terminal the learner was promised: a lesson has
+   * still to reset it, run its setup and type `tmux attach` into it, and a
+   * screen that had already gone showed every one of those. So the panel never
+   * decides for itself that the machine is up — the screen running it says so,
+   * through `hideGate`, and holds `staging` until then.
    */
   gate(state: GateState, detail = ''): void {
     const gate = this.#gate;
@@ -191,6 +204,23 @@ export class TerminalPanel {
       this.#writeGate({
         title: this.#loadingMessage(detail),
         note: this.#progressNote(),
+        dots: true,
+      });
+      this.#showAction(null);
+      return;
+    }
+
+    if (state === 'staging') {
+      // The machine has arrived, so the shape is finished: whatever the
+      // download had painted fills the rest of the way and holds there while
+      // the terminal underneath is laid out. The glow and the dots are what
+      // say time is still passing. The note is the one thing this state knows
+      // for certain, and it is the thing worth knowing — the wait left is not
+      // the 15 MB kind.
+      this.#paint(1);
+      this.#writeGate({
+        title: this.#loadingMessage(detail || 'Almost there'),
+        note: 'the machine is up',
         dots: true,
       });
       this.#showAction(null);
@@ -271,11 +301,12 @@ export class TerminalPanel {
    *
    * The statuses are written for the one-line readout under the terminal, in
    * lower case and sometimes with a full stop from whichever screen sent them.
-   * This is the same sentence given a capital and no stop, because it is a
-   * heading here rather than a fragment in a status line.
+   * This is the same sentence given a capital and no stop — the dots after it
+   * are the screen's own — because it is a heading here rather than a fragment
+   * in a status line.
    */
   #loadingMessage(detail: string): string {
-    const text = detail.trim().replace(/\.$/, '');
+    const text = detail.trim().replace(/[.…]+$/, '');
     if (!text) return 'Starting the machine';
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
@@ -351,7 +382,7 @@ export class TerminalPanel {
   }
 
   /**
-   * The machine is up: the terminal underneath is the whole panel now.
+   * The terminal underneath is the learner's now, and the whole panel.
    *
    * It does not simply vanish. The mark finishes, holds for a beat at full
    * strength, and fades — the terminal was already painted behind it, so what a
@@ -630,10 +661,10 @@ export class TerminalPanel {
    */
   progress(fraction: number): void {
     this.#progress = Math.min(1, Math.max(0, fraction));
-    // The machine zeroes this as it reports itself ready, which arrives while
-    // the finished mark is still on screen holding its last beat. The screen is
-    // already leaving; it does not empty itself on the way out.
-    if (this.#gateState === 'ready') return;
+    // Once the machine has arrived the mark is finished and stays that way:
+    // nothing landing late gets to empty a shape the screen is holding at full
+    // strength, or already fading out.
+    if (this.#gateState === 'staging' || this.#gateState === 'ready') return;
     this.#paint(this.#progress);
     // The note carries the number for anyone who wants one, and only while
     // there is a download to put a number on.

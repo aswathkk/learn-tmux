@@ -51,6 +51,12 @@ export type MachineStatus = 'idle' | 'loading' | 'booting' | 'ready' | 'failed';
 
 export interface MachineEvents {
   status(status: MachineStatus, detail: string): void;
+  /**
+   * How much of the machine has arrived, as a fraction. It only ever counts
+   * up: a finished download stays finished on whatever draws it, which used to
+   * be a bar that wanted zeroing at boot and is now the mark on the loading
+   * screen, which does not.
+   */
   progress(fraction: number): void;
   openFile(path: string, contents: string): void;
   /**
@@ -120,6 +126,9 @@ export class TmuxMachine {
   #baseline: ArrayBuffer | null = null;
   /** The guest's counter as the baseline was taken; put back exactly on restore. See #setTsc. */
   #baselineTsc: bigint | null = null;
+  /** When the guest last wrote to the learner's terminal, and how much in all. See `whenDrawn`. */
+  #lastOutputAt = 0;
+  #outputBytes = 0;
 
   constructor(options: MachineOptions) {
     this.#options = options;
@@ -290,6 +299,8 @@ export class TmuxMachine {
   }
 
   #onSerialByte(byte: number): void {
+    this.#lastOutputAt = performance.now();
+    this.#outputBytes++;
     this.#serial.push(byte);
 
     // Only meaningful on a cold boot: buildroot's shell prompt means the kernel
@@ -391,12 +402,65 @@ export class TmuxMachine {
   #markReady(): void {
     const { cols, rows } = this.view.size;
     this.#status('ready', `Alpine i386 + tmux · ${cols}×${rows}`);
-    this.#events.progress?.(0);
     this.view.focus();
     // Only now is the guest real enough to snapshot or take a command.
     this.#readyResolve?.();
     this.#readyResolve = null;
     this.#readyReject = null;
+  }
+
+  /** Bytes the guest has written to the learner's terminal since the machine was made. */
+  get outputBytes(): number {
+    return this.#outputBytes;
+  }
+
+  /**
+   * Resolve once something typed into the learner's terminal has been
+   * answered on it, and the answer has finished arriving.
+   *
+   * `mark` is `outputBytes` from just before the line was sent, and `budget`
+   * is the most the shell's echo of that line can come to. Everything past the
+   * two together is the program the line started, drawing itself — so this
+   * waits for that, and then for the wire to go quiet.
+   *
+   * Measured on the wire, at the byte, rather than at the terminal: the serial
+   * stream draws once a frame, so on a page that is being looked at the two
+   * are a frame apart, and the wire is the one that cannot be throttled out
+   * from under a background tab.
+   *
+   * It exists because a fixed wait is not a signal. `tmux attach` answers in
+   * a tenth of a second on a machine that is keeping up, and it answered in
+   * five on one whose clock had stalled after the snapshot restore (see
+   * `#advanceClock`, which is why it no longer does). Whatever is timed off a
+   * fixed beat — a loading screen lifting, a snapshot of what was "already
+   * true" — lands over a terminal with the command echoed on it and nothing
+   * else, the moment a machine is slower than the beat allowed for.
+   *
+   * Bounded twice: a program that prints nothing would otherwise hold the
+   * caller until the first deadline, and one that never stops printing until
+   * the second. Both are the whole page waiting.
+   */
+  async whenDrawn(
+    mark: number,
+    budget: number,
+    { maxWaitMs = 10_000, quietMs = 150, quietMaxMs = 2000 } = {},
+  ): Promise<void> {
+    const deadline = performance.now() + maxWaitMs;
+    while (this.#outputBytes <= mark + budget && performance.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    await this.#whenQuiet(quietMs, quietMaxMs);
+  }
+
+  /** Resolve once no byte has arrived for `quietMs`, or `maxWaitMs` has passed. */
+  async #whenQuiet(quietMs: number, maxWaitMs: number): Promise<void> {
+    const deadline = performance.now() + maxWaitMs;
+    for (;;) {
+      const now = performance.now();
+      const wait = quietMs - (now - this.#lastOutputAt);
+      if (wait <= 0 || now >= deadline) return;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(wait, deadline - now)));
+    }
   }
 
   /** Take the in-memory baseline used by "reset task". Cheap to call twice. */

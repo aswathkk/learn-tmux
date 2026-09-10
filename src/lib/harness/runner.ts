@@ -11,6 +11,11 @@
  *      because that is the learner's own client.
  *
  * Then the checks poll themselves (see checks.ts) until every one has latched.
+ *
+ * None of the three is something to watch happen. The page keeps its loading
+ * screen over the terminal until `watching`, so `watching` is only reported
+ * once the terminal is really the learner's: staged, with the start command
+ * landed and drawn.
  */
 import type { TmuxMachine } from '../vm/machine';
 import { Checklist, evaluateChecks, type ChecklistState } from './checks';
@@ -20,8 +25,8 @@ const POLL_INTERVAL_MS = 1500;
 const SETUP_TIMEOUT_MS = 20_000;
 
 /**
- * How long to let the lesson's own `startCommand` take effect before deciding
- * what was "already true".
+ * The least time the lesson's own `startCommand` gets to take effect before
+ * anything decides what was "already true".
  *
  * The pre-satisfied rule exists so a check that is true before the learner
  * touches anything cannot latch on its own. That only works if the snapshot is
@@ -29,10 +34,37 @@ const SETUP_TIMEOUT_MS = 20_000;
  * `tmux attach` takes a beat, and priming too early records "no client
  * attached", so the check for an attached client then latches the moment the
  * attach lands, crediting the learner for the lesson's own setup.
+ *
+ * A floor, not the whole wait: the command is also watched land on the wire
+ * (see `startEchoBudget`), because a beat is not a signal. The attach took
+ * five seconds on a machine whose clock had stalled after a restore — the
+ * machine no longer lets that happen (src/lib/vm/machine.ts), but a beat would
+ * still be a guess about the next slow thing.
  */
 const START_SETTLE_MS = 1200;
 
-export type RunnerPhase = 'idle' | 'resetting' | 'staging' | 'watching' | 'complete' | 'error';
+/**
+ * The most the shell's echo of a typed line can amount to, in bytes.
+ *
+ * What is typed comes back as typed, plus a line break; anything past twice
+ * that is the program the line started, drawing itself. Twice, because the
+ * echo is the only part of the arithmetic the shell owns, and the smallest
+ * thing any start command draws — a tmux client clearing the screen — is many
+ * times the line that started it.
+ */
+function startEchoBudget(command: string): number {
+  return 2 * (command.length + 2);
+}
+
+export type RunnerPhase =
+  | 'idle'
+  | 'resetting'
+  | 'staging'
+  /** The start command is typed and being watched land. */
+  | 'starting'
+  | 'watching'
+  | 'complete'
+  | 'error';
 
 export interface SetupFailure {
   command: string;
@@ -40,6 +72,11 @@ export interface SetupFailure {
 }
 
 export interface RunnerEvents {
+  /**
+   * Where the runner is. `watching` is the one the page acts on — it lifts the
+   * loading screen — and it is reported only once the terminal is the
+   * learner's to look at.
+   */
   phase(phase: RunnerPhase, detail: string): void;
   checklist(state: ChecklistState): void;
   /** Setup commands that exited non-zero. A lesson that reports these is broken, not failed. */
@@ -105,12 +142,21 @@ export class LessonRunner {
       if (generation !== this.#generation) return;
 
       if (spec.startCommand) {
+        this.#events.phase?.('starting', `Opening ${spec.startCommand.split(/\s+/)[0]}…`);
         // A beat, so the command is not typed into a terminal still redrawing.
         await new Promise((resolve) => setTimeout(resolve, 250));
+        const mark = this.#machine.outputBytes;
         this.#machine.send(spec.startCommand + '\n');
         // Then let it land, so the pre-satisfied snapshot below describes where
-        // the lesson actually starts.
-        await new Promise((resolve) => setTimeout(resolve, START_SETTLE_MS));
+        // the lesson actually starts. Landed means drawn: the floor is there
+        // for the server to settle, and the wire says when the client has
+        // actually painted — the loading screen over the terminal comes off on
+        // `watching`, and lifted over a command still coming up it shows the
+        // flash it exists to stop.
+        await Promise.all([
+          new Promise((resolve) => setTimeout(resolve, START_SETTLE_MS)),
+          this.#machine.whenDrawn(mark, startEchoBudget(spec.startCommand)),
+        ]);
       }
 
       if (failures.length) {

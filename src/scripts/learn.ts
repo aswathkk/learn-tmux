@@ -21,7 +21,9 @@
  * itself behind a loading screen that says so — every metric it could have hurt
  * is already recorded by then, and a learner who opened a lesson wanted the
  * terminal. src/lib/vm/autostart.ts decides which clients can afford that; the
- * rest are asked, on the same screen.
+ * rest are asked, on the same screen. The screen stays up past the boot: the
+ * prompt the machine wakes at is reset, set up and typed into before it is
+ * the lesson's, and it is uncovered only once it is.
  *
  * The stylesheet stays eager. It is 4 KB, it has no JavaScript cost, and moving
  * it into the deferred chunk would land it after global.css and undo the
@@ -161,8 +163,11 @@ export function mountLearnScreen(): void {
         status: (status, detail) => {
           panel.status(status, detail);
           if (status === 'loading' || status === 'booting') panel.gate('busy', detail);
+          // Ready is a prompt, not a lesson. The runner is about to reset that
+          // prompt, stage the task on it and type `tmux attach` into it, and a
+          // loading screen that left here showed all three — a blank box, then
+          // the command, then tmux over the top of it. It leaves on `watching`.
           if (status === 'ready') {
-            panel.hideGate();
             if (machine) {
               const { cols, rows } = machine.view.size;
               panel.showSize(cols, rows);
@@ -195,8 +200,16 @@ export function mountLearnScreen(): void {
           panel.gate('failed');
           started = false;
         } else if (phase === 'watching') {
+          // Only now is the terminal the learner's: the task is staged and
+          // tmux has had its beat to draw. This is where the screen leaves.
+          panel.hideGate();
           setChecksStatus('watching your terminal', 'var(--color-accent)');
-        } else if (phase !== 'complete') {
+        } else if (phase === 'resetting' || phase === 'staging' || phase === 'starting') {
+          // On the way in, and again on Reset. The machine is up, so the mark
+          // is finished; the screen stays over a terminal that is being laid
+          // out and says so in the learner's terms. The checks line keeps the
+          // runner's own, finer-grained ones.
+          panel.gate('staging', 'Setting up the task');
           setChecksStatus(detail.replace(/[.…]+$/, '').toLowerCase(), 'var(--color-hint)');
         }
       },
