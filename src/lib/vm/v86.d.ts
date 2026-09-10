@@ -40,7 +40,23 @@ export interface DownloadProgressEvent {
   total: number;
 }
 
+/**
+ * The CPU, as far as the page touches it: the time stamp counter.
+ *
+ * v86 keeps the TSC as an offset from host time (`performance.now()`), and
+ * these three are how it saves and restores it. The page uses them to move
+ * the guest's clock after a restore — see TmuxMachine#advanceClock.
+ */
+export interface V86Cpu {
+  /** Write the counter back into `current_tsc`, low word first. */
+  store_current_tsc(): void;
+  current_tsc: Uint32Array;
+  set_tsc(low: number, high: number): void;
+}
+
 export interface V86Emulator {
+  /** The running machine, present once the wasm module is up. */
+  v86?: { cpu: V86Cpu };
   add_listener(event: 'serial0-output-byte', handler: (byte: number) => void): void;
   add_listener(event: 'serial1-output-byte', handler: (byte: number) => void): void;
   add_listener(event: 'emulator-started', handler: () => void): void;

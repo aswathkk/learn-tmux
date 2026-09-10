@@ -12,7 +12,13 @@ import { SerialStream } from './serial';
 import { loadSnapshot, SNAPSHOT_URL } from './snapshot';
 import { stripTerminalReports } from './input-filter';
 import { controlResizeCommand, TerminalView } from './terminal';
-import type { DownloadProgressEvent, V86Constructor, V86Emulator, V86Options } from './v86';
+import type {
+  DownloadProgressEvent,
+  V86Constructor,
+  V86Cpu,
+  V86Emulator,
+  V86Options,
+} from './v86';
 
 /** Where the guest's files are served from. Everything under here is gitignored. */
 const VM_BASE = '/vm/';
@@ -24,6 +30,22 @@ const VM_BASE = '/vm/';
  */
 const BOOT_TIMEOUT_MS = 60_000;
 const LIBV86_URL = `${VM_BASE}libv86.js`;
+
+/**
+ * The guest's TSC rate: v86 advances the counter at a nominal gigahertz, and
+ * the kernel calibrates to exactly that ("tsc: Detected 1000.000 MHz").
+ */
+const TSC_HZ = 1_000_000_000;
+
+/**
+ * How far to push the clock after restoring the downloaded snapshot.
+ *
+ * Far enough to clear the few seconds the snapshot had been up when it was
+ * taken, with room for a slower build; well inside the fifteen minutes past
+ * which a single step overflows the kernel's cycle-to-nanosecond arithmetic
+ * (its `max_idle_ns`).
+ */
+const RESTORED_CLOCK_ADVANCE_S = 60;
 
 export type MachineStatus = 'idle' | 'loading' | 'booting' | 'ready' | 'failed';
 
@@ -96,6 +118,8 @@ export class TmuxMachine {
   #tail = '';
   /** A snapshot of the ready machine, kept in memory so a task can reset without downloading. */
   #baseline: ArrayBuffer | null = null;
+  /** The guest's counter as the baseline was taken; put back exactly on restore. See #setTsc. */
+  #baselineTsc: bigint | null = null;
 
   constructor(options: MachineOptions) {
     this.#options = options;
@@ -127,6 +151,16 @@ export class TmuxMachine {
 
   get hasBaseline(): boolean {
     return this.#baseline !== null;
+  }
+
+  /**
+   * The emulator itself, for the console and nothing else: the debugging
+   * handle the pages install (`__learntmux.machine.emulator.v86.cpu`) is the
+   * only practical way to look at the guest's clock or devices in someone
+   * else's browser. Null until `boot()` has constructed it.
+   */
+  get emulator(): V86Emulator | null {
+    return this.#emulator;
   }
 
   #status(status: MachineStatus, detail: string): void {
@@ -284,6 +318,7 @@ export class TmuxMachine {
     if (this.#booted) return;
     this.#booted = true;
     this.#status('booting', 'restored from snapshot');
+    this.#advanceClock(RESTORED_CLOCK_ADVANCE_S);
 
     setTimeout(async () => {
       this.view.fit();
@@ -299,6 +334,58 @@ export class TmuxMachine {
 
       this.#markReady();
     }, 150);
+  }
+
+  /**
+   * The guest's time stamp counter, as v86 keeps it: an offset from host time.
+   */
+  #readTsc(cpu: V86Cpu): bigint {
+    cpu.store_current_tsc();
+    const [low = 0, high = 0] = cpu.current_tsc;
+    return (BigInt(high) << 32n) | BigInt(low);
+  }
+
+  /**
+   * Set the counter to exactly `value`.
+   *
+   * v86's `set_tsc` is relative to the offset it already holds: it reads the
+   * counter *through* that offset and subtracts, so one call lands at `value`
+   * plus whatever offset was there, not at `value`. Its own restore is caught
+   * by this — `set_state` hands it the saved counter over an offset that is
+   * never zero, and the machine comes back with its clock somewhere else. So:
+   * set the counter to what it reads now, which leaves the offset at zero,
+   * and only then to the value wanted.
+   */
+  #setTsc(cpu: V86Cpu, value: bigint): void {
+    const now = this.#readTsc(cpu);
+    cpu.set_tsc(Number(now & 0xffffffffn), Number(now >> 32n));
+    cpu.set_tsc(Number(value & 0xffffffffn), Number(value >> 32n));
+  }
+
+  /**
+   * Move the guest's clock forward, after restoring the downloaded snapshot.
+   *
+   * The snapshot was taken in another process, and its counter does not come
+   * back where it was: v86 restores it through `set_tsc`, which lands relative
+   * to the offset this emulator already holds (see `#setTsc`), and from a
+   * snapshot made elsewhere that is below the last value the kernel read. The
+   * kernel keeps time off that counter and clamps a backwards step to no step
+   * at all, so time stands still until the counter climbs back past that
+   * value — 4.65 seconds, for a snapshot that had been up 4.65 seconds — and
+   * everything that waits on a clock waits with it. `tmux attach` could not
+   * connect for the whole of it, and the lesson opened onto a terminal with
+   * the command echoed and nothing else.
+   *
+   * A forward step is harmless, so the machine is pushed clear of anything the
+   * snapshot can have read. The in-memory baseline is taken after this and put
+   * back exactly (see `restoreBaseline`), so nothing later steps backwards.
+   * Measured on the guest's own uptime: frozen for 4.6 seconds before, ticking
+   * from the first read after.
+   */
+  #advanceClock(seconds: number): void {
+    const cpu = this.#emulator?.v86?.cpu;
+    if (!cpu) return;
+    this.#setTsc(cpu, this.#readTsc(cpu) + BigInt(seconds * TSC_HZ));
   }
 
   #markReady(): void {
@@ -317,6 +404,13 @@ export class TmuxMachine {
     if (this.#baseline || !this.#emulator) return;
     try {
       this.#baseline = await this.#emulator.save_state();
+      // Saving stores the counter as part of the state; this is that value,
+      // read back so the restore can land on it exactly.
+      const cpu = this.#emulator.v86?.cpu;
+      if (cpu) {
+        const [low = 0, high = 0] = cpu.current_tsc;
+        this.#baselineTsc = (BigInt(high) << 32n) | BigInt(low);
+      }
     } catch (error) {
       console.warn('baseline snapshot failed', error);
     }
@@ -330,6 +424,12 @@ export class TmuxMachine {
     if (!this.#baseline || !this.#emulator) return false;
     // restore_state consumes the buffer, so hand it a copy each time.
     await this.#emulator.restore_state(this.#baseline.slice(0));
+    // The restore's own attempt at the counter lands wide of where it was
+    // taken (see #setTsc), and the kernel inside the baseline has read the
+    // real value: anything lower than that stops its clock until the counter
+    // catches up, anything higher is a harmless jump. Exact is best.
+    const cpu = this.#emulator.v86?.cpu;
+    if (cpu && this.#baselineTsc !== null) this.#setTsc(cpu, this.#baselineTsc);
     this.control.reset();
     this.#serial.reset();
     this.view.reset();
