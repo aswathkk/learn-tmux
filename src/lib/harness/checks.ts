@@ -57,7 +57,10 @@ export async function evaluateChecks(
   return checks.map((check, index) => {
     let passes = false;
     try {
-      passes = new RegExp(check.expect).test(outputs[index]);
+      // `m`, because a check's command is usually a list — list-windows,
+      // list-panes — that prints one line per item, and a pattern anchors the
+      // line it cares about (`^logs:0$`), not the whole block.
+      passes = new RegExp(check.expect, 'm').test(outputs[index]);
     } catch {
       // A malformed regex is caught at build time by the content schema; if one
       // gets this far, treat it as never passing rather than throwing here.

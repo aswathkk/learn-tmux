@@ -16,14 +16,16 @@ import { z } from 'astro/zod';
  * `command` runs on the guest's control channel (its second serial port), never
  * in the terminal the learner is using. `kind: 'tmux'` commands are prefixed
  * with `tmux` before they run; `kind: 'shell'` commands run as written.
- * `expect` is a JavaScript regular expression matched against the trimmed output.
+ * `expect` is a JavaScript regular expression matched against the trimmed
+ * output, compiled multiline: `^` and `$` bracket a line of it, not the whole
+ * block, because most checks read one line out of a list.
  */
 export const checkSchema = z.object({
   id: z.string(),
   description: z.string(),
   kind: z.enum(['tmux', 'shell']),
   command: z.string(),
-  /** Compiled with `new RegExp()` in the browser, so it must be valid there. */
+  /** Compiled with `new RegExp(pattern, 'm')` in the browser, so it must be valid there. */
   expect: z
     .string()
     .refine(
