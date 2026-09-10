@@ -55,7 +55,7 @@ const emulator = new V86({
   bios: { buffer: read('seabios.bin') },
   vga_bios: { buffer: read('vgabios.bin') },
   bzimage: { buffer: read('bzimage.bin') },
-  cmdline: 'console=ttyS0 tsc=reliable mitigations=off random.trust_cpu=on',
+  cmdline: 'console=ttyS0 mitigations=off random.trust_cpu=on',
   filesystem: { basefs: { url: PUBLIC + 'fs.json' }, baseurl: PUBLIC + 'rootfs/' },
   // Must match the browser: without uart1 the control channel's serial port
   // does not exist, and the snapshot will not contain the control shell.
@@ -119,7 +119,7 @@ emulator.add_listener('serial1-output-byte', (byte: number) => {
   controlTail = (controlTail + String.fromCharCode(byte)).slice(-32);
   if (stage === 2 && controlTail.includes('WARM_DONE')) {
     stage = 3;
-    setTimeout(snapshot, 2000);
+    setTimeout(snapshot, 400);
   }
 });
 

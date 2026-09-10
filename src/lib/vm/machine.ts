@@ -220,7 +220,7 @@ export class TmuxMachine {
       };
     } else {
       config.bzimage = { url: `${VM_BASE}bzimage.bin` };
-      config.cmdline = 'console=ttyS0 tsc=reliable mitigations=off random.trust_cpu=on';
+      config.cmdline = 'console=ttyS0 mitigations=off random.trust_cpu=on';
       config.filesystem.basefs = { url: `${VM_BASE}fs.json` };
     }
 
