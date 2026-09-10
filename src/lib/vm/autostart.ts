@@ -1,7 +1,7 @@
 /**
  * Whether the machine is allowed to start itself, and when.
  *
- * The gate exists because 15 MB and an x86 CPU on the main thread is not
+ * The hold exists because 15 MB and an x86 CPU on the main thread is not
  * something to spend on someone who came to read. That reasoning was never an
  * argument for a button — it was an argument against starting the machine
  * *during page load*. Someone who has landed on a lesson, or on the playground,
@@ -17,8 +17,8 @@
  *     going to spend doing nothing;
  *   - only when the terminal is actually on screen and the tab is actually
  *     being looked at, so a background tab never spends the bytes;
- *   - never on a metered, slow, small or automated client — those keep the
- *     button, which still works exactly as it did.
+ *   - never on a metered, slow, small or automated client — those are offered
+ *     the download on the loading screen instead, in one press.
  *
  * SEO is handled a layer down and not here: /vm/ is disallowed in robots.txt,
  * so a crawler that renders one of these pages skips the guest entirely. The
@@ -40,10 +40,32 @@ interface CapabilityHints {
 }
 
 /**
+ * Why a client is not having the machine started for it, in the words the
+ * loading screen uses to explain itself.
+ *
+ * A verdict rather than a boolean because the screen it feeds no longer has a
+ * button standing by: there is nothing to press, so a client that declines has
+ * to be told what happened and offered the download in the same breath. "Not
+ * now" and "not on this connection" are different sentences.
+ */
+export type AutoStartVerdict =
+  | 'go'
+  /** A synthetic run. Nothing is offered and nothing is explained. */
+  | 'automated'
+  /** The visitor asked, at the OS or the browser, not to spend data. */
+  | 'save-data'
+  /** A phone. Cellular bytes and an x86 CPU on a phone's main thread. */
+  | 'small-screen'
+  /** Too little RAM or too few cores to stay responsive while it runs. */
+  | 'weak-device'
+  /** 2G or 3G, with no copy of the machine already in this browser. */
+  | 'slow-link';
+
+/**
  * Whether this client should have the machine started for it.
  *
- * Every `false` here leaves the learner with the button, so a wrong guess is a
- * click, never a missing terminal.
+ * Every verdict other than `go` leaves the learner one press away from the
+ * machine, so a wrong guess costs a click, never a terminal.
  *
  * Asynchronous only because of the last question it asks: whether the snapshot
  * is already in this browser. That is a real lookup in the Cache API rather
@@ -51,39 +73,39 @@ interface CapabilityHints {
  * under storage pressure, and believing a stale flag would spend 12.5 MB on a
  * connection the check exists to protect.
  */
-export async function mayAutoStart(): Promise<boolean> {
-  if (typeof navigator === 'undefined' || typeof matchMedia !== 'function') return false;
+export async function autoStartVerdict(): Promise<AutoStartVerdict> {
+  if (typeof navigator === 'undefined' || typeof matchMedia !== 'function') return 'automated';
 
   // Headless Chrome under Lighthouse, WebPageTest and anything driving the page
   // through WebDriver. A synthetic run should measure the page, not the guest.
-  if (navigator.webdriver) return false;
+  if (navigator.webdriver) return 'automated';
 
   // Two ways of saying the same thing, and both are explicit requests.
-  if (matchMedia('(prefers-reduced-data: reduce)').matches) return false;
+  if (matchMedia('(prefers-reduced-data: reduce)').matches) return 'save-data';
   const { connection, deviceMemory } = navigator as Navigator & CapabilityHints;
-  if (connection?.saveData) return false;
+  if (connection?.saveData) return 'save-data';
 
   // Below the lg breakpoint the columns stack and the machine is on a phone:
   // mobile is what Google indexes and ranks on, an x86 CPU on a phone's main
   // thread is the worst version of this trade, and the bytes are likely
   // someone's cellular data. Phones ask.
-  if (matchMedia('(max-width: 1023px)').matches) return false;
+  if (matchMedia('(max-width: 1023px)').matches) return 'small-screen';
 
   // The emulator is a single-threaded interpreter with an xterm renderer beside
   // it, so cores and RAM are the two things that decide whether the page stays
   // responsive while it runs.
-  if (typeof deviceMemory === 'number' && deviceMemory < 4) return false;
+  if (typeof deviceMemory === 'number' && deviceMemory < 4) return 'weak-device';
   if (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 2) {
-    return false;
+    return 'weak-device';
   }
 
   // A machine already in this browser costs a conditional request, not 15 MB,
   // so the link is only worth judging when the bytes are really going to move.
   if (connection?.effectiveType && /^(slow-)?2g$|^3g$/.test(connection.effectiveType)) {
-    if (!(await hasStoredSnapshot())) return false;
+    if (!(await hasStoredSnapshot())) return 'slow-link';
   }
 
-  return true;
+  return 'go';
 }
 
 /**

@@ -7,20 +7,21 @@
  * already in the HTML, and this only toggles state on them.
  *
  * Nothing here loads the emulator during page load. That is the whole reason
- * the gate exists: 15 MB and an x86 CPU on the main thread is not something to
- * spend on someone who came to read. It used to be only half true.
- * The v86 image was gated, but xterm.js, the machine and the CodeMirror overlay
- * were static imports, so every lesson page pulled 634 KB — 176 KB over the
- * wire — before the gate was touched, on a page whose entire premise is that it
- * is readable before any JavaScript runs. They are behind `import()` now: what
- * loads eagerly is this file, and this file is the hints, the navigator, the
- * progress count and the completion swap.
+ * the machine is held back at all: 15 MB and an x86 CPU on the main thread is
+ * not something to spend on someone who came to read. It used to be only half
+ * true. The v86 image was held back, but xterm.js, the machine and the
+ * CodeMirror overlay were static imports, so every lesson page pulled 634 KB —
+ * 176 KB over the wire — before anything was asked for, on a page whose entire
+ * premise is that it is readable before any JavaScript runs. They are behind
+ * `import()` now: what loads eagerly is this file, and this file is the hints,
+ * the navigator, the progress count and the completion swap.
  *
- * The gate is no longer a wall, though. Once the page has loaded, gone idle and
- * put the terminal on screen, the machine starts itself — every metric it could
- * have hurt is already recorded by then, and a learner who opened a lesson
- * wanted the terminal. src/lib/vm/autostart.ts decides which clients can afford
- * that; the rest keep the button.
+ * It is not a wall, though, and there is no button in front of it. Once the
+ * page has loaded, gone idle and put the terminal on screen, the machine starts
+ * itself behind a loading screen that says so — every metric it could have hurt
+ * is already recorded by then, and a learner who opened a lesson wanted the
+ * terminal. src/lib/vm/autostart.ts decides which clients can afford that; the
+ * rest are asked, on the same screen.
  *
  * The stylesheet stays eager. It is 4 KB, it has no JavaScript cost, and moving
  * it into the deferred chunk would land it after global.css and undo the

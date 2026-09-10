@@ -93,6 +93,7 @@
   /* channels, so accent alphas stay tied to the accent token */
   --accent-rgb: 61 220 132;
   --hint-rgb: 224 176 74;
+  --alert-rgb: 227 93 122;
   --rail: 52%;
   --rail-gap: clamp(28px, 4vw, 60px);
   --pin-top: 26vh;
@@ -954,6 +955,264 @@
   }
 }
 
+/* ---------------------------------------------------- the loading screen
+
+   What fills the terminal box between a page arriving and a machine appearing
+   in it. There is no button in that path any more (src/lib/vm/panel.ts decides
+   when there has to be), so this is the whole of it: the site's mark, one line,
+   and a note.
+
+   The mark is the wordmark's split-pane logo at the wordmark's own ratios — a
+   cell, a gap of 2/9 of it, a radius of 1/6 — scaled up until it can carry a
+   fill. It draws itself the way the shape is made: one pane, a horizontal
+   split, then a vertical one. That is the thing the site teaches, performed by
+   the thing that has to hold someone's attention for the length of a 15 MB
+   download.
+
+   Then the panes become the progress bar. Each fills from the bottom as its
+   share of the download lands — the tall pane is half the mark and carries the
+   first half — so the shape completing IS the machine arriving, and there is no
+   second bar anywhere saying the same thing in a straight line. */
+/* The screen itself. It fades rather than vanishing, and stops taking clicks
+   the moment the machine is up — the terminal is already painted underneath. */
+[data-terminal-gate] {
+  transition: opacity 260ms ease;
+  /* So the mark can be sized off the box rather than off nothing: a lesson's
+     terminal, the playground's full-height one and the 208px one a phone gets
+     are three very different rectangles to be the only thing in. */
+  container-type: size;
+}
+
+[data-terminal-gate][data-state='ready'] {
+  pointer-events: none;
+}
+
+[data-terminal-gate][data-leaving] {
+  opacity: 0;
+}
+
+.learn-gate-mark {
+  --cell: 26px;
+  --gap: 6px;
+  --radius: 5px;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, var(--cell));
+  grid-template-rows: repeat(2, var(--cell));
+  gap: var(--gap);
+}
+
+/* The wordmark's ratios, kept exactly: a gap of 2/9 of the cell and a radius of
+   a sixth of it. Guarded, because a browser that cannot read `cqmin` would take
+   `--cell` as invalid and leave the grid with no track size at all. */
+@supports (container-type: size) and (width: 1cqmin) {
+  .learn-gate-mark {
+    --cell: clamp(20px, 7cqmin, 34px);
+    --gap: calc(var(--cell) * 0.2222);
+    --radius: calc(var(--cell) / 6);
+  }
+}
+
+/* The glow the mark sits in. Behind the panes and well outside them, so the
+   accent reads as light coming off the shape rather than an edge on it. */
+.learn-gate-mark::before {
+  content: '';
+  position: absolute;
+  inset: -60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--accent-rgb) / 0.16), transparent 68%);
+  opacity: 0;
+  animation: gateGlow 3.2s ease-in-out 0.5s infinite;
+}
+
+.learn-gate-pane {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: rgb(var(--accent-rgb) / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.18);
+  /* Drawn in the order the splits happen, and held at nothing until then. */
+  animation: gateSplit 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.learn-gate-pane--left {
+  grid-row: span 2;
+  transform-origin: left center;
+}
+
+/* Split -h: the pane opens to the right of the one already there. */
+.learn-gate-pane--top {
+  transform-origin: left center;
+  animation-delay: 300ms;
+}
+
+/* Split -v: this one opens downward, out of the pane above it. */
+.learn-gate-pane--bottom {
+  transform-origin: center top;
+  animation-name: gateSplitDown;
+  animation-delay: 560ms;
+}
+
+/* The fill. `--p` is this pane's own share of the download, written by the
+   panel; the transition is what keeps a jumpy byte counter from strobing. */
+.learn-gate-pane > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: scaleY(var(--p, 0));
+  transform-origin: center bottom;
+  background: linear-gradient(to top, var(--color-accent), rgb(var(--accent-rgb) / 0.75));
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Nothing to count yet — loading the emulator's own code, or waiting on a
+   kernel. The panes take it in turn, in the order they were drawn, which reads
+   as the same shape still being worked on rather than a spinner bolted to it. */
+[data-terminal-gate][data-state='idle'] .learn-gate-pane,
+[data-terminal-gate][data-state='busy'] .learn-gate-pane {
+  animation:
+    gateSplit 460ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    gateBreathe 1.9s ease-in-out 1.1s infinite;
+}
+
+[data-terminal-gate][data-state='busy'] .learn-gate-pane--top,
+[data-terminal-gate][data-state='idle'] .learn-gate-pane--top {
+  animation-delay: 300ms, 1.35s;
+}
+
+[data-terminal-gate][data-state='busy'] .learn-gate-pane--bottom,
+[data-terminal-gate][data-state='idle'] .learn-gate-pane--bottom {
+  animation-name: gateSplitDown, gateBreathe;
+  animation-delay: 560ms, 1.6s;
+}
+
+/* Arrived. One beat of the finished mark at full strength before the gate goes,
+   so the terminal underneath is something that appeared rather than something
+   that replaced a loading screen. */
+[data-terminal-gate][data-state='ready'] .learn-gate-pane {
+  animation: none;
+  background: rgb(var(--accent-rgb) / 0.2);
+  box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.12);
+}
+
+[data-terminal-gate][data-state='ready'] .learn-gate-pane > i {
+  transform: scaleY(1);
+}
+
+/* Stopped. Not a red version of the same animation — the mark holds still,
+   because the one thing this state has to say is that nothing is happening. */
+[data-terminal-gate][data-state='failed'] .learn-gate-mark::before,
+[data-terminal-gate][data-state='unsupported'] .learn-gate-mark::before {
+  animation: none;
+  opacity: 0;
+}
+
+[data-terminal-gate][data-state='failed'] .learn-gate-pane,
+[data-terminal-gate][data-state='unsupported'] .learn-gate-pane {
+  animation: none;
+  background: rgb(var(--alert-rgb) / 0.13);
+  box-shadow: inset 0 0 0 1px rgb(var(--alert-rgb) / 0.28);
+}
+
+/* Whatever had loaded stays visible in the failed mark, in the failed colour:
+   a download that stopped at 80% and one that never started are different
+   things to look at. */
+[data-terminal-gate][data-state='failed'] .learn-gate-pane > i {
+  background: rgb(var(--alert-rgb) / 0.45);
+}
+
+[data-terminal-gate][data-state='unsupported'] .learn-gate-pane > i {
+  transform: scaleY(0);
+}
+
+/* Held: a client that was asked rather than started. The mark waits — drawn,
+   dim, not pretending to be busy. */
+[data-terminal-gate][data-state='held'] .learn-gate-pane {
+  animation: gateSplit 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: rgb(var(--accent-rgb) / 0.1);
+}
+
+[data-terminal-gate][data-state='held'] .learn-gate-mark::before {
+  animation: none;
+  opacity: 0.35;
+}
+
+/* The three dots after the loading message, which is the only part of this
+   screen that is allowed to be a cliché: it is also the only part a person
+   glances at to decide whether the page is still alive. */
+.learn-gate-dots {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 1px;
+  vertical-align: baseline;
+}
+
+.learn-gate-dots > i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.25;
+  animation: gateDot 1.4s ease-in-out infinite;
+}
+
+.learn-gate-dots > i:nth-child(2) { animation-delay: 0.18s; }
+.learn-gate-dots > i:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes gateSplit {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes gateSplitDown {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes gateBreathe {
+  0%, 100% {
+    background: rgb(var(--accent-rgb) / 0.14);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.18);
+  }
+  45% {
+    background: rgb(var(--accent-rgb) / 0.3);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.45);
+  }
+}
+
+@keyframes gateGlow {
+  0%, 100% { opacity: 0.35; transform: scale(0.92); }
+  50% { opacity: 0.85; transform: scale(1.04); }
+}
+
+@keyframes gateDot {
+  0%, 100% { opacity: 0.22; }
+  40% { opacity: 1; }
+}
+
+/* Reduced motion takes the whole performance away and leaves the instrument.
+   The panes are drawn, the fill still moves — a transform transition on a
+   progress readout is information, not decoration, and the global block above
+   keeps `transition-property` from carrying it, so it is written back here on
+   the one element that needs it. */
+@media (prefers-reduced-motion: reduce) {
+  .learn-gate-pane > i {
+    transition-property: transform !important;
+    transition-duration: 420ms !important;
+  }
+
+  .learn-gate-mark::before {
+    opacity: 0.4;
+  }
+
+  /* Without the cycle, an indeterminate wait has nothing moving on it at all.
+     The message underneath is doing the talking in that case, so the mark just
+     sits at the brighter of the two tones rather than flickering between them. */
+  [data-terminal-gate][data-state='busy'] .learn-gate-pane {
+    background: rgb(var(--accent-rgb) / 0.22);
+  }
+}
+
 /* The checks panel takes what the terminal leaves, which on a short window is
    less than the list needs. It used to overflow visible inside a column with
    `overflow: hidden`, so the rows past the fold were not clipped-but-scrollable,
@@ -1062,10 +1321,19 @@
   }
 
   /* An unstarted terminal is an empty black rectangle. At 52vh it was the whole
-     first screen; gated, it only has to be big enough to hold its own invitation.
-     Browsers without :has() keep the full height, which is what shipped. */
+     first screen; loading, it only has to be big enough to hold the mark and a
+     line. Browsers without :has() keep the full height, which is what shipped. */
   .learn-terminal-box:has([data-terminal-gate]:not([hidden])) {
     height: 208px;
+  }
+
+  /* Except when the screen has something to say. A phone is never started for
+     — it is asked — so this is the state most phones open in, and a paragraph
+     and a button do not fit in the height a mark and one line need. */
+  .learn-terminal-box:has([data-terminal-gate][data-state='held']),
+  .learn-terminal-box:has([data-terminal-gate][data-state='failed']),
+  .learn-terminal-box:has([data-terminal-gate][data-state='unsupported']) {
+    height: 320px;
   }
 
   /* Nothing is clipping the list here — the page scrolls. */

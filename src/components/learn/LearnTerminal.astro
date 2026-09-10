@@ -127,41 +127,69 @@ const {
   </div>
 
   {/*
-    The start gate. The emulator is 15 MB and runs an x86 CPU on the main
-    thread, so it is never booted *during* page load — but on a client that can
-    afford it the machine starts itself once the page is loaded, idle and on
-    screen (src/lib/vm/autostart.ts). The button is the learner's way to beat
-    that deadline, and the only way in on a client that declines.
+    The loading screen.
 
-    It stays up through the download and the boot, with its own copy swapped for
-    what the machine is doing, and it comes back if the machine fails — a black
-    box with no way back into it is not a state to leave anyone in.
+    The emulator is 15 MB and runs an x86 CPU on the main thread, so it is never
+    booted *during* page load — but once the page has loaded, gone idle and put
+    the terminal on screen, the machine starts itself (src/lib/vm/autostart.ts).
+    There is no button in that path: nobody arrives at a lesson wanting to press
+    a thing before the terminal they came for appears.
+
+    So this is a loading screen rather than a gate. The mark is the site's own
+    split-pane logo, and it does what the logo describes — one pane, then a
+    horizontal split, then a vertical one — while the panes fill from the bottom
+    with however much of the machine has arrived. One line says what is
+    happening.
+
+    The button underneath only exists for the paths where something has to be
+    asked: a client that declines the download (data saver, a phone, a slow
+    link) and a machine that did not start. Hidden otherwise, and the panel is
+    the only thing that shows it.
   */}
   <div
-    class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-ink-term px-6 text-center"
+    class="learn-gate absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-ink-term px-6 text-center"
     data-terminal-gate
+    data-state="idle"
   >
+    <div class="learn-gate-mark" data-gate-logo aria-hidden="true">
+      <span class="learn-gate-pane learn-gate-pane--left"><i></i></span>
+      <span class="learn-gate-pane learn-gate-pane--top"><i></i></span>
+      <span class="learn-gate-pane learn-gate-pane--bottom"><i></i></span>
+    </div>
+
     <div class="flex flex-col gap-[6px]">
-      <p class="font-mono text-[13px] font-semibold text-fg" data-gate-title>
+      {/*
+        The loading message. `aria-live` because on the automatic path this line
+        is the only thing that changes between a page arriving and a terminal
+        appearing on it.
+      */}
+      <p
+        class="learn-gate-title font-mono text-[13px] font-semibold text-fg"
+        data-gate-title
+        aria-live="polite"
+      >
         A real terminal, in this tab
       </p>
-      <p class="max-w-[38ch] text-[12.5px] leading-[1.5] text-fg-dim" data-gate-body>
+      {/*
+        Only painted where there is something to explain — a client that was
+        asked rather than started, or a machine that failed. The automatic path
+        is a mark and a line.
+      */}
+      <p class="max-w-[38ch] text-[12.5px] leading-[1.5] text-fg-dim" data-gate-body hidden>
         {gateBody}
       </p>
     </div>
+
     <button
       type="button"
       data-terminal-start
+      hidden
       class="min-h-[44px] rounded-lg bg-accent px-[18px] py-[11px] text-[13px] font-bold text-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
     >
       Start the terminal
     </button>
-    <p class="font-mono text-[11px] text-fg-faint" data-gate-note>about 15 MB, once</p>
-  </div>
 
-  {/* Boot progress, under the gate. */}
-  <div class="pointer-events-none absolute inset-x-0 top-0 z-20 h-[2px]">
-    <div class="h-full w-0 bg-accent transition-[width] duration-200" data-terminal-progress></div>
+    <p class="font-mono text-[11px] text-fg-faint" data-gate-note>about 15 MB, once</p>
   </div>
 
   <EditorOverlay />

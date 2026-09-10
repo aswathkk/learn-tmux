@@ -1,6 +1,6 @@
 /**
- * The chrome around a machine: the start gate, the status line under the
- * terminal, the boot progress bar and the editor overlay.
+ * The chrome around a machine: the loading screen, the status line under the
+ * terminal and the editor overlay.
  *
  * Every screen that runs the guest paints these the same way — a lesson and the
  * playground differ in what they do with the machine, never in how the machine
@@ -10,13 +10,26 @@
  *
  * Nothing here knows what the machine is for. Grading, hints and completion
  * stay in the lesson's own client — the panel only ever asks it to start, which
- * it does on a gesture and, where it costs nothing, on its own.
+ * it does on its own wherever the client can afford it, and on a press where it
+ * had to ask first or where something went wrong.
  */
-import { mayAutoStart, scheduleAutoStart } from './autostart';
+import { autoStartVerdict, scheduleAutoStart, type AutoStartVerdict } from './autostart';
 import type { EditorOverlay } from './editor';
 import type { MachineStatus, TmuxMachine } from './machine';
 
-export type GateState = 'idle' | 'busy' | 'failed';
+export type GateState =
+  /** Nothing has happened yet, and a start is coming. */
+  | 'idle'
+  /** Downloading or booting. */
+  | 'busy'
+  /** Up. Held for one beat at full strength, then gone. */
+  | 'ready'
+  /** A client that declines the download, one press from having it. */
+  | 'held'
+  /** It started and stopped. */
+  | 'failed'
+  /** This browser cannot run the machine at all. */
+  | 'unsupported';
 
 export interface GateCopy {
   title: string;
@@ -31,8 +44,8 @@ export interface PanelCopy {
 }
 
 /**
- * Only reached when a page ships a gate with nothing in it. The words a learner
- * actually reads are the ones in the markup: see #readIdleCopy.
+ * Only reached when a page ships a loading screen with nothing in it. The words
+ * a learner actually reads are the ones in the markup: see #readIdleCopy.
  */
 const IDLE_COPY: GateCopy = {
   title: 'A real terminal, in this tab',
@@ -41,17 +54,33 @@ const IDLE_COPY: GateCopy = {
   action: 'Start the terminal',
 };
 
-/**
- * Appended to the gate's note while a start is scheduled.
- *
- * Kept apart from the note itself rather than folded into it: #readIdleCopy
- * takes the idle copy from the markup, so writing a derived value back into
- * the element it is read from is how a suffix ends up on the page twice.
- */
-const AUTO_START_NOTE = ' · starting on its own';
-
 const FAILED_BODY =
   'Check your connection and try again. The lesson, the steps and the hints are all on this page either way.';
+
+/**
+ * Why the machine is waiting to be asked, said to the person waiting.
+ *
+ * There is no button on the automatic path any more, so a client that declines
+ * cannot simply be handed one and left to work out why the terminal did not
+ * appear on its own. Each of these is the reason plus the price, because those
+ * are the two things someone needs to decide.
+ */
+const HELD_NOTE: Record<Exclude<AutoStartVerdict, 'go'>, string> = {
+  'save-data': 'data saver is on — this is about 15 MB',
+  'small-screen': 'about 15 MB, and it runs here on your phone',
+  'weak-device': 'about 15 MB, and it is heavy on this device',
+  'slow-link': 'about 15 MB, on a connection that looks slow',
+  automated: 'about 15 MB, once',
+};
+
+/**
+ * How much of the mark each pane is worth.
+ *
+ * The panes are the progress bar, so their shares have to be their areas: the
+ * tall one is half the logo and carries the first half of the download. Any
+ * other split would have the shape finishing before the bytes did.
+ */
+const PANE_SHARE = [0.5, 0.25, 0.25];
 
 const DOT_COLOUR: Record<MachineStatus, string> = {
   idle: 'var(--color-ring)',
@@ -71,7 +100,7 @@ export class TerminalPanel {
   #gateTitle = document.querySelector<HTMLElement>('[data-gate-title]');
   #gateBody = document.querySelector<HTMLElement>('[data-gate-body]');
   #gateNote = document.querySelector<HTMLElement>('[data-gate-note]');
-  #progressBar = document.querySelector<HTMLElement>('[data-terminal-progress]');
+  #paneFills = [...document.querySelectorAll<HTMLElement>('[data-gate-logo] .learn-gate-pane > i')];
   #statusPill = document.querySelector<HTMLElement>('[data-terminal-status]');
   #statusText = document.querySelector<HTMLElement>('[data-terminal-status-text]');
   #statusDot = document.querySelector<HTMLElement>('[data-terminal-dot]');
@@ -91,12 +120,17 @@ export class TerminalPanel {
   #onFullscreenChange: ((on: boolean) => void) | null = null;
   #hintTimer: ReturnType<typeof setTimeout> | null = null;
   #cancelAutoStart: (() => void) | null = null;
-  #autoStartArmed = false;
   #focusArmed = false;
   #nudgeTimer: ReturnType<typeof setTimeout> | null = null;
   #nudgeAt = 0;
   #nudged = false;
   #requestFocus: (() => void) | null = null;
+  #gateState: GateState = 'idle';
+  #progress = 0;
+  #leaveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Held so a connection coming back can start the machine without a press. */
+  #start: (() => void) | null = null;
+  #waitingForNetwork = false;
 
   constructor(copy: PanelCopy = {}) {
     this.mount = document.querySelector<HTMLElement>('[data-terminal-mount]');
@@ -107,14 +141,13 @@ export class TerminalPanel {
   }
 
   /**
-   * What the gate said before anything touched it.
+   * What the loading screen said before anything touched it.
    *
-   * The busy and failed states are the machine talking, so their words live
-   * here. The idle state is the page talking, and each page words it for
-   * itself: a lesson invites you into a task, the playground into a terminal
-   * with nothing attached to it. Reading it back means a page says that once,
-   * in its own markup, and going back to idle restores exactly what a visitor
-   * read before they pressed anything.
+   * Every state but this one is the machine talking, so their words live here.
+   * This one is the page talking, and each page words it for itself: a lesson
+   * invites you into a task, the playground into a terminal with nothing
+   * attached to it. Reading it back means a page says that once, in its own
+   * markup, and a client that has to be asked is asked in the page's own voice.
    */
   #readIdleCopy(): GateCopy {
     const read = (node: HTMLElement | null, fallback: string): string =>
@@ -128,70 +161,220 @@ export class TerminalPanel {
   }
 
   /**
-   * The gate is the machine's whole face until the machine has one.
+   * The loading screen is the machine's whole face until the machine has one.
    *
    * It used to be hidden the instant Start was clicked, which left the learner
    * watching an empty black rectangle for the length of a 15 MB download — and
    * left them watching it forever if the download failed, with no control on
    * screen to try again.
+   *
+   * There is no button in the ordinary path now: the machine starts itself, so
+   * the screen only ever has to say what is happening. The button comes back
+   * for the two states that are a question — a client that declines the
+   * download, and a machine that stopped.
    */
   gate(state: GateState, detail = ''): void {
     const gate = this.#gate;
     if (!gate) return;
+
+    if (this.#leaveTimer) clearTimeout(this.#leaveTimer);
+    this.#leaveTimer = null;
     gate.hidden = false;
+    delete gate.dataset.leaving;
+    gate.dataset.state = state;
+    this.#gateState = state;
+    // Anything that is not the download is not a percentage: a failed start and
+    // a held one both keep whatever had arrived, and only `busy` counts up.
+    if (state === 'idle' || state === 'held') this.#paint(0);
 
     if (state === 'busy') {
       this.#writeGate({
-        title: 'Starting the machine',
-        body: detail || 'Fetching the emulator.',
-        note: 'first time only — it is cached after this',
+        title: this.#loadingMessage(detail),
+        note: this.#progressNote(),
+        dots: true,
       });
-      if (this.startButton) {
-        this.startButton.disabled = true;
-        this.startButton.textContent = 'Starting…';
-      }
+      this.#showAction(null);
       return;
     }
 
     if (state === 'failed') {
-      // The gate is the only one of the places this state shows that has room
-      // to say anything useful, so it is the only one that says more than what
-      // happened. The status line and the checklist get a label.
-      this.#writeGate({
-        title: 'The machine did not start',
-        body: detail || this.#failedBody,
-        note: 'nothing you did',
-      });
-      if (this.startButton) {
-        this.startButton.disabled = false;
-        this.startButton.textContent = 'Try again';
-      }
+      // The one place this state shows that has room to say anything useful, so
+      // the only one that says more than what happened. The status line and the
+      // checklist get a label.
+      //
+      // Offline is worth telling apart: nothing here is broken, the retry will
+      // fail the same way until the connection is back, and this is the only
+      // failure the page can watch for and recover from by itself.
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      this.#writeGate(
+        offline
+          ? {
+              title: 'You are offline',
+              body:
+                'The machine is one download away and needs a connection for it. ' +
+                'It starts on its own as soon as you are back.',
+              note: 'waiting for the network',
+            }
+          : {
+              title: 'The machine did not start',
+              body: detail || this.#failedBody,
+              note: 'nothing you did',
+            },
+      );
+      this.#showAction('Try again');
+      if (offline) this.#retryWhenOnline();
       return;
     }
 
-    this.#writeGate(this.#idle);
-    // Said out loud, because a button about to press itself is otherwise a
-    // small mystery. Here rather than only at the moment of arming, because a
-    // screen paints its idle gate after wiring one up.
-    if (this.#autoStartArmed && this.#gateNote) {
-      this.#gateNote.textContent = `${this.#idle.note}${AUTO_START_NOTE}`;
+    if (state === 'unsupported') {
+      this.#writeGate({
+        title: 'This browser cannot run the machine',
+        body:
+          detail ||
+          'It needs WebAssembly, which this browser has turned off or does not have. ' +
+            'Everything else on the page works without it.',
+        note: 'nothing you did',
+      });
+      this.#showAction(null);
+      return;
     }
-    if (this.startButton) {
-      this.startButton.disabled = false;
-      this.startButton.textContent = this.#idle.action;
+
+    if (state === 'held') {
+      // Asked rather than started, and told why in the same breath: with no
+      // button in the ordinary path, "press this" with no reason attached would
+      // read as the page having simply failed to do its job.
+      this.#writeGate({
+        title: this.#idle.title,
+        body: this.#idle.body,
+        note: detail || this.#idle.note,
+      });
+      this.#showAction(this.#idle.action);
+      return;
+    }
+
+    if (state === 'ready') {
+      // One beat of the finished mark, then out of the way. #leave does the
+      // leaving; this only has to stop the screen taking clicks meant for the
+      // terminal that is already painted underneath it.
+      this.#writeGate({ title: 'Ready', note: '' });
+      this.#showAction(null);
+      return;
+    }
+
+    // Idle: the machine is coming and nothing has been asked of anyone.
+    this.#writeGate({ title: 'Starting the terminal', note: this.#idle.note, dots: true });
+    this.#showAction(null);
+  }
+
+  /**
+   * The machine's own words, made into a line to read.
+   *
+   * The statuses are written for the one-line readout under the terminal, in
+   * lower case and sometimes with a full stop from whichever screen sent them.
+   * This is the same sentence given a capital and no stop, because it is a
+   * heading here rather than a fragment in a status line.
+   */
+  #loadingMessage(detail: string): string {
+    const text = detail.trim().replace(/\.$/, '');
+    if (!text) return 'Starting the machine';
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /** What the note says while bytes are moving. */
+  #progressNote(): string {
+    if (this.#progress <= 0) return 'first time only — it is cached after this';
+    return `${Math.round(this.#progress * 100)}% of about 15 MB`;
+  }
+
+  #writeGate(copy: { title: string; body?: string; note: string; dots?: boolean }): void {
+    if (this.#gateTitle) {
+      this.#gateTitle.textContent = copy.title;
+      // Three dots, and only while something is genuinely in flight: this is
+      // the part of the screen a person checks to decide whether the page is
+      // still alive, so it must never animate over a machine that has stopped.
+      if (copy.dots) this.#gateTitle.append(this.#dots());
+    }
+    if (this.#gateBody) {
+      // The automatic path is a mark and a line. The paragraph is for the
+      // states that owe an explanation.
+      this.#gateBody.hidden = !copy.body;
+      if (copy.body) this.#gateBody.textContent = copy.body;
+    }
+    if (this.#gateNote) {
+      this.#gateNote.textContent = copy.note;
+      this.#gateNote.hidden = !copy.note;
     }
   }
 
-  #writeGate(copy: { title: string; body: string; note: string }): void {
-    if (this.#gateTitle) this.#gateTitle.textContent = copy.title;
-    if (this.#gateBody) this.#gateBody.textContent = copy.body;
-    if (this.#gateNote) this.#gateNote.textContent = copy.note;
+  #dots(): HTMLElement {
+    const dots = document.createElement('span');
+    dots.className = 'learn-gate-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    dots.append(
+      document.createElement('i'),
+      document.createElement('i'),
+      document.createElement('i'),
+    );
+    return dots;
   }
 
-  /** The machine is up: the terminal underneath is the whole panel now. */
+  /** The button, which only some states have. */
+  #showAction(label: string | null): void {
+    const button = this.startButton;
+    if (!button) return;
+    button.hidden = label === null;
+    button.disabled = false;
+    if (label) button.textContent = label;
+  }
+
+  /**
+   * A failed start that was only ever the network, retried the moment there is
+   * one again.
+   *
+   * The alternative is a screen that says "try again" to someone whose train
+   * has just gone into a tunnel, and stays that way after it comes out.
+   */
+  #retryWhenOnline(): void {
+    if (this.#waitingForNetwork || typeof window === 'undefined') return;
+    this.#waitingForNetwork = true;
+    window.addEventListener(
+      'online',
+      () => {
+        this.#waitingForNetwork = false;
+        // Only if nothing else has happened in the meantime — a press on Try
+        // again is already a start, and this must not become a second one.
+        if (this.#gateState !== 'failed') return;
+        this.#start?.();
+      },
+      { once: true },
+    );
+  }
+
+  /**
+   * The machine is up: the terminal underneath is the whole panel now.
+   *
+   * It does not simply vanish. The mark finishes, holds for a beat at full
+   * strength, and fades — the terminal was already painted behind it, so what a
+   * learner sees is the thing they were waiting for being uncovered rather than
+   * a loading screen being swapped out for it.
+   */
   hideGate(): void {
-    if (this.#gate) this.#gate.hidden = true;
+    const gate = this.#gate;
     this.#armFocus();
+    if (!gate || gate.hidden) return;
+
+    this.#paint(1);
+    this.gate('ready');
+
+    if (this.#leaveTimer) clearTimeout(this.#leaveTimer);
+    this.#leaveTimer = setTimeout(() => {
+      gate.dataset.leaving = '';
+      // Matches the fade in global.css; hiding sooner cuts it off.
+      this.#leaveTimer = setTimeout(() => {
+        gate.hidden = true;
+        delete gate.dataset.leaving;
+      }, 260);
+    }, 240);
   }
 
   /**
@@ -356,33 +539,45 @@ export class TerminalPanel {
    * Start the machine without being asked, at the first moment that costs
    * nothing: page loaded, terminal on screen, tab in front, main thread idle.
    *
-   * The button does not move and does not stop working — this is a deadline a
-   * visitor can always beat, not a replacement for the control. On a client
-   * that declines (src/lib/vm/autostart.ts decides which) the button is the
-   * only way in, exactly as before.
+   * This is the ordinary path and it has no button in it. What it has instead
+   * is a loading screen that says what is happening, because a terminal that
+   * takes fifteen megabytes to appear has to account for itself either way.
+   *
+   * Two things can stop it. A browser with no WebAssembly cannot run the guest
+   * at all and is told so once, plainly. A client that declines the download —
+   * data saver, a phone, a slow link, decided in src/lib/vm/autostart.ts — is
+   * asked, with the reason and the price on the same screen.
    */
   autoStart(start: () => void): void {
     const box = this.#box;
     const gate = this.#gate;
+    this.#start = start;
     if (!box || !gate) return;
+
+    // Nothing below this matters without it: v86 is WebAssembly, and every
+    // other path ends at a download that cannot be run.
+    if (typeof WebAssembly === 'undefined') {
+      this.gate('unsupported');
+      return;
+    }
 
     let cancelled = false;
     // Registered before the first await, not after it. Deciding whether a
-    // client can afford the machine ends in a Cache API lookup, and a visitor
-    // can press Start inside that: a cancel landing there has to be remembered
-    // rather than arrive to find nothing registered yet. Missing it would put
-    // "starting on its own" back under a gate that already says "Starting the
-    // machine".
+    // client can afford the machine ends in a Cache API lookup, and a screen
+    // can start the machine inside that: a cancel landing there has to be
+    // remembered rather than arrive to find nothing registered yet.
     this.#cancelAutoStart = () => {
       cancelled = true;
     };
 
     void (async () => {
-      const may = await mayAutoStart();
-      if (cancelled || !may || gate.hidden) return;
+      const verdict = await autoStartVerdict();
+      if (cancelled || gate.hidden) return;
 
-      this.#autoStartArmed = true;
-      if (this.#gateNote) this.#gateNote.textContent = `${this.#idle.note}${AUTO_START_NOTE}`;
+      if (verdict !== 'go') {
+        this.gate('held', HELD_NOTE[verdict]);
+        return;
+      }
 
       const stop = scheduleAutoStart(box, () => {
         this.#cancelAutoStart = null;
@@ -405,7 +600,6 @@ export class TerminalPanel {
   cancelAutoStart(): void {
     this.#cancelAutoStart?.();
     this.#cancelAutoStart = null;
-    this.#autoStartArmed = false;
   }
 
   /**
@@ -427,8 +621,36 @@ export class TerminalPanel {
     if (this.#statusText) this.#statusText.textContent = status === 'ready' ? '' : detail;
   }
 
+  /**
+   * How much of the machine has arrived, drawn into the logo.
+   *
+   * The mark is the progress bar — see PANE_SHARE — so there is no second
+   * readout anywhere saying the same thing in a straight line, and the shape
+   * completing is the machine arriving.
+   */
   progress(fraction: number): void {
-    if (this.#progressBar) this.#progressBar.style.width = `${Math.round(fraction * 100)}%`;
+    this.#progress = Math.min(1, Math.max(0, fraction));
+    // The machine zeroes this as it reports itself ready, which arrives while
+    // the finished mark is still on screen holding its last beat. The screen is
+    // already leaving; it does not empty itself on the way out.
+    if (this.#gateState === 'ready') return;
+    this.#paint(this.#progress);
+    // The note carries the number for anyone who wants one, and only while
+    // there is a download to put a number on.
+    if (this.#gateState === 'busy' && this.#gateNote) {
+      this.#gateNote.textContent = this.#progressNote();
+    }
+  }
+
+  /** Fill each pane with its own share of `fraction`. */
+  #paint(fraction: number): void {
+    let filled = 0;
+    this.#paneFills.forEach((fill, index) => {
+      const share = PANE_SHARE[index] ?? 0;
+      const within = share === 0 ? 0 : (fraction - filled) / share;
+      fill.style.setProperty('--p', String(Math.min(1, Math.max(0, within))));
+      filled += share;
+    });
   }
 
   /** The grid the guest is actually running at, written with its own separator

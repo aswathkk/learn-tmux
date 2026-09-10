@@ -5,8 +5,9 @@
  * no checks, no polling. Start the guest, hand the learner the keyboard, and
  * put the machine back when they ask.
  *
- * The gate, the status line and the editor overlay are the panel's, so this
- * screen cannot drift from the lesson screen's copy — see src/lib/vm/panel.ts.
+ * The loading screen, the status line and the editor overlay are the panel's,
+ * so this screen cannot drift from the lesson screen's copy — see
+ * src/lib/vm/panel.ts.
  * Everything heavy is behind `import()` for the same reason it is there: the
  * emulator is 15 MB and an x86 CPU on the main thread, and the page is readable
  * and useful (it carries the whole key reference) before any of it loads.
