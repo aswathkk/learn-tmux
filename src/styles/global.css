@@ -341,12 +341,33 @@
      hero's own bottom padding under it, the first screen ended in ~170px of
      nothing and the terminal — the only proof of the claim above it — started
      below the fold. */
-  .pin { order: 2; padding-top: 3vh; }
+  .pin { order: 2; padding-top: 3vh; padding-bottom: 6vh; }
   .hero-section { order: 1; }
   .sheet { order: 3; }
   .lesson-section { order: 4; }
+
+  /* The rail's placeholder cells hold a column open beside the copy and beside
+     the terminal. In one column each is an empty row with a rail gap on either
+     side of it: 56px of nothing between the hero's caption and its terminal,
+     on the one screen where the fold decides whether the terminal is seen. */
+  .rail-grid > [aria-hidden='true']:empty { display: none; }
+
+  /* Shorter than the desktop's. Without the pin the terminal is a still, and
+     past this it is only showing more of vim's tildes. */
+  :root { --term-body: clamp(220px, 30vh, 300px); }
+
   /* the tall gaps only exist to give the pinned terminal scroll room */
   .lesson-steps { gap: 32px; padding-top: 4vh; padding-bottom: 4vh; }
+
+  /* Picture before captions. The desktop keeps the terminal beside the steps
+     and changes it as they pass; a phone gets one still of the finished split,
+     so it goes under the heading that describes it and the three steps read as
+     the keys that produced it. `display: contents` lifts the intro and the
+     steps into the rail so the three can be ordered. */
+  .lesson-left { display: contents; }
+  .lesson-intro { order: 1; }
+  .lesson-figure { order: 2; }
+  .lesson-steps { order: 3; }
   .terminal--live .win--3,
   .terminal--live .keys { display: none; }
   .terminal--live .layer--shell { opacity: 0; }
@@ -360,6 +381,7 @@
 .no-scroll-motion .pin .rail-grid { height: auto; }
 .no-scroll-motion .pin .terminal-wrap { transform: none; }
 .no-scroll-motion .rail-grid { grid-template-columns: minmax(0, 1fr); }
+.no-scroll-motion .rail-grid > [aria-hidden='true']:empty { display: none; }
 .no-scroll-motion .terminal--live .win--3,
 .no-scroll-motion .terminal--live .keys { display: none; }
 .no-scroll-motion .terminal--live .layer--shell { opacity: 0; }
@@ -593,6 +615,52 @@
 .terminal--lesson .tab--lesson { background: var(--color-ink); color: var(--color-accent); }
 .terminal--lesson .tab--lesson .mark__star { opacity: 1; }
 .terminal--lesson .tab--lesson .mark__dash { opacity: 0; }
+
+/* ------------------------------------------------------- terminal, phones
+
+   The drawing is 335px wide on a 375px phone, and three panes split that
+   between them. At the desktop's 13.5px a fifteen-character prompt no longer
+   fits the right-hand column, the status line runs 452px into a 335px box with
+   the clock cut in half, and the log's five columns spill out of a pane with
+   room for two. Everything here buys columns back: smaller type, tighter pane
+   padding, an even split, a status line without the clock, and log lines
+   without their timings. What still does not fit the status line fades out at
+   the edge rather than stopping mid-glyph. */
+@media (max-width: 639px) {
+  /* A quarter of the screen. Enough for the notes, the prompt and three log
+     lines; the hero's button stays above it and the levels are one flick
+     down. */
+  :root { --term-body: clamp(190px, 26vh, 230px); }
+
+  .terminal__body { font-size: 12px; }
+  .pane,
+  .layer,
+  .pane__inner { padding: 10px 12px; }
+  .pane-col { flex-basis: 50%; }
+
+  /* The log pane fills from the bottom and the oldest line goes off the top,
+     which is what tail -f does. At this height that is the command and three
+     lines; the fourth the script keeps is the one that has scrolled away. */
+  .pane-col > .pane:last-child { display: flex; flex-direction: column; }
+  .log { flex: 1 1 auto; min-height: 0; justify-content: flex-end; overflow: hidden; }
+  .vim__row { gap: 10px; }
+  /* mode and position only: with the file name too the line is 172px in a
+     143px pane and the mode folds into three rows */
+  .vim__status { gap: 10px; padding: 2px 12px; font-size: 11px; white-space: nowrap; }
+  .vim__status > span:not(.vim__mode, .vim__pos) { display: none; }
+  .lesson-hint { bottom: 10px; left: 12px; font-size: 11px; }
+  .terminal__status {
+    gap: 6px;
+    padding: 0 8px;
+    font-size: 10.5px;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent);
+  }
+  .tab { padding: 0 3px; }
+  .terminal__clock { display: none; }
+  .log__line { gap: 6px; font-size: 11.5px; }
+  .log__line > .log__time { display: none; }
+  .log__path { min-width: 0; }
+}
 
 /* ------------------------------------------------- live scroll choreography
 

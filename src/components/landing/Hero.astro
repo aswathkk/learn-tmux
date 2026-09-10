@@ -22,6 +22,15 @@ interface Props {
 }
 
 const { startHref, firstTask } = Astro.props;
+
+/** The rest of the site: in the row from md up, behind the menu below it. */
+const links = [
+  { href: '#levels', label: 'Levels' },
+  { href: '/playground', label: 'Playground' },
+  { href: '/guides', label: 'Guides' },
+  { href: '/cheatsheet', label: 'Cheat sheet' },
+  { href: '/gallery', label: 'Gallery' },
+];
 ---
 <section
   id="hero"
@@ -31,40 +40,109 @@ const { startHref, firstTask } = Astro.props;
     class="pointer-events-none absolute -inset-x-[10%] bottom-[4%] top-auto h-[46%] [background:radial-gradient(ellipse_at_50%_50%,rgb(var(--accent-rgb)/.09),transparent_70%)]"
   ></div>
 
-  {/* Three navs on the page — this one and the footer's two — so it says which. */}
+  {/* Three navs on the page — this one and the footer's two — so it says which.
+      It sits above the copy in the stacking order so the open menu lands on
+      top of the heading instead of under it. */}
   <nav
     aria-label="Main"
-    class="relative mx-auto flex max-w-[1200px] items-center justify-between gap-3 py-[26px]"
+    class="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between gap-3 py-4 sm:py-[26px]"
   >
     {/*
       No button up here. The hero's own button is a few lines down and is the
       one ask on the screen; a second one in the corner was the same ask twice.
       The wordmark scales with the viewport so it never crowds the narrowest
-      phones, where it is the only thing in this row.
+      phones.
     */}
     <a href="/" aria-label="learntmux.dev — home"><Wordmark size="clamp(15px, 4.4vw, 21px)" /></a>
     <span class="hidden shrink-0 items-center gap-[26px] text-sm font-medium md:flex">
-      <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
-      <a href="/playground" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Playground</a>
-      <a href="/guides" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Guides</a>
-      <a href="/cheatsheet" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Cheat sheet</a>
-      <a href="/gallery" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Gallery</a>
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg"
+          >
+            {link.label}
+          </a>
+        ))
+      }
       <GitHubLink size="18px" class="inline-flex min-h-[44px] text-fg-muted hover:text-fg" />
     </span>
+
+    {/*
+      Below md the same links are behind a menu. Hiding them outright left a
+      phone with no way to the playground, the guides, the cheat sheet or the
+      gallery from the top of the page — the only route was the footer, nine
+      screens down. It is a <details>, so it opens and closes without the
+      script below, which only adds closing on Escape, on a tap outside it and
+      on following a link. The negative margin lines the icon up with the
+      page edge while the button keeps its 44px.
+    */}
+    <details class="group relative md:hidden" data-hero-menu>
+      <summary
+        class="-mr-[11px] flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-lg text-fg-muted transition-colors hover:text-fg [&::-webkit-details-marker]:hidden"
+        aria-label="Menu"
+      >
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <path class="group-open:hidden" d="M4 7h16M4 12h16M4 17h16"></path>
+          <path class="hidden group-open:block" d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </summary>
+      <div
+        class="absolute right-0 top-[calc(100%+6px)] flex w-[min(260px,calc(100vw-40px))] flex-col rounded-xl border border-line-strong bg-ink-raised p-2 shadow-[0_24px_60px_rgb(0_0_0/.6)]"
+      >
+        {
+          links.map((link) => (
+            <a
+              href={link.href}
+              class="flex min-h-11 items-center rounded-lg px-3 text-[15px] font-medium text-fg-muted transition-colors hover:bg-ink-card hover:text-fg"
+            >
+              {link.label}
+            </a>
+          ))
+        }
+        <GitHubLink
+          size="16px"
+          label="GitHub"
+          class="flex min-h-11 rounded-lg px-3 text-[15px] font-medium text-fg-muted hover:bg-ink-card hover:text-fg"
+        />
+      </div>
+    </details>
   </nav>
 
   <div class="rail-grid relative mx-auto max-w-[1200px] items-start">
     <div class="flex flex-col gap-[26px] pt-[3vh]">
-      <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">
-        REAL TMUX · IN THIS TAB · NOTHING TO INSTALL
+      {/* One line on a 375px phone, two on anything narrower. Each phrase
+          holds together and the space before a dot does not break, so a wrap
+          can only fall after a dot: never inside a phrase, never with a dot
+          starting the next line. Kept on one line of source because Astro
+          drops the whitespace between text and an element that starts on the
+          next line, and the space after each dot is that whitespace. */}
+      <span
+        class="font-mono text-[11px] font-medium tracking-[.08em] text-accent [text-wrap:balance] sm:text-xs sm:tracking-[.12em]"
+      >
+        <span class="whitespace-nowrap">REAL TMUX</span>&nbsp;· <span class="whitespace-nowrap">IN THIS TAB</span>&nbsp;· <span class="whitespace-nowrap">NOTHING TO INSTALL</span>
       </span>
+      {/*
+        Two slopes. Below lg the heading has the whole width and can follow it;
+        from lg it shares the row with the terminal and the old, flatter slope
+        keeps it in its column.
+      */}
       <h1
-        class="m-0 font-bold [text-wrap:balance]"
-        style="font-size:clamp(40px,5.2vw,74px); line-height:1; letter-spacing:-.035em;"
+        class="m-0 text-[clamp(36px,10.5vw,60px)] font-bold [text-wrap:balance] lg:text-[clamp(40px,5.2vw,74px)]"
+        style="line-height:1; letter-spacing:-.035em;"
       >
         Learn tmux by doing it, not reading about it.
       </h1>
-      <p class="m-0 max-w-[46ch] text-lg leading-[1.55] text-fg-muted [text-wrap:pretty]">
+      <p class="m-0 max-w-[46ch] text-[17px] leading-[1.55] text-fg-muted [text-wrap:pretty] sm:text-lg">
         A real tmux session runs in this tab. You type, it watches, and the list ticks itself
         off the moment you get it right. Nothing to install, no account.
       </p>
@@ -97,3 +175,27 @@ const { startHref, firstTask } = Astro.props;
     <div aria-hidden="true"></div>
   </div>
 </section>
+
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>('[data-hero-menu]');
+
+  if (menu) {
+    // A tap anywhere else closes it. The summary is inside the menu, so its
+    // own toggle is left to the browser.
+    document.addEventListener('pointerdown', (event) => {
+      if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !menu.open) return;
+      menu.open = false;
+      menu.querySelector<HTMLElement>('summary')?.focus();
+    });
+
+    // "Levels" is a same-page link: without this the menu would stay open
+    // over the section it just scrolled to.
+    menu.addEventListener('click', (event) => {
+      if ((event.target as Element).closest('a')) menu.open = false;
+    });
+  }
+</script>

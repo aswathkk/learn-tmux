@@ -37,7 +37,13 @@ const steps = [
 ];
 ---
 
-<section id="lesson" class="lesson-section px-5 pt-[8vh] sm:px-[clamp(20px,5vw,72px)]">
+{/*
+  Not on a phone. The section is a caption for an animation, and below md the
+  animation does not run: what is left is three cards describing a picture that
+  does not change. The hero already says the terminal watches and ticks the
+  list off. Tablets get the static picture between the heading and the cards.
+*/}
+<section id="lesson" class="lesson-section px-5 pt-[8vh] max-md:hidden sm:px-[clamp(20px,5vw,72px)]">
   <div class="mx-auto max-w-[1200px]">
     <div class="rail-grid lesson-rail items-start">
       <div class="lesson-left">
@@ -87,7 +93,8 @@ const steps = [
         </ol>
       </div>
 
-      <div>
+      {/* Named so the phone layout can seat it between the intro and the steps. */}
+      <div class="lesson-figure">
         <DemoTerminal mode="lesson" class="terminal-static" />
       </div>
     </div>

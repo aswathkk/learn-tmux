@@ -31,9 +31,14 @@ const elsewhere = [
 ];
 ---
 
+{/*
+  Not on a phone. Fifteen tiles and two more cards were two thousand pixels of
+  the page there; the menu in the header reaches the sheet, the guides and the
+  gallery in one tap.
+*/}
 <section
   id="cheatsheet"
-  class="mx-auto flex max-w-[1200px] flex-col gap-9 px-5 pb-[8vh] pt-[4vh] sm:px-[clamp(20px,5vw,72px)]"
+  class="mx-auto flex max-w-[1200px] flex-col gap-9 px-5 pb-[8vh] pt-[4vh] max-md:hidden sm:px-[clamp(20px,5vw,72px)]"
 >
   <div class="flex flex-wrap items-end justify-between gap-6 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both]">
     <div>

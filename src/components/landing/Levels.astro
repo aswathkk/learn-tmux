@@ -22,10 +22,10 @@ const { levels, totalTasks } = Astro.props;
 
 <section id="levels" class="sheet">
   <div
-    class="mx-auto flex max-w-[1200px] flex-col gap-12 px-5 pb-[12vh] pt-[10vh] sm:px-[clamp(20px,5vw,72px)]"
+    class="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 pb-[9vh] pt-[8vh] sm:gap-12 sm:px-[clamp(20px,5vw,72px)] sm:pb-[12vh] sm:pt-[10vh]"
   >
     <div
-      class="grid items-end gap-8 [animation-range:entry_0%_entry_70%] [animation-timeline:view()] [animation:up_linear_both] sm:grid-cols-2"
+      class="grid items-end gap-5 [animation-range:entry_0%_entry_70%] sm:gap-8 [animation-timeline:view()] [animation:up_linear_both] sm:grid-cols-2"
     >
       <div>
         <span class="font-mono text-xs font-medium tracking-[.12em] text-accent">THE PATH</span>
@@ -58,7 +58,7 @@ const { levels, totalTasks } = Astro.props;
           <li>
             <a
               href={entry.href}
-              class="group flex h-full min-h-[340px] flex-col gap-[14px] rounded-2xl border border-line-strong bg-ink-card p-6 transition-colors hover:border-accent/40"
+              class="group flex h-full flex-col gap-[10px] rounded-2xl border border-line-strong bg-ink-card p-5 transition-colors hover:border-accent/40 md:min-h-[340px] md:gap-[14px] md:p-6"
               data-level-card
               data-slugs={entry.slugs.join(' ')}
               style={`animation:upSoft linear both;animation-timeline:view();animation-range:entry ${index * 5}% entry ${45 + index * 5}%;`}
@@ -70,18 +70,24 @@ const { levels, totalTasks } = Astro.props;
                 </span>
               </div>
 
-              <h3 class="text-[22px] font-bold tracking-[-.02em] group-hover:text-accent">
+              <h3 class="text-[19px] font-bold tracking-[-.02em] group-hover:text-accent md:text-[22px]">
                 {entry.level.name}
               </h3>
               <p class="m-0 text-[14px] leading-[1.5] text-fg-muted">{entry.level.tagline}</p>
 
-              <ul class="mt-1 flex flex-col gap-[7px] font-mono text-[12.5px] text-fg-dim">
+              {/*
+                A taste of the level, for someone reading four cards side by
+                side. Stacked on a phone they are twenty lines of mono between
+                the reader and the next level, so they wait for md and the card
+                is name, line, count and progress.
+              */}
+              <ul class="mt-1 hidden flex-col gap-[7px] font-mono text-[12.5px] text-fg-dim md:flex">
                 {entry.keys.map((key) => (
                   <li class="truncate">{key}</li>
                 ))}
               </ul>
 
-              <div class="mt-auto flex flex-col gap-[10px] pt-4">
+              <div class="mt-auto flex flex-col gap-[10px] pt-2 md:pt-4">
                 <div class="h-[3px] overflow-hidden rounded-[2px] bg-line">
                   <div
                     class="h-full w-0 bg-accent transition-[width] duration-700"
