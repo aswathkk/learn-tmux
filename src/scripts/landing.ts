@@ -99,7 +99,7 @@ export function mountLandingProgress(): void {
     }
   });
 
-  // Every start button on the page, not just the one in the nav.
+  // Every start button on the page: the hero's, the closing call and the sticky bar.
   document.querySelectorAll<HTMLAnchorElement>('[data-resume-link]').forEach((link) => {
     const label = link.querySelector<HTMLElement>('[data-resume-label]');
     if (!label) return;

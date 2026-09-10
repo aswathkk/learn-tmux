@@ -13,6 +13,7 @@
  * it will look for it.
  */
 import Wordmark from '../ui/Wordmark.astro';
+import GitHubLink from '../ui/GitHubLink.astro';
 import type { LandingFirstTask } from '../../lib/landing';
 
 interface Props {
@@ -36,32 +37,20 @@ const { startHref, firstTask } = Astro.props;
     class="relative mx-auto flex max-w-[1200px] items-center justify-between gap-3 py-[26px]"
   >
     {/*
-      The lower clamp bound is set by the narrowest phone, not by taste: at
-      320px the wordmark and the resume button are the only two things in this
-      row and they add up to more than the row.
+      No button up here. The hero's own button is a few lines down and is the
+      one ask on the screen; a second one in the corner was the same ask twice.
+      The wordmark scales with the viewport so it never crowds the narrowest
+      phones, where it is the only thing in this row.
     */}
     <a href="/" aria-label="learntmux.dev — home"><Wordmark size="clamp(15px, 4.4vw, 21px)" /></a>
-    <div class="flex shrink-0 items-center gap-[26px] text-sm font-medium">
-      <span class="hidden items-center gap-[26px] md:flex">
-        <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
-        <a href="/playground" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Playground</a>
-        <a href="/guides" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Guides</a>
-        <a href="/cheatsheet" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Cheat sheet</a>
-        <a href="/gallery" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Gallery</a>
-      </span>
-      {/*
-        Says "Start" until the browser reports progress, then becomes "Resume"
-        pointing at the next unfinished task. Rendered in its starting state so
-        it is correct for a first-time visitor with no JavaScript.
-      */}
-      <a
-        href={startHref}
-        data-resume-link
-        class="inline-flex min-h-[44px] items-center whitespace-nowrap rounded-lg bg-fg px-3 font-semibold text-ink sm:px-4"
-      >
-        <span data-resume-label>Start task 1</span>
-      </a>
-    </div>
+    <span class="hidden shrink-0 items-center gap-[26px] text-sm font-medium md:flex">
+      <a href="#levels" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Levels</a>
+      <a href="/playground" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Playground</a>
+      <a href="/guides" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Guides</a>
+      <a href="/cheatsheet" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Cheat sheet</a>
+      <a href="/gallery" class="inline-flex min-h-[44px] items-center text-fg-muted transition-colors hover:text-fg">Gallery</a>
+      <GitHubLink size="18px" class="inline-flex min-h-[44px] text-fg-muted hover:text-fg" />
+    </span>
   </nav>
 
   <div class="rail-grid relative mx-auto max-w-[1200px] items-start">
@@ -80,8 +69,10 @@ const { startHref, firstTask } = Astro.props;
         off the moment you get it right. Nothing to install, no account.
       </p>
       {/*
-        The loudest button on the page has to know what the nav knows. Grouped
-        with its caption so the two are rewritten together: a button offering to
+        Says "Start" until the browser reports progress, then becomes "Resume"
+        pointing at the next unfinished task; rendered in its starting state so
+        it is right for a first-time visitor with no JavaScript. Grouped with
+        its caption so the two are rewritten together: a button offering to
         resume above a line promising task one is worse than either alone.
       */}
       <div class="flex flex-col gap-3" data-resume-group>

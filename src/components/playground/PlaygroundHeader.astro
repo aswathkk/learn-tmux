@@ -7,6 +7,7 @@
  * you are, and offers the two ways back: the course and the cheat sheet.
  */
 import Wordmark from '../ui/Wordmark.astro';
+import GitHubLink from '../ui/GitHubLink.astro';
 ---
 
 <header
@@ -43,5 +44,7 @@ import Wordmark from '../ui/Wordmark.astro';
     >
       Cheat sheet
     </a>
+    {/* No footer on this screen either, so the source sits here. */}
+    <GitHubLink size="16px" class="hidden py-[14px] -my-[14px] text-fg-muted hover:text-accent sm:inline-flex" />
   </div>
 </header>

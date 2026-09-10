@@ -4,6 +4,7 @@
  * denser header with the task picker in it.
  */
 import Wordmark from './Wordmark.astro';
+import GitHubLink from './GitHubLink.astro';
 
 interface Props {
   /** Highlights the section the reader is in. */
@@ -58,6 +59,11 @@ const links = [
           </a>
         ))
       }
+      {/* The source, at the end of the row, sized to the text beside it. */}
+      <GitHubLink
+        size="17px"
+        class="inline-flex min-h-9 rounded-lg px-3 text-fg-dim hover:text-fg [@media(pointer:coarse)]:min-h-11"
+      />
     </nav>
   </div>
 </header>

@@ -16,6 +16,8 @@ import type { CourseStats } from './lessons';
 
 export const SITE_NAME = 'learntmux';
 export const SITE_URL = 'https://learntmux.dev';
+/** Where the site's source lives. Linked from every header and the footer. */
+export const REPO_URL = 'https://github.com/aswathkk/learn-tmux';
 export const TWITTER_CARD = 'summary_large_image';
 /** The social card used wherever a page does not supply its own. */
 export const DEFAULT_SOCIAL_IMAGE = '/og-image.png';

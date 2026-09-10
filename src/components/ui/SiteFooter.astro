@@ -1,5 +1,6 @@
 ---
 import Wordmark from './Wordmark.astro';
+import { REPO_URL } from '../../lib/seo';
 
 const year = new Date().getFullYear();
 ---
@@ -26,6 +27,12 @@ const year = new Date().getFullYear();
     <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/guides">Guides</a>
     <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/gallery">Config gallery</a>
     <a class="-my-2 inline-flex py-2 transition-colors hover:text-accent" href="/rss.xml">RSS</a>
+    <a
+      class="-my-2 inline-flex py-2 transition-colors hover:text-accent"
+      href={REPO_URL}
+      target="_blank"
+      rel="noopener">GitHub</a
+    >
   </nav>
 
   {/*

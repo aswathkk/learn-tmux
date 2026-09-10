@@ -7,6 +7,7 @@
  * here is a button; the whole bar reads as one line of text.
  */
 import Wordmark from '../ui/Wordmark.astro';
+import GitHubLink from '../ui/GitHubLink.astro';
 import CourseNav from './CourseNav.astro';
 import type { LessonContext, LessonEntry } from '../../lib/lessons';
 
@@ -107,5 +108,12 @@ const { level, position, totalInLevel, lesson } = context;
     >
       Cheat sheet
     </a>
+
+    {/*
+      The source. The footer carries it everywhere else, but this screen has no
+      footer, so the bar does. Held back to sm like the count: on a phone the
+      row is already full.
+    */}
+    <GitHubLink size="16px" class="hidden py-[14px] -my-[14px] text-fg-muted hover:text-accent sm:inline-flex" />
   </div>
 </header>
