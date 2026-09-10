@@ -46,7 +46,7 @@ checks:
 hints:
   - "`swap-pane` with no arguments uses the marked pane. Mark C first, then run it from A."
   - "`C-b m` marks the active pane; `C-b }` swaps the active pane with its right neighbour; `C-b M` clears the mark."
-  - "On C press `C-b m`; move to A, `C-b :` `swap-pane`; move to the middle pane, `C-b }`; then `C-b M`."
+  - "On C press `C-b m`; move to A, `C-b :` `swap-pane`; `C-b Left` to the middle pane, `C-b }`; then `C-b M`."
 ---
 
 ## Concept
@@ -63,7 +63,7 @@ Left to right the panes are titled A, B, C; A is active.
 
 1. Press `C-b Right` twice to reach C, then `C-b m`. Its border turns green; the list shows `M`.
 2. Press `C-b Left` twice to reach A. Press `C-b :`, type `swap-pane`, Enter. The order is now C, B, A.
-3. Press `C-b Right` to reach B, then `C-b }`. The order is C, A, B.
+3. The swap carried you along, so A is active on the right. Press `C-b Left` to reach B, then `C-b }`. The order is C, A, B.
 4. Press `C-b M`. The mark and the `M` flag go.
 
 ## What just happened

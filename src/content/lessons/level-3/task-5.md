@@ -47,7 +47,7 @@ checks:
     expect: "^docs$"
 hints:
   - "Wait for the prompt to appear before typing; text typed early goes to the shell."
-  - "`C-b f`, type `connection refused`, Enter. Enter again on the matching row."
+  - "`C-b f`, type `connection refused`, Enter. Then `Down` onto the matching row and Enter again."
   - "`C-b w`, then `C-s`, type `docs`, Enter to jump, Enter to select."
 ---
 
@@ -62,7 +62,7 @@ The filter reads what is on screen now, not the scrollback. When something match
 ## Do this
 
 1. Press `C-b f`, type `connection refused`, Enter. The tree shows one pane, with `filter: active`.
-2. Press Enter. `db` is current.
+2. The session line is selected, not the match. Press `Down` to the `db` row below it, then Enter. `db` is current.
 3. Press `C-b w`, then `C-s`, type `docs`, Enter. The selection jumps to `docs`. Press Enter. `docs` is current.
 
 ## What just happened

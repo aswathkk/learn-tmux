@@ -12,9 +12,9 @@ keys:
   - key: "C-b D"
     command: "choose-client"
     description: "Client mode: Enter or d detaches the selected client, D the tagged ones; q exits"
-  - key: "tmux attach -d -t name"
+  - key: ":attach -d -t name"
     command: "attach-session -d"
-    description: "Attach and detach every other client from that session"
+    description: "Move this client to that session and detach every other client from it"
   - key: ":detach-client -a"
     command: "detach-client -a"
     description: "Detach all clients except the one running the command"
@@ -44,14 +44,16 @@ checks:
     command: "tmux list-clients -F '#{client_session}' | tr '\\n' ','"
     expect: "^home,$"
 hints:
-  - "You need a shell to type `tmux attach` from. Switch to window 0 of `learn` first with `C-b 0`."
+  - "Do not go looking for a shell to type `tmux attach` into: inside a pane it refuses to nest. Run `attach` at `C-b :`."
   - "`C-b D` lists every client on the server. Move to one on `home` and press Enter to detach it."
-  - "`tmux attach -d -t home` attaches you to `home` and detaches everyone else on it, including your own client on `learn`."
+  - "`C-b :` then `attach -d -t home` moves your own client to `home` and detaches everyone else on it, which leaves `learn` with none."
 ---
 
 ## Concept
 
-`C-b D` opens client mode, a list of every terminal attached to the server. Enter or `d` detaches the selected one. `tmux attach -d -t name` attaches you and detaches every other client on that session in one move.
+`C-b D` opens client mode, a list of every terminal attached to the server. Enter or `d` detaches the selected one. `attach -d -t name` attaches you and detaches every other client on that session in one move.
+
+At a plain shell that is `tmux attach -d -t name`. Inside a session it goes at `C-b :` instead: a pane already has `$TMUX` set, so `tmux attach` there refuses to nest, and even forced it would only add a second client rather than move the one you are sitting at.
 
 A session can have several clients, and it is drawn at the size of the smallest one, which is why stray clients make a session cramped. Detaching a client changes nothing inside the session.
 
@@ -60,11 +62,11 @@ A session can have several clients, and it is drawn at the size of the smallest 
 ## Do this
 
 1. Press `C-b D`. Three clients: yours on `learn`, two on `home`. Move to one on `home`, press Enter. It goes, and its window in `learn` closes too.
-2. Press `q` if the list is still open, then `C-b 0` for a shell. Run `tmux attach -d -t home`. The screen switches to `home`, and you are its only client.
+2. Press `q` if the list is still open. Press `C-b :`, type `attach -d -t home`, Enter. The screen switches to `home`, and you are its only client.
 
 ## What just happened
 
-`C-b D` runs `choose-client`; detaching from it is what `C-b d` does to your own client. `attach-session -d` detached the remaining stray before attaching you, and since your client had been on `learn`, `learn` was left with none.
+`C-b D` runs `choose-client`; detaching from it is what `C-b d` does to your own client. `attach` at the prompt is `attach-session`, which reattaches the client that ran it: `-d` detached the remaining stray, and your own client moved off `learn`, leaving it with none.
 
 ## Go further
 
