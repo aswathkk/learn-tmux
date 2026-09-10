@@ -59,10 +59,11 @@ bun run guest:state  # snapshot it so the page starts in ~0.4 s
 │   ├── layouts/            # Base, Learn, Article
 │   ├── pages/
 │   └── scripts/learn.ts    # wires the machine and harness to the learn screen
-├── docs/
-│   ├── banner.png          # the README banner
-│   └── banner-src/         # the HTML it renders from, plus `render.sh`
-└── scripts/content-index.mjs # lesson slugs + authored dates, for the sitemap
+├── functions/
+│   └── vm/[[path]].ts      # Pages Function: serves the guest machine from R2
+└── scripts/
+    ├── banner/             # the README banner: its HTML source, fonts and `render.sh`
+    └── content-index.mjs   # lesson slugs + authored dates, for the sitemap
 ```
 
 ## How a lesson works
