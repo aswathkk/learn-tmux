@@ -1,11 +1,12 @@
 /**
  * Splitting a lesson into the parts the learn screen shows separately.
  *
- * Every lesson has exactly four second-level sections — Concept, Do this, What
- * just happened, Go further — and the screen does not show them in one column.
- * Concept and Do this are what you read while working; What just happened and
- * Go further only appear once every check has passed, which is the whole point
- * of the completion state.
+ * Every lesson has four core second-level sections — Concept, Do this, What
+ * just happened, Go further — plus an optional More detail section. Concept
+ * and Do this are what you read while working; What just happened and Go
+ * further only appear once every check has passed, which is the whole point of
+ * the completion state. More detail is a deliberate, optional disclosure after
+ * the steps rather than an automatic fold of otherwise visible prose.
  *
  * The split is done on the rendered HTML rather than the markdown source, so
  * the content pipeline (syntax highlighting, heading ids, smart quotes) has
@@ -15,16 +16,10 @@ import type { CollectionEntry } from 'astro:content';
 
 export interface LessonSections {
   concept: string;
-  /**
-   * The first paragraph of Concept, shown inline.
-   *
-   * The Concept sections run to four or five paragraphs. All of it is worth
-   * reading eventually and none of it is worth reading before you have typed
-   * anything, so the screen shows the lead and folds the rest away.
-   */
-  conceptLead: string;
-  /** Everything after that first paragraph. Rendered collapsed. */
-  conceptRest: string;
+  /** Optional supporting explanation, intentionally placed after the steps. */
+  moreDetail: string;
+  /** The authored title of the optional disclosure. */
+  moreDetailTitle: string;
   steps: string;
   whatHappened: string;
   goFurther: string;
@@ -32,26 +27,65 @@ export interface LessonSections {
 
 const EMPTY: LessonSections = {
   concept: '',
-  conceptLead: '',
-  conceptRest: '',
+  moreDetail: '',
+  moreDetailTitle: '',
   steps: '',
   whatHappened: '',
   goFurther: '',
 };
 
+/** Split a rendered unordered list into its immediate list items. */
+function splitListItems(listHtml: string): string[] {
+  const items: string[] = [];
+  const tagPattern = /<(\/?)(li)\b[^>]*>/gi;
+  let depth = 0;
+  let start = -1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagPattern.exec(listHtml)) !== null) {
+    const isClosing = match[1] === '/';
+    if (!isClosing) {
+      if (depth === 0) start = match.index + match[0].length;
+      depth++;
+    }
+    else {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        items.push(listHtml.slice(start, match.index).trim());
+        start = -1;
+      }
+    }
+  }
+
+  return items;
+}
+
 /**
- * Split rendered HTML after its first top-level paragraph.
- *
- * Only splits on a `</p>` that closes the opening `<p>`, so a paragraph
- * containing inline markup stays whole.
+ * The revised source marks parallel ideas as markdown lists. When every item
+ * uses an em dash, that punctuation is editorial data: turn it into an actual
+ * label/value list instead of painting a bullet list that the reader must
+ * mentally re-tabulate. A causal chain keeps its own arrow but loses bullets.
  */
-function splitAfterFirstParagraph(html: string): [string, string] {
-  const trimmed = html.trim();
-  if (!trimmed.startsWith('<p')) return [trimmed, ''];
-  const end = trimmed.indexOf('</p>');
-  if (end === -1) return [trimmed, ''];
-  const cut = end + '</p>'.length;
-  return [trimmed.slice(0, cut), trimmed.slice(cut).trim()];
+function renderConceptRows(html: string): string {
+  return html.replace(/<ul>([\s\S]*?)<\/ul>/g, (list, itemsHtml: string) => {
+    const items = splitListItems(itemsHtml);
+    if (items.length === 0) return list;
+
+    const pairs = items.map((item) => {
+      const divider = item.indexOf(' — ');
+      return divider === -1 ? null : [item.slice(0, divider), item.slice(divider + 3)];
+    });
+
+    if (pairs.every((pair): pair is [string, string] => pair !== null)) {
+      return `<dl class="lesson-rows">${pairs
+        .map(([label, description]) => `<div><dt>${label}</dt><dd>${description}</dd></div>`)
+        .join('')}</dl>`;
+    }
+
+    return items.every((item) => item.includes(' → '))
+      ? `<ol class="lesson-chain">${items.map((item) => `<li>${item}</li>`).join('')}</ol>`
+      : list;
+  });
 }
 
 /** "What just happened" -> "whathappened", so heading text can be matched loosely. */
@@ -74,18 +108,22 @@ export function splitLessonHtml(html: string): LessonSections {
 
   for (const match of html.matchAll(pattern)) {
     // Heading text can contain inline markup; strip it before matching.
-    const key = normalise(match[1].replace(/<[^>]+>/g, ''));
+    const heading = match[1].replace(/<[^>]+>/g, '').trim();
+    const key = normalise(heading);
     const body = match[2].trim();
 
     if (key === 'concept') {
-      sections.concept = body;
-      const [lead, rest] = splitAfterFirstParagraph(body);
-      sections.conceptLead = lead;
-      sections.conceptRest = rest;
+      sections.concept = renderConceptRows(body);
     }
     else if (key === 'dothis') sections.steps = body;
     else if (key === 'whatjusthappened') sections.whatHappened = body;
     else if (key === 'gofurther') sections.goFurther = body;
+    // An authored heading between Concept and Do this is optional supporting
+    // detail. Its title is rendered directly, so the source owns the label.
+    else if (sections.concept && !sections.steps && !sections.moreDetail) {
+      sections.moreDetail = body;
+      sections.moreDetailTitle = heading;
+    }
   }
 
   return sections;

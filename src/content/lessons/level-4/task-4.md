@@ -51,15 +51,23 @@ hints:
 
 ## Concept
 
-The `prefix` option sets which key tmux waits for. Three lines move it to `C-a`: `set -g prefix C-a`, `unbind C-b` to drop the old key's binding, `bind C-a send-prefix` so pressing `C-a` twice still sends a real `C-a` to the program.
+Moving the prefix takes three lines, and each one does a different job:
 
-The prefix is an ordinary key with one job: read the next key and look it up in the prefix table. Changing the option changes the key; it does not move the `send-prefix` binding, which is tied to `C-b` itself, hence the other two lines.
+- `set -g prefix C-a` — tell tmux which key to wait for
+- `unbind C-b` — drop the old key's now-stale binding
+- `bind C-a send-prefix` — so pressing `C-a` twice still sends a real `C-a` through
 
-`C-a` is the shell's beginning-of-line key, which is exactly why `send-prefix` matters once it is the prefix.
+One line is not enough because the `prefix` option only changes *which key tmux watches*. It does not move the `send-prefix` binding, which was attached to `C-b` itself.
+
+That third line earns its place here: `C-a` is the shell's beginning-of-line key, so without an escape hatch you lose it.
+
+## What makes the prefix special
+
+The prefix is an ordinary key with one job: read the next key and look it up in the `prefix` table. Nothing else about it is special.
 
 ## Do this
 
-1. Run `open ~/.tmux.conf`. Add these lines and save with Ctrl-S:
+1. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    set -g prefix C-a
@@ -67,8 +75,13 @@ The prefix is an ordinary key with one job: read the next key and look it up in 
    bind C-a send-prefix
    ```
 
-2. Press `C-b :` one last time, type `source ~/.tmux.conf`, Enter. Nothing visible changes.
-3. Press `C-a c`. A second window opens: the list reads `0:shell- 1:sh*`.
+2. Press `C-b :` one last time, type `source ~/.tmux.conf`, Enter.
+
+   Nothing visible changes — but `C-b` is now inert.
+
+3. Press `C-a c`.
+
+   A second window opens: the list reads `0:shell- 1:sh*`.
 
 ## What just happened
 

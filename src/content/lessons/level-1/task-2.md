@@ -40,16 +40,29 @@ hints:
 
 ## Concept
 
-Keys go to the program in the pane until you press the prefix, `C-b`: Ctrl and b together. The next key is then a tmux command. `C-b c` opens a new window and makes it current.
+Keys go to the program in your pane until you press the prefix.
+`C-b` — Ctrl and b together — makes the *next* key a tmux command instead. `C-b c` opens a new window and makes it current.
 
-Key names are written with a space between the parts: `C-b c` means press `C-b`, release, then press `c`. `C-` is Ctrl, `M-` is Meta (usually Alt), `S-` is Shift.
+Release matters. A space in a key name means let go: `C-b c` is `C-b`, release, then `c`. Holding Ctrl through the `c` runs something else entirely.
 
-Every window has an index from 0. The status line lists them in order, with `*` after the current window and `-` after the last one, the window you came from.
+Windows are numbered from 0, and the status line marks two of them:
+
+- `*` — the current window
+- `-` — the last window, the one you came from
+
+## The full key notation
+
+`C-` is Ctrl, `M-` is Meta (usually Alt), `S-` is Shift. The same notation appears in every tmux doc and in the key list.
 
 ## Do this
 
-1. Press `C-b c`. A second window opens and the list reads `0:shell 1:sh*`.
-2. Press `C-b c` again. The list reads `0:shell 1:sh- 2:sh*`: window 2 is current, window 1 was last.
+1. Press `C-b c`.
+
+   A second window opens and the list reads `0:shell- 1:sh*`.
+
+2. Press `C-b c` again.
+
+   The list reads `0:shell 1:sh- 2:sh*` — window 2 is current, window 1 was last.
 
 ## What just happened
 

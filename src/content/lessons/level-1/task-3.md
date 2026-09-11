@@ -43,17 +43,34 @@ hints:
 
 ## Concept
 
-`C-b ?` fills the pane with every key binding and what it does. Scroll with `Down` or `C-Down`, leave with `q`. Anything you find there you can press straight away.
+`C-b ?` fills the pane with every key binding and what it does. Anything you find there you can press straight away, so there is nothing to memorise.
 
-The list is too long for the status line, so tmux puts the pane into view mode: a read-only mode with its own keys that need no prefix. The top right corner shows your line number against the total.
+- `Down` / `C-Down` — scroll the list
+- `q` — leave it
 
-`C-b /` asks for one key and shows only its description on the status line. From the shell, `tmux lsk -N` prints the same list, and `man tmux` documents every command and option.
+While the list is up the pane is in view mode: read-only, with its own keys that need no prefix. The top right corner shows your line number against the total.
+
+## Three other ways to look a key up
+
+Three other ways to look a key up:
+
+- `C-b /` then a key — that one key's description, on the status line
+- `tmux lsk -N` from the shell — the same list, printed
+- `man tmux` — every command and option in full
 
 ## Do this
 
-1. Press `C-b ?`. The pane fills with key bindings; the top right shows a line counter.
-2. Scroll down with `Down` or `C-Down` until you find the row for `C-b t`: `Show a clock`.
-3. Press `q` to leave the list, then `C-b t`. A large clock fills the pane. Leave it there.
+1. Press `C-b ?`.
+
+   The pane fills with key bindings; the top right shows a line counter.
+
+2. Scroll down with `Down` or `C-Down` until you find the row for `C-b t`.
+
+   It reads `Show a clock`.
+
+3. Press `q` to leave the list, then `C-b t`.
+
+   A large clock fills the pane. Leave it there.
 
 ## What just happened
 

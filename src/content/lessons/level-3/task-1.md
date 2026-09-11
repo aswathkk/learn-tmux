@@ -44,20 +44,42 @@ hints:
 
 ## Concept
 
-`C-b [` enters copy mode: the pane freezes and the cursor moves with the arrows, `C-a` to line start, `C-e` to line end. `C-Space` starts a selection, `M-w` copies it into a paste buffer and leaves copy mode.
+Copy mode is the read-and-select mode for a pane's screen and its scrollback. The pane freezes, and inside it no key needs a prefix:
 
-Copy mode is the read-and-select mode for a pane's screen and its scrollback. Its keys need no prefix. `q` leaves without copying; `C-g` drops a selection and stays.
+- `C-b [` — enter copy mode
+- arrows — move the cursor
+- `C-a` / `C-e` — jump to the start or end of the line
+- `C-Space` — start a selection (`C-g` drops it and stays)
+- `M-w` — copy the selection into a buffer and leave
+- `q` — leave without copying
 
-The copied text becomes an automatic buffer, `buffer0`, `buffer1` and so on; tmux keeps the last 50. `C-w` copies like `M-w`, but many browsers close the tab on `C-w` first.
+The copied text becomes a paste buffer, ready for the next task.
 
-The keys are emacs-style by default; a vi-style table exists too, and the `mode-keys` option switches between them.
+## How automatic buffers are kept
+
+Buffers copied this way are automatic — `buffer0`, `buffer1` and so on — and tmux keeps the last 50.
+
+`C-w` copies exactly like `M-w`, but many browsers close the tab on `C-w` first, so `M-w` is the safer habit.
+
+The keys above are emacs-style, the default. A vi-style table exists too, and the `mode-keys` option switches between them.
 
 ## Do this
 
-1. Press `C-b [`. The pane freezes and a position counter appears top right.
+1. Press `C-b [`.
+
+   The pane freezes and a position counter appears top right.
+
 2. Press `Up` until the cursor is on `deploy key: deploy-key-7f3a9c2e`, then `C-a`.
-3. Press `C-Space`, then `C-e`. The line highlights.
-4. Press `M-w`. The highlight goes, copy mode ends, and the line is in a buffer.
+
+   The cursor sits at the start of that line.
+
+3. Press `C-Space`, then `C-e`.
+
+   The line highlights from start to end.
+
+4. Press `M-w`.
+
+   The highlight goes, copy mode ends, and the line is in a buffer.
 
 ## What just happened
 

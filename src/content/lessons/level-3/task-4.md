@@ -50,16 +50,35 @@ hints:
 
 ## Concept
 
-At the prompt, `setb -b old -n new` renames a buffer, `saveb -b name path` writes it to a file, and `loadb -b name path` reads a file into a named buffer. Naming a buffer stops it being dropped when automatic buffers pile past 50.
+Three commands, all typed at `C-b :`, all taking `-b` to say which buffer they act on:
 
-`set-buffer -b name text` can also create a buffer outright. Without `-b`, `set-buffer` and `load-buffer` make a new automatic buffer. `~` expands at the prompt, so `~/key.txt` is `/home/alpine/key.txt`.
+- `setb -b old -n new` — rename a buffer
+- `saveb -b name path` — write its contents to a file
+- `loadb -b name path` — read a file into a buffer with that name
+
+Naming is the point: an automatic buffer is dropped once the pile passes 50, and a named one never is. `~` expands at the prompt, so `~/key.txt` is `/home/alpine/key.txt`.
+
+## Creating a buffer directly
+
+`set-buffer -b name text` creates a buffer outright, with no copying involved. Without `-b`, both `set-buffer` and `load-buffer` make a new automatic buffer instead.
 
 ## Do this
 
 1. Press `C-b :`, type `setb -b buffer0 -n key`, Enter.
+
+   Only the name changed; the text is untouched.
+
 2. Press `C-b :`, type `saveb -b key ~/key.txt`, Enter.
+
+   The buffer's contents are now on disk.
+
 3. Press `C-b :`, type `loadb -b motd ~/motd.txt`, Enter.
-4. Press `C-b =`. The list shows `key` and `motd`, no `buffer0`. Press `q`.
+
+   The file's contents arrive as a new named buffer.
+
+4. Press `C-b =`, then `q`.
+
+   The list shows `key` and `motd`, and no `buffer0`.
 
 ## What just happened
 

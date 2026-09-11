@@ -43,16 +43,29 @@ hints:
 
 ## Concept
 
-`C-b :` opens the command prompt in place of the status line. Type any tmux command with its flags, press Enter to run it, Escape to cancel. `C-b c` is just `new-window` with no flags; the prompt lets you add them.
+`C-b :` opens the command prompt in place of the status line. Type a tmux command, Enter runs it, Escape cancels. Do not type `tmux` in front — you are already talking to it.
 
-Commands have a long name and usually an alias: `new-window` is `neww`, `new-session` is `new`, `list-keys` is `lsk`. Flags work as in the shell, and `;` separates several commands on one line.
+`C-b c` is just `new-window` with no flags. The prompt is where you add them:
 
-A short result shows on the status line; longer output opens in view mode, which `q` closes.
+- `-d` — create the window without switching to it
+- `-n name` — name it, instead of letting it take its program's name
+- a word after the flags — a program to run in place of the shell
+
+Most commands have a short alias: `new-window` is `neww`, `new-session` is `new`, `list-keys` is `lsk`.
+
+## What the prompt does with output
+
+Flags work as in the shell, and `;` separates several commands on one line. A short result shows on the status line; longer output opens in view mode, which `q` closes.
 
 ## Do this
 
-1. Press `C-b :`, type `neww -d -n logs`, press Enter. The list reads `0:shell* 1:logs`: the new window exists but `shell` stays current.
-2. Press `C-b :`, type `neww top`, press Enter. A window running `top` opens and becomes current: `2:top*`.
+1. Press `C-b :`, type `neww -d -n logs`, Enter.
+
+   The list reads `0:shell* 1:logs` — the new window exists but `shell` stays current.
+
+2. Press `C-b :`, type `neww top`, Enter.
+
+   A window running `top` opens and becomes current: `2:top*`.
 
 ## What just happened
 

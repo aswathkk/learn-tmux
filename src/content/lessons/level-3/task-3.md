@@ -43,17 +43,33 @@ hints:
 
 ## Concept
 
-`C-b =` opens buffer mode: every paste buffer, newest first, with a preview. `Up` and `Down` move, Enter (or `p`) pastes the selected buffer, `d` deletes it, `q` leaves. It is how you reach a buffer other than the newest.
+`C-b ]` only ever pastes the newest buffer. Buffer mode is how you reach any of the others:
 
-Buffers copied without a name are automatic, `buffer0`, `buffer1`, and the oldest is dropped past 50. A named buffer, made with `set-buffer -b name`, is never dropped that way, so a stale one sits in the list until you delete it.
+- `C-b =` — open it; every buffer, newest first, with a preview
+- `Up` / `Down` — move
+- `Enter` or `p` — paste the selected buffer
+- `d` — delete it
+- `q` — leave
 
-Buffer mode uses the same keys as tree mode; `D` deletes tagged buffers, as `X` kills tagged windows there.
+Two kinds of buffer sit in that list. **Automatic** buffers are the ones copy mode makes — `buffer0`, `buffer1` — and the oldest drops off past 50. A **named** buffer, made with `set-buffer -b name`, never ages out, so a stale one stays in your list until you delete it by hand.
+
+## The buffer-mode keys
+
+Buffer mode uses the same keys as tree mode: `t` tags, and `D` deletes the tagged buffers the way `X` kills tagged windows there.
 
 ## Do this
 
-1. Press `C-b =`. The newest buffer, `host=web-3.internal`, is at the top.
-2. Press `Down` to select `host=db-1.internal`, then Enter. It appears at the shell prompt, not run.
-3. Press `C-b =` again, move to `stale`, press `d`. It vanishes from the list. Press `q`.
+1. Press `C-b =`.
+
+   The newest buffer, `host=web-3.internal`, is at the top.
+
+2. Press `Down` to select `host=db-1.internal`, then Enter.
+
+   It appears at the shell prompt, not run.
+
+3. Press `C-b =` again, move to `stale`, press `d`, then `q`.
+
+   It vanishes from the list.
 
 ## What just happened
 

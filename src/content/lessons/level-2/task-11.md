@@ -51,18 +51,29 @@ hints:
 
 ## Concept
 
-`C-b D` opens client mode, a list of every terminal attached to the server. Enter or `d` detaches the selected one. `attach -d -t name` attaches you and detaches every other client on that session in one move.
+A client is one terminal attached to the server. Three ways to get rid of one:
 
-At a plain shell that is `tmux attach -d -t name`. Inside a session it goes at `C-b :` instead: a pane already has `$TMUX` set, so `tmux attach` there refuses to nest, and even forced it would only add a second client rather than move the one you are sitting at.
+- `C-b D` — client mode, a list of every client on the server; Enter or `d` detaches the selected one
+- `attach -d -t name` at `C-b :` — attach yourself and detach every other client on that session
+- `detach-client -a` at `C-b :` — detach everyone except you
 
-A session can have several clients, and it is drawn at the size of the smallest one, which is why stray clients make a session cramped. Detaching a client changes nothing inside the session.
+**Run these at `C-b :`, not in a pane's shell.** A pane already has `$TMUX` set, so `tmux attach` there refuses to nest.
 
-`detach-client -a` at the prompt is the inside-out version: it detaches every client except the one running it.
+A session can have several clients, and it is drawn at the size of the smallest one — which is why a stray client makes a session mysteriously cramped.
+
+## Detaching is not moving a client
+
+Even if you forced the nested attach through, it would only add a second client rather than move the one you are sitting at. Detaching a client changes nothing inside the session itself.
 
 ## Do this
 
-1. Press `C-b D`. Three clients: yours on `learn`, two on `home`. Move to one on `home`, press Enter. It goes, and its window in `learn` closes too.
-2. Press `q` if the list is still open. Press `C-b :`, type `attach -d -t home`, Enter. The screen switches to `home`, and you are its only client.
+1. Press `C-b D`, move to one of the clients on `home`, press Enter.
+
+   Three clients were listed: yours on `learn`, two on `home`. The one you picked goes, and its window in `learn` closes with it.
+
+2. Press `q` if the list is still open, then `C-b :`, type `attach -d -t home`, Enter.
+
+   The screen switches to `home`, and you are its only client.
 
 ## What just happened
 

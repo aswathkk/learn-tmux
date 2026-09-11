@@ -40,16 +40,28 @@ hints:
 
 ## Concept
 
-`C-b %` splits the active pane into left and right. `C-b "` splits it into top and bottom. The new pane becomes the active one, marked by the green border, so the next split lands there.
+Two keys, one for each direction:
+
+- `C-b %` — split the active pane into left and right
+- `C-b "` — split it into top and bottom
+
+The new pane becomes the active one, marked by the green border, so the next split lands there.
 
 A pane is a rectangle of the window running its own program. One pane is active: typing goes there, and it is the default target for commands. The set of pane sizes and positions is the window's layout.
 
-The flag names are the confusing part: `split-window -h` (horizontal) puts panes side by side, `-v` (vertical) stacks them. Think of the direction the new pane is added in, not the line between.
+## Why the flags are called -h and -v
+
+The flag names behind these keys are the confusing part: `split-window -h` (horizontal) puts panes side by side, `-v` (vertical) stacks them. Think of the direction the new pane is added in, not the line between.
 
 ## Do this
 
-1. Press `C-b %`. The window splits into two panes side by side; the right one is active.
-2. Press `C-b "`. The right pane splits into top and bottom. Three panes, the bottom right active.
+1. Press `C-b %`.
+
+   The window splits into two panes side by side; the right one is active.
+
+2. Press `C-b "`.
+
+   The right pane splits into top and bottom. Three panes, the bottom right active.
 
 ## What just happened
 

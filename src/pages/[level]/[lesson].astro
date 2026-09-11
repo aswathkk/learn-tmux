@@ -103,8 +103,9 @@ const jsonLd = [
 
   <Fragment slot="task">
     {/*
-      The working state. Title, what you are aiming at, one paragraph of why,
-      then the steps. Swapped for the completion panel once every check passes.
+      The working state. Title, the goal, the complete concept, then the steps.
+      Optional supporting detail follows the steps, where it is available on
+      demand but cannot hide a sentence the learner needs before acting.
 
       Two blocks rather than one, so the narrow layout can lift what the task is
       above the terminal and leave the steps below it. Both carry `data-working`
@@ -147,27 +148,26 @@ const jsonLd = [
 
     <div class="learn-task-body flex flex-col gap-5" data-working>
       {/*
-        One paragraph of concept, as designed. The rest of the section is real
-        teaching and stays in the page, folded, rather than being dropped: it is
-        what the learner reaches for when the step in front of them does not
-        make sense yet.
+      The revised lessons turn parallel facts into rows and keep all of the
+      task-critical concept visible. Their optional supporting prose is an
+      explicitly authored section, shown after the procedure below.
       */}
       {
-        sections.conceptLead && (
-          <div class="lesson-prose lesson-concept" set:html={sections.conceptLead} />
-        )
-      }
-
-      {
-        sections.conceptRest && (
-          <details class="lesson-aside">
-            <summary>More detail</summary>
-            <div class="lesson-prose mt-3" set:html={sections.conceptRest} />
-          </details>
+        sections.concept && (
+          <div class="lesson-prose lesson-concept" set:html={sections.concept} />
         )
       }
 
       <Steps html={sections.steps} />
+
+      {
+        sections.moreDetail && (
+          <details class="lesson-aside">
+            <summary>{sections.moreDetailTitle}</summary>
+            <div class="lesson-prose mt-3" set:html={sections.moreDetail} />
+          </details>
+        )
+      }
     </div>
 
     <Completion

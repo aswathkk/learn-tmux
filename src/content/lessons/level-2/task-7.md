@@ -51,20 +51,39 @@ hints:
 
 ## Concept
 
-`C-b }` swaps the active pane with the next one, `C-b {` with the previous. For any two panes: `C-b m` marks one, then `swap-pane` at the prompt swaps the marked pane with the active one. `C-b M` clears the mark.
+Neighbours swap with one key. Any two panes need a mark:
 
-Swapping moves what runs in a pane, not the pane's slot: sizes and positions stay, programs and titles trade places. Pane numbers belong to positions, so a number does not travel with the program.
+- `C-b }` / `C-b {` — swap the active pane with the next or previous one
+- `C-b m` — mark the active pane (`C-b M` clears the mark)
+- `swap-pane` at `C-b :` — swap the marked pane with the active one, wherever either sits
 
-One pane on the whole server can be marked at a time. Its border turns green and the window gets an `M` flag. Without a mark, `swap-pane` behaves like `C-b }`.
+Swapping moves what is *in* a pane, not the pane's slot. Sizes and positions stay exactly as they are; programs and titles trade places. Pane numbers belong to positions, so a number never travels with a program.
+
+Only one pane on the whole server can be marked at a time. Its border turns green and its window gets an `M` flag.
+
+## Swapping without a marked pane
+
+Run `swap-pane` with nothing marked and it behaves like `C-b }`, swapping with the next pane.
 
 ## Do this
 
 Left to right the panes are titled A, B, C; A is active.
 
-1. Press `C-b Right` twice to reach C, then `C-b m`. Its border turns green; the list shows `M`.
-2. Press `C-b Left` twice to reach A. Press `C-b :`, type `swap-pane`, Enter. The order is now C, B, A.
-3. The swap carried you along, so A is active on the right. Press `C-b Left` to reach B, then `C-b }`. The order is C, A, B.
-4. Press `C-b M`. The mark and the `M` flag go.
+1. Press `C-b Right` twice to reach C, then `C-b m`.
+
+   Its border turns green and the list shows `M`.
+
+2. Press `C-b Left` twice to reach A, then `C-b :`, type `swap-pane`, Enter.
+
+   The order is now C, B, A.
+
+3. The swap carried you along, so A is active on the right. Press `C-b Left` to reach B, then `C-b }`.
+
+   The order is C, A, B.
+
+4. Press `C-b M`.
+
+   The mark and the `M` flag go.
 
 ## What just happened
 

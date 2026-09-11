@@ -40,17 +40,35 @@ hints:
 
 ## Concept
 
-`C-b C-Right` moves the active pane's right border one column; `C-b M-Right` (Alt) moves it five. The other arrows do the same in their direction. After one `C-b`, further arrow presses repeat without another prefix.
+Three sizes of step, all of them `resize-pane`:
 
-`resize-pane` moves a border, taking columns or rows from the neighbour, so growing one pane always shrinks another. The keys repeat because they are bound with the repeat flag: presses within `repeat-time` (500 ms) count as one sequence.
+- `C-b C-Left` / `C-Right` / `C-Up` / `C-Down` — move the border one cell
+- `C-b M-Left` and friends (Alt) — move it five cells
+- `resize-pane -R 20` at `C-b :` — any exact count
 
-Not every terminal passes Ctrl or Alt plus arrows through. The prompt form, `resize-pane -R 20`, works everywhere and takes an exact count.
+**The arrow names the direction the border moves, not which pane grows.** To make the left pane wider, push its right border right.
+
+Resizing moves a border, taking columns or rows from the neighbour, so growing one pane always shrinks another. After one `C-b`, further arrow presses repeat without another prefix.
+
+## Why the resize keys repeat
+
+The arrows repeat because they are bound with the repeat flag: presses within `repeat-time` (500 ms) count as one sequence.
+
+Not every terminal passes Ctrl or Alt plus arrows through to tmux. The prompt form works everywhere, which is why it is worth knowing.
 
 ## Do this
 
-1. Press `C-b C-Right`, then keep tapping `C-Right`. The border moves right a column at a time.
-2. Press `C-b M-Right` a few times. Five columns per press, until the left pane passes 80 of the 120 columns.
+1. Press `C-b C-Right`, then keep tapping `C-Right`.
+
+   The border moves right a column at a time.
+
+2. Press `C-b M-Right` a few times.
+
+   Five columns per press, until the left pane passes 80 of the 120 columns.
+
 3. If neither moved the border, press `C-b :`, type `resize-pane -R 20`, Enter.
+
+   The border jumps 20 columns at once.
 
 ## What just happened
 

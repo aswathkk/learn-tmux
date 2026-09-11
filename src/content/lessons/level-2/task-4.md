@@ -39,19 +39,33 @@ hints:
 
 ## Concept
 
-`C-b z` zooms the active pane to fill the window; the other panes are hidden, not closed. Press it again to put everything back. A zoomed window shows `Z` after its name in the status line.
+`C-b z` zooms the active pane to fill the window. The other panes are hidden, not closed; press it again to put everything back. A zoomed window shows `Z` after its name in the status line — often the only sign that anything happened.
 
-Zoom is a temporary view over the layout: unzooming restores every pane to its exact size. Anything that changes the layout, such as resizing a pane or applying a preset layout, unzooms the window first, so zoom last.
+Zoom is a temporary view over the layout, not a change to it. Unzooming restores every pane to its exact size. Anything that *does* change the layout — resizing a pane, applying a preset layout — unzooms the window first, so zoom last.
 
-`*`, `-` and `Z` are window flags, and more than one can show at once.
+## The window flags
+
+`*`, `-` and `Z` are window flags, and more than one can show at once:
+
+- `*` — the current window
+- `-` — the last window
+- `Z` — the window is zoomed
 
 ## Do this
 
 Pane A on the left is active; B is top right, C bottom right.
 
-1. Press `C-b o`. B is active.
-2. Press `C-b z`. B fills the window, A and C vanish, and the list shows `0:editor*Z`.
-3. Press `C-b z` twice. B shrinks back and A and C return, then B fills the window again. Leave it zoomed.
+1. Press `C-b o`.
+
+   B is active.
+
+2. Press `C-b z`.
+
+   B fills the window, A and C vanish, and the list shows `0:editor*Z`.
+
+3. Press `C-b z` twice.
+
+   B shrinks back and A and C return, then B fills the window again. Leave it zoomed.
 
 ## What just happened
 

@@ -56,19 +56,41 @@ hints:
 
 ## Concept
 
-`show -g name` at the prompt reads an option and `set -g name value` writes it. `set -gu name` unsets it, back to the default. Every part of tmux you have used, from the prefix to the status line, is an option like these.
+Almost every part of tmux you have used — the prefix, the status line, the mouse — is an **option**. Three commands cover all of them:
 
-Options come in types: server options apply to everything; session and window options have a global set plus overrides per session or window; pane options work like window ones. When you name the option, tmux knows which type it is, so `show` and `set` need only `-g`.
+- `show -g name` — read it
+- `set -g name value` — write it
+- `set -gu name` — unset it, back to the shipped default
 
-`-g` matters on `set`: without it you change only the current session or window, and some options have no such override.
+`-u` is worth the habit: it removes your override rather than setting a value, so you never need to know what the default was.
+
+Options come in types — server, session, window, pane — but tmux knows which is which from the name, so in practice `-g` is all you type. What `-g` itself means matters: without it you change only the *current* session or window, not the global setting.
+
+## Where option values live
+
+The types differ in scope. Server options apply to everything at once. Session and window options have a global set plus per-session or per-window overrides on top. Pane options work like window ones. Some options have no per-session override at all, which is when `-g` versus no `-g` stops mattering.
 
 ## Do this
 
-1. Press `C-b :`, type `show -g status-position`, Enter. It says `top`, which is where the bar is now.
-2. Press `C-b :`, type `set -s escape-time 10`, Enter. No output; the server option is set.
+1. Press `C-b :`, type `show -g status-position`, Enter.
+
+   It says `top`, which is where the bar is now.
+
+2. Press `C-b :`, type `set -s escape-time 10`, Enter.
+
+   No output — the server option is set.
+
 3. Press `C-b :`, type `set -g renumber-windows on`, Enter.
-4. Press `C-b :`, type `kill-window -t :1`, Enter. The list goes from `0 1 2` to `0 1`: `logs` moved down to fill the gap.
-5. Press `C-b :`, type `set -gu status-position`, Enter. The bar jumps back to the bottom.
+
+   Still nothing visible; the next close will show it.
+
+4. Press `C-b :`, type `kill-window -t :1`, Enter.
+
+   The list goes from `0 1 2` to `0 1` — `logs` moved down to fill the gap.
+
+5. Press `C-b :`, type `set -gu status-position`, Enter.
+
+   The bar jumps back to the bottom.
 
 ## What just happened
 

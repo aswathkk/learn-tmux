@@ -59,17 +59,35 @@ hints:
 
 ## Concept
 
-`select-layout name` at the prompt arranges every pane in the window at once. Five presets: `even-horizontal`, `even-vertical`, `main-horizontal`, `main-vertical`, `tiled`. `C-b Space` cycles through them.
+`select-layout name` at the prompt rearranges every pane in the window at once. `C-b Space` cycles the same presets in order.
 
-`even-*` spreads panes equally side by side or stacked. `main-*` gives one pane most of the window and lines the rest up along one edge. `tiled` makes a grid. Applying a layout keeps every pane's contents and the active pane; it only recomputes sizes.
+There are five:
 
-`C-b M-1` to `M-5` (or `M-7` on tmux 3.5 and newer, which added mirrored main layouts) apply presets directly. Which number means which shifted between versions, so `C-b /` then the key is the way to check.
+- `even-horizontal` — equal columns, side by side
+- `even-vertical` — equal rows, stacked
+- `main-horizontal` — one large pane on top, the rest in a row beneath
+- `main-vertical` — one large pane on the left, the rest stacked on the right
+- `tiled` — a grid
+
+Applying a layout keeps every pane's contents and the active pane; it only recomputes sizes. Any manual resizing you did is overwritten.
+
+## Layout presets and tmux versions
+
+`C-b M-1` to `M-5` apply presets directly — `M-7` on tmux 3.5 and newer, which added mirrored main layouts. Which number means which shifted between versions, so `C-b /` then the key is the way to check yours.
 
 ## Do this
 
-1. Press `C-b :`, type `select-layout even-vertical`, Enter. Four equal rows.
-2. Press `C-b :`, type `select-layout main-vertical`, Enter. A is large on the left; B, C and D stack on the right.
-3. Press `C-b Space` until you see a two-by-two grid: `tiled`.
+1. Press `C-b :`, type `select-layout even-vertical`, Enter.
+
+   Four equal rows.
+
+2. Press `C-b :`, type `select-layout main-vertical`, Enter.
+
+   A is large on the left; B, C and D stack on the right.
+
+3. Press `C-b Space` until you see a two-by-two grid.
+
+   That is `tiled`.
 
 ## What just happened
 

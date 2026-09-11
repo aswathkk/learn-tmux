@@ -55,13 +55,24 @@ hints:
 
 ## Concept
 
-`pane-border-style` styles every border, `pane-active-border-style` the active pane's. `pane-border-status top` adds a line to each border, and `pane-border-format` decides what it shows, using the same `#{...}` formats and `#[...]` styles as the status line.
+Four window options own the borders:
 
-Both style options are window options, set with `set -g`. The title bar costs one row per pane. `#{pane_title}` is what `pane-border-format` shows by default; the title itself defaults to the host name.
+- `pane-border-style` — every border
+- `pane-active-border-style` — the active pane's, layered on top
+- `pane-border-status` — `top` or `bottom` to add a line to each border
+- `pane-border-format` — what that line shows
+
+The last one takes the same `#{...}` formats and `#[...]` styles you used on the status line, so everything from the previous two tasks applies here unchanged. All four are window options, set with `set -g`.
+
+## The cost of pane title bars
+
+The title bar costs one row per pane, which is worth remembering in a window split four ways.
+
+`#{pane_title}` is what `pane-border-format` shows by default, and the title itself defaults to the host name until you set one.
 
 ## Do this
 
-1. Run `open ~/.tmux.conf`. Add these lines and save with Ctrl-S:
+1. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    set -g pane-border-style fg=red
@@ -70,8 +81,13 @@ Both style options are window options, set with `set -g`. The title bar costs on
    set -g pane-border-format '#[bold]#{pane_title}#[default]'
    ```
 
-2. Press `C-b :`, type `source ~/.tmux.conf`, Enter. A bold title appears above each pane and the borders turn red.
-3. Press `C-b Right` and `C-b Left`. The yellow background follows the active pane.
+2. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   A bold title appears above each pane and the borders turn red.
+
+3. Press `C-b Right`, then `C-b Left`.
+
+   The yellow background follows the active pane.
 
 ## What just happened
 

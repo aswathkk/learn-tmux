@@ -34,17 +34,30 @@ hints:
 
 ## Concept
 
-`kill-server`, typed at `C-b :`, stops the whole server at once: every session, window and pane, attached or not, with no confirmation. It is the one-step way to shut everything down.
+`kill-server`, typed at `C-b :`, stops the whole server at once: every session, window and pane, attached or not, with no confirmation.
 
-Normally things close from the inside out. A program exits and its pane closes; the last pane in a window closes the window; the last window closes the session; the last session stops the server. `exit` in a shell starts that chain and nothing else.
+Normally things close from the inside out, one layer at a time:
 
-`kill-server` skips the chain and does not care what is still running.
+- a program exits → its pane closes
+- the last pane in a window closes → the window closes
+- the last window in a session closes → the session ends
+- the last session ends → the server stops
+
+`exit` in a shell starts that chain and nothing else. `kill-server` skips it entirely and does not care what is still running.
 
 ## Do this
 
-1. Run `tmux ls`. Two sessions: `learn` with two windows and `scratch` with one.
-2. Type `exit`. This pane's shell ends and window `shell` closes; `learn` still has `logs`, so you stay attached, now looking at it.
-3. Press `C-b :`, type `kill-server`, Enter. You are back at the plain shell, and `tmux ls` reports no server.
+1. Run `tmux ls`.
+
+   Two sessions: `learn` with two windows and `scratch` with one.
+
+2. Type `exit`.
+
+   This pane's shell ends and window `shell` closes. `learn` still has `logs`, so you stay attached, now looking at it.
+
+3. Press `C-b :`, type `kill-server`, Enter.
+
+   You are back at the plain shell, and `tmux ls` reports no server.
 
 ## What just happened
 

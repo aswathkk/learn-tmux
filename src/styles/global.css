@@ -158,7 +158,7 @@
 }
 
 /* Reduced motion means no travel, not no feedback.
-   
+
    Killing `transition` outright also killed the colour change on a hovered
    link or card title — a state change with nothing vestibular about it, and
    the only signal that the thing under the cursor is pressable. So the
@@ -166,7 +166,7 @@
    that moves, scales or resizes stops, and everything else keeps its 150ms.
    Elements with no transition of their own are untouched, because their
    duration is still 0s.
-   
+
    `scroll-behavior` is not a transition and was surviving this block. A skip
    link jumping to #main animated the whole viewport for exactly the people who
    asked it not to. */
@@ -1588,6 +1588,16 @@
   margin-top: 12px;
 }
 
+/* Revised steps deliberately separate the action from the result. The first
+   paragraph is what to do; every following paragraph is the quieter evidence
+   of what the learner should see. Challenge steps have one paragraph and are
+   consequently unaffected. */
+.step-body.lesson-prose > p + p {
+  color: var(--color-fg-faint);
+  font-size: 13px;
+  line-height: 1.58;
+}
+
 /* ------------------------------------------------------------------ checklist
 
    Done rows are struck through and recede; the next outstanding check carries a
@@ -1658,14 +1668,14 @@
 }
 
 /* Block children are spaced with margins, never a flex gap.
-   
+
    A tight markdown list — no blank lines between items — leaves each item's
    content as bare inline nodes: text runs and <code> with no <p> around them.
    In a flex column every one of those becomes its own flex item, so
    "run `tmux ls`. Three lines appear" would break into three stacked rows with
    the full stop orphaned at the start of the third. Most of the lessons write
    their steps that way, so this is the normal case, not an edge one.
-   
+
    The gap must still exceed the leading (~23.5px at 1.62), or paragraphs sit
    closer together than the lines inside them. */
 .lesson-prose > * + :is(p, ul, ol, pre, h2, h3, h4, blockquote, details, table) {
@@ -1674,6 +1684,56 @@
 
 .lesson-concept {
   line-height: 1.65;
+}
+
+/* The revised source uses an em dash to divide a compact term or command from
+   its explanation. Render that relation as a definition list, not as bullets
+   the reader has to scan and mentally pair. */
+.lesson-prose .lesson-rows {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 1em 0;
+}
+
+.lesson-prose .lesson-rows > div {
+  display: grid;
+  gap: 10px 14px;
+  grid-template-columns: minmax(max-content, 120px) minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.lesson-prose .lesson-rows dt {
+  color: var(--color-fg);
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 0.9em;
+}
+
+.lesson-prose .lesson-rows dd {
+  min-width: 0;
+  margin: 0;
+}
+
+/* A process chain is a sequence rather than a set of bullets. Its arrows are
+   already part of the prose; removing the markers lets that relationship read. */
+.lesson-prose .lesson-chain {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.lesson-prose .lesson-chain li {
+  margin: 0;
+}
+
+@media (max-width: 380px) {
+  .lesson-prose .lesson-rows > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }
 
 /* Guides use h2 for their sections; a lesson's h2s were split out before
@@ -1754,34 +1814,34 @@ pre code {
 }
 
 /* The code palette.
-   
+
    Shiki's default theme was github-dark, so every config block on a tmux site
    rendered in GitHub's blues and purples — three hues that appear nowhere in
    the brand — and the stylesheet had to force the background back with
    !important. `theme: 'css-variables'` in astro.config.mjs moves the decision
    here, where the tokens are.
-   
+
    The palette is deliberately near-monochrome, because that is what a terminal
    looks like and because the brand guide reserves Phosphor for progress and
    live state, which syntax highlighting is neither.
-   
+
    It has three levels, taken from how a config line is actually read:
-   
+
        set -g history-limit 50000
        ^^^ command          ^^^^^ value
            ^^ ^^^^^^^^^^^^^ flag and option
-   
+
    The command is brightest, the way it separates from its arguments in a real
    shell. Flags and option names sit at body weight — they are the sentence.
    Values carry the one hue, because the value is the part a reader has come to
    change. Fourteen amber tokens in a forty-line file, all of them the number
    or string you would edit.
-   
+
    Shiki's bash grammar reaches these through its own names: the command is
    `function`, flags and option names are `string`, and only literals end up
    under `constant` and `string-expression`. `keyword` catches the bare `|` in
    `bind | split-window`, which is a key being bound rather than a pipe.
-   
+
    Every colour clears 4.5:1 on Void. github-dark's comment grey did not — it
    measured 4.09:1, which put the reason for each line, the whole point of these
    guides, below AA. */
@@ -1936,11 +1996,14 @@ pre code {
 .lesson-aside > summary {
   cursor: pointer;
   list-style: none;
-  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
   color: var(--color-fg-faint);
   width: fit-content;
-  padding: 12px 0;
-  margin: -12px 0;
+  padding: 8px 0;
+  margin: -8px 0;
 }
 
 .lesson-aside > summary::-webkit-details-marker {
@@ -1948,12 +2011,18 @@ pre code {
 }
 
 .lesson-aside > summary::before {
-  content: '+ ';
-  font-family: var(--font-mono);
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 150ms ease;
 }
 
 .lesson-aside[open] > summary::before {
-  content: '- ';
+  transform: rotate(225deg) translate(-1px, -1px);
 }
 
 .lesson-aside > summary:hover {

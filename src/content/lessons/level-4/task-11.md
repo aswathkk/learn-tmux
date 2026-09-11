@@ -51,9 +51,12 @@ hints:
 
 ## Concept
 
-`.tmux.conf` runs once, when the server starts. Every line here is one you have already written; the new part is that `base-index` only applies to windows created after the file runs, so proving the file works takes a genuinely new server.
+Every line you need is one you have already written. The new part is *when* a line takes effect:
 
-A sourced file changes the running server, but windows that already exist keep their numbers. `kill-server` then `tmux new` is the only way to see every line take effect from zero.
+- `source` — changes the running server, but windows that already exist keep the numbers they have
+- a fresh server — runs the file before anything exists, so every line applies from zero
+
+`base-index` is the line that exposes the difference: it only affects windows created after it is set. That is why proving this file works takes `kill-server` and a genuinely new session, not a reload.
 
 ## Do this
 
@@ -71,9 +74,18 @@ Write `~/.tmux.conf` so that a fresh server has all of this:
 | Windows number from 1 | `set -g base-index 1` |
 
 1. Run `open ~/.tmux.conf`, write the lines from the table, save with Ctrl-S.
+
 2. Press `C-b :`, type `kill-server`, Enter.
-3. Run `tmux new -s main`. The bar is at the top and reads `main`; the window list starts at `1`.
-4. Press `C-a |`. The window splits; `C-b` now does nothing.
+
+   You drop to the plain shell.
+
+3. Run `tmux new -s main`.
+
+   The bar is at the top and reads `main`; the window list starts at `1`.
+
+4. Press `C-a |`.
+
+   The window splits — and `C-b` now does nothing.
 
 ## What just happened
 

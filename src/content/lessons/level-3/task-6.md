@@ -59,18 +59,36 @@ hints:
 
 ## Concept
 
-`set -g mouse on` at the prompt turns on mouse support. Then a click on a pane makes it active, a click on a window name in the status line switches to it, and dragging over text copies it into a buffer on release.
+`set -g mouse on` at the prompt turns mouse support on. Nothing visibly changes — but four things start working:
 
-`mouse` is an option, a named setting on the server, a session or a window, changed with `set-option` (`set`). `-g` sets it globally for every session.
+- click a pane — make it active
+- click a window name in the status line — switch to it
+- drag over text and release — copy it into a buffer
+- drag a border — resize
 
-With it on, mouse events are key bindings like any other: a click runs `select-pane` or `select-window`, a border drag runs `resize-pane`, and a right click opens a menu with each command's key shown.
+`mouse` is an **option**: a named setting held on the server, a session or a window, changed with `set-option` (`set` for short). `-g` sets it globally, for every session.
+
+## How mouse bindings work
+
+With the mouse on, mouse events are key bindings like any other: a click runs `select-pane` or `select-window`, a border drag runs `resize-pane`. A right click opens a menu with each command's key shown beside it.
 
 ## Do this
 
 1. Press `C-b :`, type `set -g mouse on`, Enter.
-2. Click the right pane, the one showing `right pane`. Its border highlights.
-3. Click `logs` in the status line. Window `logs` is current.
-4. Drag across a word in the pane and release. The text is now in a buffer.
+
+   Nothing on screen changes.
+
+2. Click the right pane, the one showing `right pane`.
+
+   Its border highlights — it is now active.
+
+3. Click `logs` in the status line.
+
+   Window `logs` is current.
+
+4. Drag across a word in the pane and release.
+
+   The text is now in a buffer.
 
 ## What just happened
 

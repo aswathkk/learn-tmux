@@ -47,17 +47,31 @@ hints:
 
 ## Concept
 
-`#(command)` inside a status option runs a shell command and shows its output. tmux reruns it at most every `status-interval` seconds, so `set -g status-interval 5` keeps it fresh. Formats like `%H:%M` need no command.
+One character apart, two different things:
 
-A command that prints one line and exits is shown until the next rerun. A command that keeps running, like a `while` loop with `sleep`, updates the bar each time it prints. Reruns happen at most once a second and at least every `status-interval`.
+- `#{...}` — a format, expanded by tmux itself
+- `#(...)` — a shell command; tmux runs it and shows the output
+- `status-interval` — how many seconds may pass before it runs again
 
-`%` in a command's output must be doubled to `%%`, or tmux reads it as a date code.
+How the command behaves decides how the bar behaves. A command that prints one line and exits is shown until the next rerun. A command that keeps running — a `while` loop with a `sleep` in it — updates the bar every time it prints. Reruns happen at most once a second, and at least every `status-interval`.
+
+## Escaping percent signs
+
+A `%` in the command's output must be doubled to `%%`, or tmux reads it as a date code.
 
 ## Do this
 
-1. Press `C-b :`, type `set -g status-right '#(cat ~/status.txt) %H:%M'`, Enter. The bar's right end reads `build: ok` and the time.
+1. Press `C-b :`, type `set -g status-right '#(cat ~/status.txt) %H:%M'`, Enter.
+
+   The bar's right end reads `build: ok` and the time.
+
 2. Press `C-b :`, type `set -g status-interval 5`, Enter.
-3. Run `echo 'FAILED' > ~/status.txt`. Within five seconds the bar reads `FAILED`.
+
+   The bar will now refresh at least every five seconds.
+
+3. Run `echo 'FAILED' > ~/status.txt`.
+
+   Within five seconds the bar reads `FAILED`.
 
 ## What just happened
 

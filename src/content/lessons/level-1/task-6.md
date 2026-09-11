@@ -62,18 +62,36 @@ hints:
 
 ## Concept
 
-`tmux ls` lists every session on the server with its window count, from the shell, without attaching. `tmux new -A -s name` attaches to `name` if it exists and creates it if not, so it never makes a duplicate.
+Two commands do the juggling, both from the plain shell, neither needing you to be attached:
 
-Sessions are independent: each has its own name, window list and current window. Names must be unique on a server, which is why plain `new -s name` fails when `name` already exists.
+- `tmux ls` — every session on the server with its window count
+- `tmux new -A -s name` — attach to `name` if it exists, create it if not, so it never makes a duplicate
 
-A word after `new`'s flags is a program to run in the first window instead of a shell. One word goes through the shell, so `~` and pipes work.
+Sessions are independent: each has its own name, window list and current window. Names must be unique on a server, which is why plain `new -s name` fails when the name is taken — and why `-A` exists.
+
+A word after `new`'s flags runs a program in the first window instead of a shell.
+
+## How the program argument is parsed
+
+That program argument goes through the shell, so `~` and pipes work inside it.
 
 ## Do this
 
-1. Run `tmux ls`. Three sessions are listed; note the one with `3 windows`.
-2. Run `tmux attach -t` and that name. You are on it. Press `C-b d` to detach.
-3. Run `tmux new -s watch -n stats top`. A session opens with `top` in a window named `stats`. Press `C-b d`.
-4. Run `tmux new -A -s` and the three-window session's name. You are back on it, and the server still has four sessions.
+1. Run `tmux ls`.
+
+   Three sessions are listed. Note the one with `3 windows`.
+
+2. Run `tmux attach -t` and that name, then press `C-b d`.
+
+   You land on it, then leave it again.
+
+3. Run `tmux new -s watch -n stats top`, then press `C-b d`.
+
+   A session opens with `top` in a window named `stats`, and you leave it running.
+
+4. Run `tmux new -A -s` and the three-window session's name.
+
+   You are back on it, and the server still has four sessions.
 
 ## What just happened
 

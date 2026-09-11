@@ -53,9 +53,16 @@ hints:
 
 ## Concept
 
-Nothing new. `C-b f` finds the window, `C-b [` and `C-r` find the line in its history, `C-Space` and `M-w` copy it, `setb -n` and `saveb` name and save the buffer, `C-b ]` pastes it, `set -g mouse on` finishes.
+Nothing new. The whole level, in order:
 
-The catch is the gap between the two searches: `find-window` reads what a pane shows now, so it finds the crash notice printed last, while the token printed earlier is only in the scrollback, where copy mode's search can reach it.
+- `C-b f` — find the window
+- `C-b [` then `C-r` — find the line in its history
+- `C-Space`, `M-w` — copy it
+- `setb -n`, `saveb` — name the buffer and save it
+- `C-b ]` — paste it back
+- `set -g mouse on` — finish
+
+**The catch is the gap between the two searches.** `find-window` reads what a pane shows *now*, so it finds the crash notice printed last. The token printed earlier and has scrolled off — only copy mode's search reaches that far back.
 
 ## Do this
 

@@ -57,16 +57,33 @@ hints:
 
 ## Concept
 
-`C-b s` opens a tree of sessions; `C-b w` opens it with windows shown. Move with `Up` and `Down`, expand with `Right`, collapse with `Left`, choose with `Enter`, leave with `q`. No prefix needed inside.
+Two keys open the same tree at different depths:
 
-The top half is the tree, the bottom a preview of the selected item's panes. Choosing a session attaches you to it; choosing a window makes it current in its session and attaches you there.
+- `C-b s` — sessions
+- `C-b w` — sessions with their windows shown
 
-Tree mode is one of tmux's modes, like view mode: the pane's keys are borrowed until you leave.
+Inside, no prefix is needed:
+
+- `Up` / `Down` — move
+- `Right` / `Left` — expand or collapse
+- `Enter` — choose
+- `q` — leave
+
+The top half is the tree, the bottom a preview of the selected item's panes. **What you choose decides where you land:** a session line attaches you to whichever window it already had current, while a window line makes that window current *and* attaches you there.
+
+## Tree mode is a temporary mode
+
+Tree mode is one of tmux's modes, like the view mode behind `C-b ?`: the pane's keys are borrowed until you leave.
 
 ## Do this
 
-1. Press `C-b s`. `learn` is selected. Press `Down` twice to `deploy`, then Enter. The status line reads `[deploy]`.
-2. Press `C-b w`. Every session shows its windows. Move to `output` under `build` and press Enter. The status line reads `[build]` with `output` current.
+1. Press `C-b s`, then `Down` twice to `deploy`, then Enter.
+
+   The status line reads `[deploy]`.
+
+2. Press `C-b w`, move to `output` under `build`, then Enter.
+
+   Every session shows its windows; the status line now reads `[build]` with `output` current.
 
 ## What just happened
 

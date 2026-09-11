@@ -43,15 +43,32 @@ hints:
 
 `tmux new -s name` starts tmux and drops you into a session called `name`. The green bar at the bottom is the status line: `[name]` on the left is the session, `0:sh*` next to it is its one window.
 
-tmux runs as a server in the background, and your terminal talks to it through a client. The server holds sessions; a session holds windows; a window holds panes; a pane runs a program, usually a shell. The server starts on your first tmux command and exits when nothing is left running in it.
+Everything in tmux nests, and each layer has one job:
+
+- **server** — runs in the background and holds everything; starts on your first tmux command
+- **session** — a set of windows; this is what you attach to and detach from
+- **window** — fills the screen, like a tab
+- **pane** — a rectangle inside a window running one program, usually a shell
+
+Your terminal is a client talking to the server. The server exits when nothing is left running in it.
+
+## What the default names are
 
 Without `-s` the session is called `0`, then `1`, and so on. Without `-n` the first window is named after the program running in it, `sh` here.
 
 ## Do this
 
-1. Run `tmux new`. The screen clears and a green status line appears, reading `[0] 0:sh*`: session `0`, one window named after the shell.
-2. Type `exit`. The shell ends, the session with it, and you are back at the plain prompt.
-3. Run `tmux new -s learn -n shell`. The status line now reads `[learn] 0:shell*`. Stay attached.
+1. Run `tmux new`.
+
+   The screen clears and a green status line appears, reading `[0] 0:sh*` — session `0`, one window named after the shell.
+
+2. Type `exit`.
+
+   The shell ends, the session with it, and you are back at the plain prompt.
+
+3. Run `tmux new -s learn -n shell`.
+
+   The status line now reads `[learn] 0:shell*`. Stay attached.
 
 ## What just happened
 

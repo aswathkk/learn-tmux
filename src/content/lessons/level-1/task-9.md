@@ -55,19 +55,33 @@ hints:
 
 ## Concept
 
-Three ways to change the active pane: `C-b Left`, `Right`, `Up` and `Down` step in a direction; `C-b q` shows each pane's number, press one to jump; `C-b o` steps to the next pane by number.
+Three ways to change the active pane, each useful at a different moment:
 
-Panes are numbered by position from 0, not by the order they were made. Directional moves wrap at the edges of the window, so pressing `C-b Left` on the leftmost pane lands on the rightmost.
+- `C-b Left` / `Right` / `Up` / `Down` — step one pane in that direction
+- `C-b q` then a digit — jump straight to a numbered pane
+- `C-b o` — step to the next pane by number
 
-The pane borders here show A, B and C so the task can name them; that label is the pane title, not its number.
+Panes are numbered by position from 0, not by the order they were made. Directional moves wrap at the edges of the window, so `C-b Left` on the leftmost pane lands on the rightmost.
+
+## About the A, B, C labels
+
+The pane borders in this task show A, B and C so the steps can name them. That label is the pane title, not its number.
 
 ## Do this
 
 Pane A on the left is active; B is top right, C bottom right.
 
-1. Press `C-b q`, then `2` while the numbers show. C is active.
-2. Press `C-b Left`. A is active.
-3. Press `C-b o`. B, the next pane by number, is active.
+1. Press `C-b q`, then `2` while the numbers show.
+
+   C is active.
+
+2. Press `C-b Left`.
+
+   A is active.
+
+3. Press `C-b o`.
+
+   B, the next pane by number, is active.
 
 ## What just happened
 

@@ -54,18 +54,38 @@ hints:
 
 ## Concept
 
-In copy mode, `C-Up` and `C-Down` scroll the history a line at a time without moving the cursor on screen; `PageUp` and `PageDown` a screen at a time. `C-r` searches backward as you type. `C-b ]` pastes the newest buffer into the active pane.
+Lines that scroll off the top of a pane are not gone — they go into its scrollback, and copy mode is how you read them.
 
-Lines that scroll off the top go into the pane's scrollback, kept up to the `history-limit` option. The counter at the top right of copy mode shows how far up you are.
+- `C-Up` / `C-Down` — scroll the history one line, the cursor staying put
+- `PageUp` / `PageDown` — a screen at a time
+- `C-r` — search backward as you type
+- `C-b ]` — paste the newest buffer into the active pane
 
-`C-r` is incremental: the cursor jumps to the nearest match above on every keystroke. Enter stops there; `C-g` cancels and returns you. `n` and `N` repeat the search.
+Search backward, not forward: from the bottom of the history, everything you want is above the cursor. `C-r` is incremental — the cursor jumps to the nearest match above on every keystroke, Enter stops there, `C-g` cancels and returns you.
+
+The counter at the top right of copy mode shows how far up you are.
+
+## Repeating a search
+
+`n` and `N` repeat the last search, forward and backward. How many scrollback lines a pane keeps is the `history-limit` option.
 
 ## Do this
 
 1. Press `C-b [`, then hold `C-Up` until the counter passes 50.
-2. Press `C-r`, type `ERROR`, Enter. The cursor lands on `ERROR request-id=req-51c2e9a7d4 failed`.
-3. Press `C-a`, `C-Space`, `C-e`, `M-w`. The line is copied and copy mode ends.
-4. Press `C-b o`, type `echo ` with a trailing space, press `C-b ]`, then Enter. The line prints in the right pane.
+
+   You are 50 lines up in the history.
+
+2. Press `C-r`, type `ERROR`, Enter.
+
+   The cursor lands on `ERROR request-id=req-51c2e9a7d4 failed`.
+
+3. Press `C-a`, `C-Space`, `C-e`, then `M-w`.
+
+   The line is copied and copy mode ends.
+
+4. Press `C-b o`, type `echo ` with a trailing space, press `C-b ]`, then Enter.
+
+   The line prints in the right pane.
 
 ## What just happened
 

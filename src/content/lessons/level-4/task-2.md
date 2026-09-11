@@ -51,19 +51,34 @@ hints:
 
 ## Concept
 
-`~/.tmux.conf` is a list of tmux commands, one per line, run when the server starts. `#` starts a comment. `source ~/.tmux.conf` at the prompt runs it against the server already running, so you can test without restarting.
+`~/.tmux.conf` is a list of tmux commands, one per line, run when the server starts. `#` starts a comment.
 
-The file runs only at server start, not when a session is created inside a running server. Anything you `set` by hand is gone when the server exits; anything in the file comes back every start.
+- the file — runs once, **at server start**
+- `source ~/.tmux.conf` at `C-b :` — runs it against the server already running, so you can test without restarting
 
-It is not a shell script: `~` and quotes work, `$()` does not.
+That distinction is the whole lesson. Starting a new session inside a running server does *not* re-read the file. And anything you `set` by hand disappears when the server exits, while anything in the file comes back every single start.
+
+## How the configuration file is parsed
+
+It is not a shell script. `~` and quotes work; `$()` does not.
 
 ## Do this
 
-1. Run `echo '# turn on mouse support' >> ~/.tmux.conf`.
-2. Run `echo 'set -g mouse on' >> ~/.tmux.conf`.
-3. Press `C-b :`, type `source ~/.tmux.conf`, Enter. `tmux show -g mouse` now prints `mouse on`.
-4. Press `C-b :`, type `kill-server`, Enter. You drop to the plain shell.
-5. Run `tmux new -s learn`. The new server read the file first: `tmux show -g mouse` prints `mouse on` with no sourcing.
+1. Run `echo '# turn on mouse support' >> ~/.tmux.conf`, then `echo 'set -g mouse on' >> ~/.tmux.conf`.
+
+   Two lines now sit in the file. `>>` appends; `>` would overwrite it.
+
+2. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   `tmux show -g mouse` now prints `mouse on`.
+
+3. Press `C-b :`, type `kill-server`, Enter.
+
+   You drop to the plain shell, and the hand-set option goes with the server.
+
+4. Run `tmux new -s learn`.
+
+   The new server read the file first: `tmux show -g mouse` prints `mouse on` with no sourcing.
 
 ## What just happened
 

@@ -52,17 +52,33 @@ hints:
 
 ## Concept
 
-`C-b !` breaks the active pane out into a window of its own. `join-pane -s window` at the prompt pulls a pane from another window into this one. `send-keys -t target text Enter` types into a pane you are not looking at.
+Panes are not stuck in the window they were born in:
 
-A pane keeps its program and history when it moves. Joining the last pane out of a window closes that window, as killing it would.
+- `C-b !` — break the active pane out into a window of its own
+- `join-pane -s window` at `C-b :` — pull a pane from another window into this one
+- `send-keys -t target text Enter` at `C-b :` — type into a pane you are not even looking at
 
-`send-keys` sends each argument as keys: a quoted string is typed literally and a key name like `Enter` is pressed. Targets are `session:window.pane`.
+A pane keeps its program and its history when it moves. Joining the last pane out of a window closes that window, exactly as killing it would.
+
+Targets are written `session:window.pane` — `learn:0.1` is pane 1 of window 0 in session `learn`.
+
+## How send-keys reads arguments
+
+`send-keys` sends each argument as keys: a quoted string is typed out literally, and a key name like `Enter` is pressed as that key. That is why the command and the Enter are two separate arguments.
 
 ## Do this
 
-1. With the `tail` pane active, press `C-b !`. It becomes window 2; window 0 has one pane left.
-2. Press `C-b 0`. Press `C-b :`, type `join-pane -s shell`, Enter. Window 0 has two panes and window 1 is gone.
-3. Press `C-b :`, type `send-keys -t learn:0.1 'echo joined-ok' Enter`, Enter. `joined-ok` prints in the second pane.
+1. With the `tail` pane active, press `C-b !`.
+
+   It becomes window 2; window 0 has one pane left.
+
+2. Press `C-b 0`, then `C-b :`, type `join-pane -s shell`, Enter.
+
+   Window 0 has two panes and window 1 is gone.
+
+3. Press `C-b :`, type `send-keys -t learn:0.1 'echo joined-ok' Enter`, Enter.
+
+   `joined-ok` prints in the second pane.
 
 ## What just happened
 

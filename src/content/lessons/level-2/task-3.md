@@ -55,17 +55,33 @@ hints:
 
 ## Concept
 
-Every create has a kill. `C-b x` kills the active pane, `C-b &` the current window, and `kill-session -t name` at the prompt a whole session, from anywhere. The first two ask `y/n` before acting.
+Every create has a kill, one per level:
 
-Killing is not exiting. `exit` ends a program on its own terms and the pane closes because it is empty; a kill forces the pane, window or session closed whatever is running, which matters for a program like `yes` that never ends.
+- `C-b x` — the active pane, after a `y/n` prompt
+- `C-b &` — the current window and every pane in it, after a `y/n` prompt
+- `kill-session -t name` at `C-b :` — a whole session, from anywhere, with no prompt
 
-Killing the last pane closes its window; killing the last window closes its session. `kill-session` without `-t` kills the session you are attached to and detaches you.
+Killing is not exiting. `exit` ends a program on its own terms and the pane closes because it is empty; a kill forces the pane, window or session closed whatever is running. That is the difference that matters for a program like `yes`, which never ends on its own.
+
+The cascade from level 1 still applies: kill the last pane and its window goes, kill the last window and its session goes.
+
+## Killing the session you are in
+
+`kill-session` without `-t` kills the session you are attached to, and detaches you with it.
 
 ## Do this
 
-1. Press `C-b x`, then `y`. The pane running `yes` closes; two panes remain.
-2. Press `C-b n` to reach `scratch`, then `C-b &`, then `y`. The list reads `editor logs`.
-3. Press `C-b :`, type `kill-session -t old`, Enter. Nothing on screen changes; `old` is gone.
+1. Press `C-b x`, then `y`.
+
+   The pane running `yes` closes; two panes remain.
+
+2. Press `C-b n` to reach `scratch`, then `C-b &`, then `y`.
+
+   The list reads `editor logs`.
+
+3. Press `C-b :`, type `kill-session -t old`, Enter.
+
+   Nothing on screen changes — `old` is gone.
 
 ## What just happened
 

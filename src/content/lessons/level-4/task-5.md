@@ -49,15 +49,23 @@ hints:
 
 ## Concept
 
-Three options draw the bar: `status-position` (`top` or `bottom`), `status-style` (a style such as `bg=red`), and `status-right` (a format string; `%H:%M` is the time). Set them with `set -g` in `~/.tmux.conf` and `source` it.
+Three options draw the bar:
 
-A style is terms separated by spaces or commas: `fg=` and `bg=` take a colour, and `bold`, `bright`, `underscore`, `reverse` and `italics` stand alone. Colours are the eight names, `brightNAME`, `colour0` to `colour255`, or hex like `#882244`.
+- `status-position` — `top` or `bottom`
+- `status-style` — a style, such as `bg=red`
+- `status-right` — a format string; `%H:%M` is the time
 
-The default `status-right` is `"#{=21:pane_title}" %H:%M %d-%b-%y`: pane title, time, date. The `%` codes are the ones `date` uses.
+**`status-right` replaces the whole right side; it does not add to it.** The default is `"#{=21:pane_title}" %H:%M %d-%b-%y` — pane title, time, date — so setting it to just the time drops the other two. The `%` codes are the ones `date` uses.
+
+## Writing styles
+
+A style is terms separated by spaces or commas. `fg=` and `bg=` take a colour; `bold`, `bright`, `underscore`, `reverse` and `italics` stand alone.
+
+Colours are the eight names, `brightNAME`, `colour0` to `colour255`, or hex like `#882244`.
 
 ## Do this
 
-1. Run `open ~/.tmux.conf`. Add these lines and save with Ctrl-S:
+1. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    set -g status-position top
@@ -65,7 +73,9 @@ The default `status-right` is `"#{=21:pane_title}" %H:%M %d-%b-%y`: pane title, 
    set -g status-right '%H:%M'
    ```
 
-2. Press `C-b :`, type `source ~/.tmux.conf`, Enter. The bar jumps to the top, turns red, and its right end is just the time.
+2. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   The bar jumps to the top, turns red, and its right end is just the time.
 
 ## What just happened
 

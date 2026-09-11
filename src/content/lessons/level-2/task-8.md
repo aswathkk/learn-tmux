@@ -46,18 +46,35 @@ hints:
 
 ## Concept
 
-`C-b .` asks for a new index and moves the current window there. `swap-window` at the prompt trades the current window with the one holding the marked pane. `movew -r` renumbers every window from 0, closing gaps.
+An index is a slot in the window list. These three commands change slots without closing anything:
 
-An index is a slot in the window list; these commands change slots without closing anything. `move-window` refuses an index that is taken unless you add `-k` to replace it.
+- `C-b .` — prompt for a new index for the current window
+- `swap-window` at `C-b :` — trade the current window with the one holding the marked pane
+- `movew -r` at `C-b :` — renumber every window from 0, closing the gaps
 
-The mark is the one from `C-b m`: mark a pane in the window you want to move, go to the window you want it to trade with, run `swap-window`.
+The mark is the same one from `C-b m`: mark a pane in the window you want to move, go to the window you want it to trade with, then run `swap-window`.
+
+## Replacing an occupied index
+
+`move-window` refuses an index that is already taken, unless you add `-k` to replace whatever is there.
 
 ## Do this
 
-1. Press `C-b 3` to reach `tests`. Press `C-b .`, type `2`, Enter. The list shows `2:tests`.
-2. Press `C-b 1` to reach `editor`, then `C-b m` to mark its pane.
-3. Press `C-b 0` to reach `logs`. Press `C-b :`, type `swap-window`, Enter. `editor` is now at 0 and `logs` at 1.
-4. Press `C-b :`, type `movew -r`, Enter. `7:shell` becomes `3:shell`: `0:editor 1:logs 2:tests 3:shell`.
+1. Press `C-b 3` to reach `tests`, then `C-b .`, type `2`, Enter.
+
+   The list shows `2:tests`.
+
+2. Press `C-b 1` to reach `editor`, then `C-b m`.
+
+   Its pane is marked.
+
+3. Press `C-b 0` to reach `logs`, then `C-b :`, type `swap-window`, Enter.
+
+   `editor` is now at 0 and `logs` at 1.
+
+4. Press `C-b :`, type `movew -r`, Enter.
+
+   `7:shell` becomes `3:shell`, leaving `0:editor 1:logs 2:tests 3:shell`.
 
 ## What just happened
 

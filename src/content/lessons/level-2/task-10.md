@@ -48,18 +48,33 @@ hints:
 
 ## Concept
 
-In tree mode, `t` tags the selected item and `X` kills every tagged item after one confirmation. `:` opens a prompt and runs your command once for each tagged item, which is how you kill several sessions at once.
+Tree mode can act on many items at once. Five keys, none needing a prefix:
 
-Tagged lines are bold with a `*`. `T` clears all tags, `C-t` tags everything listed, and lowercase `x` kills only the selected item whatever is tagged.
+- `t` — tag or untag the selected item; tagged lines go bold with a `*`
+- `T` / `C-t` — clear every tag / tag everything listed
+- `X` — kill every tagged item, after one confirmation
+- `x` — kill only the selected item, whatever is tagged
+- `:` — a prompt that runs your command once per tagged item
 
-`X` runs `kill-window` or `kill-pane` for whichever level you tagged. There is no key for `kill-session`, so sessions go through the `:` prompt.
+`X` picks its command from the level you tagged: `kill-window` for windows, `kill-pane` for panes. There is no key for `kill-session`, which is why sessions go through the `:` prompt instead.
 
 ## Do this
 
-1. Press `C-b w`. Move to `scratch1`, press `t`; move to `scratch2`, press `t`. Both turn bold.
-2. Press `X`, then `y`. Both windows close; `shell` and `logs` remain.
-3. Press `C-b s`. Tag `junk1` and `junk2` with `t`. Do not tag `learn`.
-4. Press `:`, type `kill-session`, Enter. Both sessions close; you stay on `learn`.
+1. Press `C-b w`, move to `scratch1` and press `t`, then move to `scratch2` and press `t`.
+
+   Both lines turn bold.
+
+2. Press `X`, then `y`.
+
+   Both windows close; `shell` and `logs` remain.
+
+3. Press `C-b s`, then tag `junk1` and `junk2` with `t`.
+
+   Do not tag `learn` — killing the session you are attached to detaches you.
+
+4. Press `:`, type `kill-session`, Enter.
+
+   Both sessions close and you stay on `learn`.
 
 ## What just happened
 

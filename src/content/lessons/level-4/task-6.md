@@ -50,23 +50,36 @@ hints:
 
 ## Concept
 
-A format, `#{session_name}`, expands to a value; a conditional, `#{?client_prefix,a,b}`, picks `a` while the prefix is held and `b` otherwise. An embedded style, `#[fg=red]`, colours the text after it until `#[default]`. Put them in `status-left` and the bar reacts to you.
+Three pieces of syntax turn the status line from a label into something that reacts:
 
-Formats read the server's state: session, window, pane and client attributes. `client_prefix` is `1` only while a client waits for the key after the prefix. A conditional is true when its value is non-zero and non-empty.
+- `#{session_name}` — a **format**: expands to a value tmux knows
+- `#{?client_prefix,a,b}` — a **conditional**: `a` while the condition holds, `b` otherwise
+- `#[fg=red]` — an **embedded style**: colours the text after it, until `#[default]`
 
-`status-left-length` caps how much of the value is drawn; the default is too short for this one.
+Formats read the server's live state — session, window, pane and client attributes. `client_prefix` is `1` only while a client is waiting for the key after the prefix, which is what makes the indicator flash.
+
+`status-left-length` caps how much of the value is actually drawn, and the default is too short for the line you are about to write.
+
+## What counts as true
+
+A conditional counts as true when its value is non-zero and non-empty, so most flag-style formats can be used directly.
 
 ## Do this
 
-1. Run `open ~/.tmux.conf`. Add these lines and save with Ctrl-S:
+1. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    set -g status-left '#{?client_prefix,#[fg=red],#[fg=green]}P#[default] #[fg=cyan]#{session_name}#[default] '
    set -g status-left-length 40
    ```
 
-2. Press `C-b :`, type `source ~/.tmux.conf`, Enter. The bar starts with a green `P` and `learn` in cyan.
-3. Press and hold `C-b`. `P` turns red; release, and it is green again.
+2. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   The bar starts with a green `P` and `learn` in cyan.
+
+3. Press and hold `C-b`.
+
+   `P` turns red; release, and it is green again.
 
 ## What just happened
 

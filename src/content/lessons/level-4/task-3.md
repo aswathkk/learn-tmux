@@ -65,15 +65,33 @@ hints:
 
 ## Concept
 
-`bind key command` adds a prefix binding: `bind M-0 selectw -t:=10` makes `C-b M-0` jump to window 10. `bind -n key command` binds without the prefix. `unbind key` removes a binding. `list-keys -T prefix key` shows what a key does.
+Four commands run the whole key system:
 
-Bindings live in key tables: `prefix` for keys after `C-b`, `root` for keys with no prefix (`-n` is short for `-T root`), and `copy-mode` and `copy-mode-vi` inside copy mode. `bind` silently replaces whatever the key did before.
+- `bind key command` — add a binding you press *after* `C-b`
+- `bind -n key command` — add one that needs no prefix at all
+- `unbind key` — remove a binding
+- `list-keys -T prefix key` — show what a key currently does
 
-In `-t :=10`, `:` says the target is a window and `=` demands an exact match on index 10. In the file, `|` needs no quoting; only the shell treats it specially.
+Bindings live in **key tables**, and the table decides when a key applies:
+
+- `prefix` — keys pressed after `C-b`; where `bind` writes by default
+- `root` — keys with no prefix; `-n` is short for `-T root`
+- `copy-mode` / `copy-mode-vi` — only inside copy mode
+
+**`bind` replaces whatever the key did before, silently.** And a careless `-n` binding fires on every keystroke, so leave it off unless you mean it.
+
+## Exact window targets
+
+In `-t :=10`, the `:` says the target is a window and the `=` demands an exact match on index 10 — without it, `10` would also match a window whose name merely starts that way.
+
+In the configuration file `|` needs no quoting; only the shell treats it specially.
 
 ## Do this
 
-1. Press `C-b :`, type `bind M-0 selectw -t:=10`, Enter. Then press `C-b M-0`. Window 10, `far`, is current.
+1. Press `C-b :`, type `bind M-0 selectw -t:=10`, Enter, then press `C-b M-0`.
+
+   Window 10, `far`, is current.
+
 2. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
@@ -82,8 +100,13 @@ In `-t :=10`, `:` says the target is a window and `=` demands an exact match on 
    bind -n M-n next-window
    ```
 
-3. Press `C-b :`, type `source ~/.tmux.conf`, Enter. `C-b |` now splits; plain `M-n` changes window.
-4. Press `C-b :`, type `unbind M-0`, Enter. `list-keys -T prefix M-0` now reports an unknown key.
+3. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   `C-b |` now splits left and right; plain `M-n` changes window with no prefix.
+
+4. Press `C-b :`, type `unbind M-0`, Enter.
+
+   `list-keys -T prefix M-0` now reports an unknown key.
 
 ## What just happened
 

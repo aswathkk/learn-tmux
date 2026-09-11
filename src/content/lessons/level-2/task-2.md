@@ -40,16 +40,28 @@ hints:
 
 ## Concept
 
-`C-b $` renames the session and `C-b ,` renames the current window. Each opens a prompt with the old name filled in; clear it with `C-u`, type the new name, press Enter.
+One key per level:
 
-A name is a label. The window keeps its index, and windows are still addressed by index; two windows may even share a name.
+- `C-b $` — rename the session
+- `C-b ,` — rename the current window
 
-Windows are renamed automatically after the program running in them, which is why a new window is `sh` and becomes `top` when you run `top`. Naming a window yourself, with `-n` or `C-b ,`, switches that off for that window.
+Both open a prompt with the **old name already in it**. Clear it with `C-u` first, then type the new name and press Enter.
+
+Windows are renamed automatically after the program running in them, which is why a new window is `sh` and becomes `top` when you run `top`. Naming a window yourself — with `-n` or `C-b ,` — switches that off for that window, and the name sticks.
+
+## A name is only a label
+
+A name is only a label. The window keeps its index and is still addressed by index, and two windows may even share a name.
 
 ## Do this
 
-1. Press `C-b $`. The prompt shows `0`. Press `C-u`, type `project`, Enter. The status line reads `[project]`.
-2. Press `C-b ,`. The prompt shows `sh`. Press `C-u`, type `editor`, Enter. The list reads `0:editor*`.
+1. Press `C-b $`, then `C-u`, type `project`, Enter.
+
+   The prompt opened showing `0`; the status line now reads `[project]`.
+
+2. Press `C-b ,`, then `C-u`, type `editor`, Enter.
+
+   The prompt opened showing `sh`; the list now reads `0:editor*`.
 
 ## What just happened
 

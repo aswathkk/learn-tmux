@@ -54,7 +54,12 @@ hints:
 
 ## Concept
 
-Nothing new here. Session, windows and panes are built in order with the names given at creation; `-fv` makes a full-width bottom pane; `neww -d -n name program` makes a named, non-current window running a program; `C-b d` and `tmux attach` leave and return.
+Nothing new here. Every piece is something you have already used:
+
+- `tmux new -s work -n editor` — start the session and name window 0 in one line
+- `neww -n name` at `C-b :` — a named window; add `-d` to stay where you are, a program name to run something other than a shell
+- `split-window -fv` at `C-b :` — a pane across the full width, below the others
+- `C-b d` and `tmux attach -t work` — leave, and come back
 
 The end state is checked, not the route. Read the status line after each step: it shows the session name, every window with its index, and which one is current.
 

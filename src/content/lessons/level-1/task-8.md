@@ -11,13 +11,13 @@ concepts: [split-window-flags, full-span-pane, command-prompt]
 keys:
   - key: ":splitw -fv"
     command: "split-window -f -v"
-    description: "New pane spans the full width (or with -fh the full height) of the window instead of only the pane being split; a command may follow"
+    description: "New pane spans the full width of the window, not just the pane being split"
   - key: ":splitw -fhb"
-    command: "split-window -b"
-    description: "Put the new pane to the left of (or above) the pane being split"
+    command: "split-window -f -h -b"
+    description: "Full-height pane placed to the left of the pane being split"
   - key: ":splitw -d"
     command: "split-window -d"
-    description: "Do not make the new pane the active pane"
+    description: "Split without making the new pane the active pane"
 wikiSections: ["Splitting the window", "The command prompt"]
 challenge: false
 objective: "Window 0 has five panes: a full-width `tail` pane at the bottom and a full-height pane on the left."
@@ -51,17 +51,36 @@ hints:
 
 ## Concept
 
-At the prompt, `split-window` takes flags the keys cannot: `-f` makes the new pane span the full width or height of the window, `-b` puts it before the pane you split (left or above), and `-d` leaves the active pane where it is. Flags combine: `-fhb`.
+At the prompt, `split-window` takes flags the keys cannot:
 
-`C-b %` and `C-b "` are `split-window -h` and `-v` with defaults. Typed out, you give the direction yourself; with neither, tmux assumes `-v`. A command after the flags runs in the new pane instead of a shell, as with `new-window`.
+- `-f` — the new pane spans the full width or height of the **window**, not just the pane you split
+- `-h` / `-v` — side by side, or stacked. Typed out you say which; with neither, tmux assumes `-v`
+- `-b` — put the new pane **before** the one you split: to the left, or above
+- `-d` — leave the active pane where it is
 
-Order matters with `-f`: a full-width pane made first keeps the rows it took, and a full-height pane made after it spans only what is left.
+Flags combine: `-fhb` is all three at once.
+
+Order matters with `-f`: a full-width pane made first keeps the rows it took, so a full-height pane made after it spans only what is left.
+
+## How this maps to the split keys
+
+`C-b %` and `C-b "` are `split-window -h` and `-v` with the defaults already filled in — which is why the prompt feels stricter than the keys.
+
+A command after the flags runs in the new pane instead of a shell, the same way `new-window` takes one.
 
 ## Do this
 
-1. Press `C-b :`, type `splitw -fv tail -f ~/build.log`, Enter. A pane running `tail` spans the whole bottom and is active.
-2. Press `C-b :`, type `splitw -fhb`, Enter. A pane spans the full height at the far left and is active.
-3. Press `C-b :`, type `splitw -d`, Enter. A fifth pane appears below it, and the green border stays put.
+1. Press `C-b :`, type `splitw -fv tail -f ~/build.log`, Enter.
+
+   A pane running `tail` spans the whole bottom and is active.
+
+2. Press `C-b :`, type `splitw -fhb`, Enter.
+
+   A pane spans the full height at the far left and is active.
+
+3. Press `C-b :`, type `splitw -d`, Enter.
+
+   A fifth pane appears below it, and the green border stays put.
 
 ## What just happened
 

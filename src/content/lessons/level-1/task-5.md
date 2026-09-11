@@ -53,15 +53,30 @@ hints:
 
 `C-b d` detaches: your terminal leaves the session, but the session and everything running in it stay alive on the server. `tmux attach -t learn` puts you back exactly where you were.
 
-Closing the terminal or typing `exit` ends the shell in the pane, and with it the window and the session. Detaching only ends the client, the link between your terminal and the server. Programs inside never notice.
+The difference that matters, and the one that costs people work:
 
-`attach` without `-t` picks the most recently used session that has no client, which is fine with one session and a guess with several.
+- `exit`, or closing the terminal — ends the shell in the pane, and with it the window and the session
+- `C-b d` — ends only the client, the link between your terminal and the server
+
+Programs inside a detached session never notice they were left.
+
+## Attaching without a name
+
+`attach` without `-t` picks the most recently used session that has no client — fine with one session, a guess with several.
 
 ## Do this
 
-1. Run `tail -f ~/build.log`. Forty lines scroll past, then it waits for more.
-2. Press `C-b d`. tmux prints `[detached (from session learn)]` and you are back at the plain shell.
-3. Run `tmux attach -t learn`. The status line returns and `tail` is still running.
+1. Run `tail -f ~/build.log`.
+
+   Forty lines scroll past, then it waits for more.
+
+2. Press `C-b d`.
+
+   tmux prints `[detached (from session learn)]` and you are back at the plain shell.
+
+3. Run `tmux attach -t learn`.
+
+   The status line returns and `tail` is still running.
 
 ## What just happened
 

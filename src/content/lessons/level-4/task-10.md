@@ -47,18 +47,35 @@ hints:
 
 ## Concept
 
-A mouse drag ends with `MouseDragEnd1Pane`, a key like any other, bound in the `copy-mode` table to `copy-pipe-and-cancel`: copy, then leave copy mode. Rebind it to `copy-selection-no-clear` and a drag copies but keeps the selection and copy mode.
+A mouse drag ends with `MouseDragEnd1Pane` — a key like any other, which means you can rebind what a drag *does*:
 
-Mouse events are bindings, so `bind`, `unbind` and `list-keys` work on them. The `copy-mode` table is the one that matters here because the drag has already put the pane in copy mode, and this server uses emacs keys.
+- `copy-pipe-and-cancel` — the default: copy, then leave copy mode
+- `copy-selection-no-clear` — copy, but keep the selection and stay in copy mode
+- unbound — the drag only highlights; copying is left to the keyboard
 
-Unbinding the event instead makes a drag only highlight; copying then needs the keyboard.
+Because mouse events are ordinary bindings, `bind`, `unbind` and `list-keys` all work on them. The binding goes in the `copy-mode` table: by the time the drag ends, the pane is already in copy mode.
+
+## The copy-mode key table
+
+`copy-mode` is the right table here because this server uses emacs keys. With `mode-keys vi` set, the same binding would belong in `copy-mode-vi`.
 
 ## Do this
 
 1. Press `C-b :`, type `set -g mouse on`, Enter.
-2. Press `C-b :`, type `list-keys -T copy-mode MouseDragEnd1Pane`, Enter. It shows `copy-pipe-and-cancel`.
+
+   Without this, a drag selects in your terminal rather than in tmux.
+
+2. Press `C-b :`, type `list-keys -T copy-mode MouseDragEnd1Pane`, Enter.
+
+   It shows the default, `copy-pipe-and-cancel`.
+
 3. Press `C-b :`, type `bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear`, Enter.
-4. Drag across the `token:` line and release. The line stays highlighted, the pane stays in copy mode, and a buffer holds it.
+
+   The drag now has new behaviour.
+
+4. Drag across the `token:` line and release.
+
+   The line stays highlighted, the pane stays in copy mode, and a buffer holds it.
 
 ## What just happened
 

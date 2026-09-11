@@ -59,9 +59,16 @@ hints:
 
 ## Concept
 
-Every fix reuses a command from this level: `C-b z` unzooms, `C-b $` and `C-b ,` rename, `select-layout` reflows, `C-b &` kills a window, `C-b D` drops a client, `movew -r` closes gaps. The new part is reading the mess off the status line before touching it.
+Nothing new. Every fix is a command from this level:
 
-The status line tells you almost everything: `Z` after a window name means zoomed, the window list shows names and index gaps, and `C-b D` lists every client on the server, not just yours.
+- `C-b z` — unzoom
+- `C-b $` / `C-b ,` — rename the session / the current window
+- `select-layout main-vertical` — reflow the panes
+- `C-b &` — kill a window
+- `C-b D` — drop a client
+- `movew -r` — close the gaps in the index list
+
+The new part is reading the mess off the status line before you touch anything. It tells you almost everything: `Z` after a window name means zoomed, the window list shows names and index gaps, and `C-b D` lists every client on the server, not just yours.
 
 ## Do this
 

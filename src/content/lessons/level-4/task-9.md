@@ -55,15 +55,24 @@ hints:
 
 ## Concept
 
-`set -g mode-keys vi` switches copy mode to vi keys: `h j k l` move, `0` and `$` go to line ends, `/` and `?` search, Enter copies and leaves. `status-keys vi` does the same for the prompt. `bind -T copy-mode-vi v send -X begin-selection` makes `v` start a selection, as in vi.
+Copy mode keys live in two tables — `copy-mode` (emacs) and `copy-mode-vi` — and the `mode-keys` option picks which one is consulted. `set -g mode-keys vi` switches to the vi table:
 
-Copy mode keys live in two tables, `copy-mode` (emacs) and `copy-mode-vi`; `mode-keys` picks which one is used. Both default to `emacs` unless `VISUAL` or `EDITOR` contained `vi` when the server started.
+- `h` `j` `k` `l` — move
+- `0` / `$` — start and end of the line
+- `/` and `?` — search forward and back
+- `Enter` — copy and leave
 
-Copy mode commands are sent with `send-keys -X`, so a binding in either table looks like `send -X command`. In the vi table `v` is `rectangle-toggle` by default and `Space` begins a selection; the rebind gives `v` its vi meaning.
+`status-keys vi` does the same for the command prompt.
+
+One rebind is worth making: in the vi table `v` is `rectangle-toggle` by default, and `Space` begins a selection. `bind -T copy-mode-vi v send -X begin-selection` gives `v` the meaning it has in vi. Copy mode commands are always sent with `send-keys -X`, so any binding in either table reads `send -X command`.
+
+## The default copy-mode tables
+
+Both tables default to `emacs` — unless `VISUAL` or `EDITOR` contained `vi` when the server started, in which case tmux picks vi for you.
 
 ## Do this
 
-1. Run `open ~/.tmux.conf`. Add these lines and save with Ctrl-S:
+1. Run `open ~/.tmux.conf`, add these lines, and save with Ctrl-S:
 
    ```text
    set -g mode-keys vi
@@ -72,8 +81,16 @@ Copy mode commands are sent with `send-keys -X`, so a binding in either table lo
    ```
 
 2. Press `C-b :`, type `source ~/.tmux.conf`, Enter.
+
+   Editing the file alone changed nothing; this is what applies it.
+
 3. Press `C-b [`, then `k` until the cursor is on `deploy key: deploy-key-7f3a9c2e`, then `0`.
-4. Press `v`, then `$`. The line highlights. Press Enter. Copy mode ends with the line in a buffer.
+
+   The cursor sits at the start of the line.
+
+4. Press `v`, then `$`, then Enter.
+
+   The line highlights, then copy mode ends with the line in a buffer.
 
 ## What just happened
 

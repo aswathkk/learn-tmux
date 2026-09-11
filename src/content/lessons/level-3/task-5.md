@@ -53,17 +53,31 @@ hints:
 
 ## Concept
 
-`C-b f` asks for text and opens tree mode showing only panes whose visible content, title or window name matches. Inside any tree, `C-s` searches names and `n` jumps to the next match.
+Two ways to find a window you cannot see — by what it *shows*, or by what it is *called*:
 
-The filter reads what is on screen now, not the scrollback. When something matches, the line above the preview says `filter: active`; when nothing does, the full tree shows with `filter: no matches`.
+- `C-b f` — ask for text, then open tree mode showing only panes whose visible content, title or window name matches
+- `C-s` in any tree — search names
+- `n` — jump to the next match
+
+The filter reads what is on screen **now**, not the scrollback. When something matches, the line above the preview says `filter: active`; when nothing does, the full tree shows with `filter: no matches`.
+
+## Keys that work in every tree
 
 `C-s` and `n` are ordinary tree mode keys, so they work whether or not a filter is on.
 
 ## Do this
 
-1. Press `C-b f`, type `connection refused`, Enter. The tree shows one pane, with `filter: active`.
-2. The session line is selected, not the match. Press `Down` to the `db` row below it, then Enter. `db` is current.
-3. Press `C-b w`, then `C-s`, type `docs`, Enter. The selection jumps to `docs`. Press Enter. `docs` is current.
+1. Press `C-b f`, type `connection refused`, Enter.
+
+   The tree shows one pane, with `filter: active`.
+
+2. The session line is selected, not the match. Press `Down` to the `db` row below it, then Enter.
+
+   `db` is current.
+
+3. Press `C-b w`, then `C-s`, type `docs`, Enter, then Enter again.
+
+   The selection jumps to `docs`, and the second Enter makes it current.
 
 ## What just happened
 

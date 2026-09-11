@@ -47,18 +47,35 @@ hints:
 
 ## Concept
 
-`C-b 0` to `C-b 9` jump to a window by index. `C-b n` and `C-b p` step to the next and previous. `C-b l` goes to the last window, the one that was current before this one, and back again.
+Three ways to change window, all of them `select-window` with a different target:
 
-The status line marks the current window with `*` and the last window with `-`. The last window updates on every switch, so it is one step of history, not a stack.
+- `C-b 0` … `C-b 9` — jump to a window by index
+- `C-b n` / `C-b p` — step to the next or previous window
+- `C-b l` — the last window, meaning the one that was current before this one
 
-All of these run `select-window` with a different target: an index, the next or previous one, or the remembered last window.
+The status line marks the current window with `*` and the last window with `-`. The last window updates on every switch, so it is one step of history, not a stack — which is why `C-b l` twice brings you home.
+
+## The other ways to target a window
+
+Each of these is one command with a different target: an index, the next or previous window, or the remembered last one. `select-window -t 3` at the prompt does exactly what `C-b 3` does.
 
 ## Do this
 
-1. Press `C-b 3`. `tests` is current: `3:tests*`.
-2. Press `C-b n`, then `C-b p`. To `docs` and back to `tests`.
-3. Press `C-b 0`. `editor` is current and `3:tests-` marks the last window.
-4. Press `C-b l` twice. First to `tests`, then back to `editor`, with `tests` last again.
+1. Press `C-b 3`.
+
+   `tests` is current: `3:tests*`.
+
+2. Press `C-b n`, then `C-b p`.
+
+   To `docs` and back to `tests`.
+
+3. Press `C-b 0`.
+
+   `editor` is current, and `3:tests-` marks the last window.
+
+4. Press `C-b l` twice.
+
+   First to `tests`, then back to `editor`, with `tests` last again.
 
 ## What just happened
 
