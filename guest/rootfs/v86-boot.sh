@@ -25,7 +25,8 @@ mount -t devtmpfs devtmpfs "$R/dev"      2>/dev/null
 mkdir -p "$R/dev/pts"
 mount -t devpts devpts "$R/dev/pts" -o gid=5,mode=620,ptmxmode=0666 2>/dev/null
 # tmux needs a real filesystem for its unix socket; 9p cannot host one.
-mount -t tmpfs    tmpfs    "$R/tmp"      2>/dev/null
+# size=99% allows the make-state script to zero free memory via /tmp before snapshotting.
+mount -t tmpfs -o size=99% tmpfs "$R/tmp" 2>/dev/null
 mount -t tmpfs    tmpfs    "$R/run"      2>/dev/null
 chmod 1777 "$R/tmp"
 

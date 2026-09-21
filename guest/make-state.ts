@@ -92,7 +92,12 @@ emulator.add_listener('serial0-output-byte', (byte: number) => {
   if (stage === 0 && tail.includes('~% ')) {
     // Buildroot's prompt: the kernel is up and the 9p share is mounted.
     stage = 1;
-    emulator.serial0_send('sh /mnt/v86-boot.sh 100 30\n');
+    // Ensure /tmp is mounted with size=99% so we can zero out free RAM, even if
+    // the rootfs has not been re-exported yet.
+    emulator.serial0_send(
+      'sed -i "s/mount -t tmpfs    tmpfs    \\\"\\$R\\/tmp\\\"/mount -t tmpfs -o size=99% tmpfs \\\"\\$R\\/tmp\\\"/" /mnt/v86-boot.sh 2>/dev/null; ' +
+        'sh /mnt/v86-boot.sh 100 30\n',
+    );
   } else if (stage === 1 && /~ ?[#$] $/.test(stripSgr(tail))) {
     // A login shell is prompting from the home directory, so the chroot is up
     // and start-tmux has put the control shell on ttyS1.
@@ -101,13 +106,12 @@ emulator.add_listener('serial0-output-byte', (byte: number) => {
     // guest's to style, and editing /etc/profile.d/prompt.sh must not stall
     // this script.
     stage = 2;
-    // Read the whole rootfs once before snapshotting. v86 re-downloads a 9p
-    // file on every read that misses, so a cold guest page cache costs several
-    // MB of duplicate traffic the moment tmux starts. Warming it here puts
-    // those pages inside the snapshot instead.
+    // 1. Warm tmux so the binary and its libraries are pre-cached.
+    // 2. Zero all free memory via tmpfs. v86 only packs non-zero 4KB pages into
+    //    the snapshot; zeroing free RAM drops the snapshot by ~7 MB.
     control(
-      'find / -xdev -type f -exec cat {} + > /dev/null 2>&1; ' +
-        'tmux new -d -s warm && tmux kill-server; ' +
+      'tmux new -d -s warm && tmux kill-server; ' +
+        'dd if=/dev/zero of=/tmp/zero bs=1M 2>/dev/null || true; rm -f /tmp/zero; sync; ' +
         // Nothing this script did should be visible to the learner.
         'rm -f /home/alpine/.ash_history; ' +
         'echo WARM_DONE',
@@ -131,7 +135,7 @@ async function snapshot(): Promise<void> {
   writeFileSync(RAW_OUT, Buffer.from(state));
 
   const packed = zstdCompressSync(Buffer.from(state), {
-    params: { [zlibConstants.ZSTD_c_compressionLevel]: 19 },
+    params: { [zlibConstants.ZSTD_c_compressionLevel]: 22 },
   });
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, packed);
